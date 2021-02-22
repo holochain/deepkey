@@ -1,0 +1,20 @@
+[package]
+name = "deepkey"
+description = "DeepKey hApp"
+version = "0.0.1"
+authors = [ "Holochain Core Dev Team <devcore@holochain.org>" ]
+license = "CAL-1.0"
+homepage = "https://github.com/holochain/deepkey"
+documentation = "https://github.com/holochain/deepkey"
+keywords = [ "holochain", "holo", "deepkey" ]
+categories = [ "cryptography", "holochain" ]
+edition = "2018"
+
+[lib]
+name = "deepkey"
+crate-type = [ "cdylib", "rlib" ]
+path = "src/lib.rs"
+
+[dependencies]
+hdk = {path = "../../../holochain/crates/hdk" }
+serde = "1"
