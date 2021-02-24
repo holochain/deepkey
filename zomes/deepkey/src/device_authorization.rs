@@ -1,7 +1,7 @@
 use hdk::prelude::*;
 
 #[hdk_entry(id = "device_authorization")]
-struct DeviceAuthorization {
+pub struct DeviceAuthorization {
     trusted_device_deepkey_agent_id_1: AgentPubKey,
     trusted_device_deepkey_agent_id_2: AgentPubKey,
     authorizor_1_sig_of_xor: Signature,
@@ -9,9 +9,9 @@ struct DeviceAuthorization {
     keyset_root_authority: EntryHash,
 }
 
-impl DeviceAuthorization {
-    pub fn xor
-}
+// impl DeviceAuthorization {
+//     pub fn xor
+// }
 
 #[hdk_extern]
 fn create_device_authorization(device: DeviceAuthorization) -> ExternResult<HeaderHash> {

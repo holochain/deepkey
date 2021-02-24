@@ -1,35 +1,26 @@
 use hdk::prelude::*;
 use crate::key;
 
-struct CreateKeyRegistration {
-    key: key::Key,
-    authorization_sig: Signature,
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct KeyAuthorization {
+    key: key::PubKey,
+    signature: Signature,
 }
 
-struct UpdateKeyRegistration {
-    key: key::Key,
-    authorization_sig: Signature,
-    prior_key: key::Key,
-    revocation_sig: Signature,
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct KeyRevocation {
+    key: key::PubKey,
+    signature: Signature,
 }
 
 #[hdk_entry(id = "key_registration")]
-enum KeyRegistration {
-    Create(CreateKeyRegistration),
-    Update(UpdateKeyRegistration),
+pub enum KeyRegistration {
+    Create(KeyAuthorization),
+    Update(KeyRevocation, KeyAuthorization),
+    Delete(KeyRevocation)
 }
 
 #[hdk_extern]
-fn create_key_registration(create: CreateKeyRegistration) -> ExternResult<HeaderHash> {
-    create_entry(create)
-}
-
-#[hdk_extern]
-fn update_key_registration(update: UpdateKeyRegistration) -> ExternResult<HeaderHash> {
-    create_entry(update)
-}
-
-#[hdk_extern]
-fn delete_key_registration(old_key_registration: HeaderHash) -> ExternResult<HeaderHash> {
-    delete_entry(old_key_registration)
+fn create_key_registration(key_registration: KeyRegistration) -> ExternResult<HeaderHash> {
+    create_entry(key_registration)
 }

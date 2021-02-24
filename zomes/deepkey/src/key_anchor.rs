@@ -1,6 +1,5 @@
-use hdk::prelude::*;
 use crate::key;
 
-struct KeyAnchor {
-    pub_key: key::EdDSAKey,
-}
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[serde(transparent)]
+struct KeyAnchor(key::PubKey);
