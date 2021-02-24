@@ -16,6 +16,6 @@ entry_defs![
     generator::Generator::entry_def(),
     key_change_rule::KeyChangeRule::entry_def(),
     key_registration::KeyRegistration::entry_def(),
-    keyset_root::KeysetRoot::entry_def()
+    keyset_root::entry::KeysetRoot::entry_def()
 ];
 
