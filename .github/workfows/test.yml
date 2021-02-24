@@ -1,0 +1,12 @@
+name: Cargo tests
+
+on: [ push, pull_request ]
+
+jobs:
+  cargo_test:
+    runs-on: ubuntu-latest
+
+    steps:
+     - uses: actions/checkout@v2
+     - uses: cachix/install-nix-action@v7
+     - run: nix-shell --run 'cargo test -j 2 --manifest-path zomes/deepkey/Cargo.toml'
