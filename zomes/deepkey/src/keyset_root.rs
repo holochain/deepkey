@@ -43,7 +43,13 @@ fn validate_create_entry_keyset_root(validate_data: ValidateData) -> ExternResul
                         match KeysetRoot::try_from(serialized_keyset_root) {
                             Ok(keyset_root) => {
                                 if keyset_root.signature_is_valid()? {
-                                    Ok(ValidateCallbackResult::Valid)
+                                    // Source = FirstDeepkeyAgent
+                                    if create_header.author == keyset_root.first_deepkey_agent {
+                                        Ok(ValidateCallbackResult::Valid)
+                                    }
+                                    else {
+                                        Ok(ValidateCallbackResult::Invalid("KeysetRoot create author must be the FDA.".to_string()))
+                                    }
                                 }
                                 else {
                                     Ok(ValidateCallbackResult::Invalid("Invalid signature from root key for FDA key.".to_string()))

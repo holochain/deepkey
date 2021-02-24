@@ -2,8 +2,11 @@ use hdk::prelude::*;
 
 /// Represents an M:N multisignature spec.
 /// The trivial case 1:1 represents a single agent to sign.
+/// We need an entry to define the rules of authority (for authorizing or revoking) keys in the space under a KeysetRoot. 
+/// This is only committed by the FDA.
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct AuthoritySpec {
+    /// // set to 1 for a single signer scenario
     sigs_required: u8,
     authorized_signers: Vec<AgentPubKey>,
 }
