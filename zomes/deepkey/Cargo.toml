@@ -18,3 +18,4 @@ path = "src/lib.rs"
 [dependencies]
 hdk = {path = "../../../holochain/crates/hdk" }
 serde = "1"
+thiserror = "1"
