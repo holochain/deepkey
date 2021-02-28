@@ -3,7 +3,7 @@ use crate::keyset_root::entry;
 use crate::keyset_root::error::Error;
 
 impl entry::KeysetRoot {
-    pub fn signature_is_valid(&self) -> ExternResult<bool> {
+    pub fn verify_signature(&self) -> ExternResult<bool> {
         verify_signature_raw(
             self.as_root_pub_key_ref().to_owned(),
             self.as_fda_pubkey_signed_by_root_key_ref().to_owned(),
@@ -27,28 +27,28 @@ fn validate_create_entry_keyset_root(validate_data: ValidateData) -> ExternResul
                 match entry {
                     // Element needs to be present for creation.
                     ElementEntry::Present(serialized_keyset_root) => {
-                        // KeysetRoot needs to deserialize cleanly from entry.
+                        // Clean deserialize.
                         match entry::KeysetRoot::try_from(serialized_keyset_root) {
                             Ok(keyset_root) => {
-                                // Signature needs to be right.
-                                if keyset_root.signature_is_valid()? {
+                                // Valid signature.
+                                if keyset_root.verify_signature()? {
                                     // Source = FirstDeepkeyAgent
                                     // When new KeysetRoot is created -> validate that Author=FirstDeepKeyAgent
-                                    if &create_header.author == keyset_root.as_first_deepkey_agent_ref() {
+                                    if keyset_root.as_first_deepkey_agent_ref() == &create_header.author {
                                         Ok(ValidateCallbackResult::Valid)
                                     }
                                     else {
-                                        Ok(ValidateCallbackResult::Invalid(Error::BadFdaAuthor.to_string()))
+                                        Ok(ValidateCallbackResult::Invalid(Error::FdaAuthor.to_string()))
                                     }
                                 }
                                 else {
-                                    Ok(ValidateCallbackResult::Invalid(Error::BadFdaSignature.to_string()))
+                                    Ok(ValidateCallbackResult::Invalid(Error::FdaSignature.to_string()))
                                 }
                             },
-                            Err(e) => Ok(ValidateCallbackResult::Invalid(Error::WasmError(e).to_string()))
+                            Err(e) => Ok(ValidateCallbackResult::Invalid(Error::Wasm(e).to_string()))
                         }
                     },
-                    _ => Ok(ValidateCallbackResult::Invalid(Error::ElementMissing.to_string()))
+                    _ => Ok(ValidateCallbackResult::Invalid(Error::EntryMissing.to_string()))
                 }
             }
             else {

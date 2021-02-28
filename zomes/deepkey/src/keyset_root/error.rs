@@ -4,7 +4,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Element missing its KeysetRoot")]
-    ElementMissing,
+    EntryMissing,
 
     #[error("Attempted to delete a KeysetRoot")]
     DeleteAttempted,
@@ -16,11 +16,11 @@ pub enum Error {
     Position(u32, u32),
 
     #[error("Bad FDA signature in KeysetRoot")]
-    BadFdaSignature,
+    FdaSignature,
 
     #[error("Element author does not match FDA for KeysetRoot")]
-    BadFdaAuthor,
+    FdaAuthor,
 
     #[error("Wasm error {0}")]
-    WasmError(WasmError)
+    Wasm(WasmError)
 }

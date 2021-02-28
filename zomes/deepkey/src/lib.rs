@@ -1,10 +1,9 @@
 use hdk::prelude::*;
 
-mod deepkey_agent;
+// mod deepkey_agent;
 mod device_authorization;
 mod dna_key_binding;
 mod entry;
-mod error;
 mod generator;
 mod key_anchor;
 mod key_change_rule;

@@ -1,24 +1,24 @@
 use hdk::prelude::*;
-use crate::keyset_root::entry;
-use crate::deepkey_agent::DeepKeyAgent;
-use crate::device_authorization::entry::DeviceAuthorization;
+// use crate::keyset_root::entry;
+// use crate::deepkey_agent::DeepKeyAgent;
+// use crate::device_authorization::entry::DeviceAuthorization;
 
 /// The tag for links from keyset roots to agents.
 /// MUST be globally (to the happ) unique.
 pub const KEYSET_ROOT_TO_AGENT_TAG: u8 = 0;
 
-impl entry::KeysetRoot {
-    pub fn link_to_deepkey_agent(&self, target: DeepKeyAgent) -> ExternResult<HeaderHash> {
-        match target {
-            DeepKeyAgent::Device(device_authorization) => {
-                create_link(hash_entry(self)?, hash_entry(device_authorization)?, vec![KEYSET_ROOT_TO_AGENT_TAG])
-            },
-            DeepKeyAgent::Root(_) => Err(WasmError::Guest("Attempted to link to a KeysetRoot from a KeysetRoot.".to_string())),
-        }
-    }
-}
+// impl entry::KeysetRoot {
+//     pub fn link_to_deepkey_agent(&self, target: DeepKeyAgent) -> ExternResult<HeaderHash> {
+//         match target {
+//             DeepKeyAgent::Device(device_authorization) => {
+//                 create_link(hash_entry(self)?, hash_entry(device_authorization)?, vec![KEYSET_ROOT_TO_AGENT_TAG])
+//             },
+//             DeepKeyAgent::Root(_) => Err(WasmError::Guest("Attempted to link to a KeysetRoot from a KeysetRoot.".to_string())),
+//         }
+//     }
+// }
 
-pub fn validate_create_link_keyset_root_to_agent(create_link_data: ValidateCreateLinkData) -> ExternResult<ValidateLinkCallbackResult> {
+pub fn validate_create_link_keyset_root_to_agent(_create_link_data: ValidateCreateLinkData) -> ExternResult<ValidateLinkCallbackResult> {
     // Author needs to be a deepkey agent.
     // let deepkey_agents = crate::deepkey_agent::query()?;
     // let maybe_deepkey_agent = deepkey_agents.iter().find(|deepkey_agent| deepkey_agent.is_agent(&create_link_data.link_add.author));
