@@ -1,5 +1,6 @@
 use hdk::prelude::*;
 use crate::keyset_root::entry;
+use crate::keyset_root::error::Error;
 
 impl entry::KeysetRoot {
     pub fn signature_is_valid(&self) -> ExternResult<bool> {
@@ -19,7 +20,7 @@ fn validate_create_entry_keyset_root(validate_data: ValidateData) -> ExternResul
     let (signed_header, _) = header_hashed.into_inner();
 
     match signed_header.header() {
-        // Header needs to be a creat.
+        // Header needs to be a create.
         Header::Create(create_header) => {
             // Header needs to be in the correct position in the chain.
             if create_header.header_seq == entry::KEYSET_ROOT_CHAIN_INDEX {
@@ -37,35 +38,36 @@ fn validate_create_entry_keyset_root(validate_data: ValidateData) -> ExternResul
                                         Ok(ValidateCallbackResult::Valid)
                                     }
                                     else {
-                                        Ok(ValidateCallbackResult::Invalid("KeysetRoot create author must be the FDA.".to_string()))
+                                        Ok(ValidateCallbackResult::Invalid(Error::BadFdaAuthor.to_string()))
                                     }
                                 }
                                 else {
-                                    Ok(ValidateCallbackResult::Invalid("Invalid signature from root key for FDA key.".to_string()))
+                                    Ok(ValidateCallbackResult::Invalid(Error::BadFdaSignature.to_string()))
                                 }
                             },
-                            Err(e) => Ok(ValidateCallbackResult::Invalid(e.to_string())),
+                            Err(e) => Ok(ValidateCallbackResult::Invalid(Error::WasmError(e).to_string()))
                         }
                     },
-                    _ => Ok(ValidateCallbackResult::Invalid("No present KeysetRoot entry.".to_string()))
+                    _ => Ok(ValidateCallbackResult::Invalid(Error::ElementMissing.to_string()))
                 }
             }
             else {
-                Ok(ValidateCallbackResult::Invalid(format!("KeysetRoot must have chain index {}", entry::KEYSET_ROOT_CHAIN_INDEX)))
+                Ok(ValidateCallbackResult::Invalid(Error::Position(create_header.header_seq, entry::KEYSET_ROOT_CHAIN_INDEX).to_string()))
             }
         },
-        _ => Ok(ValidateCallbackResult::Invalid("Not a create header for new KeysetRoot entry creation.".to_string())),
+        // Holochain sent a non-Create Header to `validate_create_`!
+        _ => unreachable!(),
     }
 }
 
 #[hdk_extern]
 /// Updates are not allowed for KeysetRoot.
 fn validate_update_entry_keyset_root(_: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    Ok(ValidateCallbackResult::Invalid("KeysetRoot update is not allowed.".to_string()))
+    Ok(ValidateCallbackResult::Invalid(Error::UpdateAttempted.to_string()))
 }
 
 #[hdk_extern]
 /// Deletes are not allowed for KeysetRoot.
 fn validate_delete_entry_keyset_root(_: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    Ok(ValidateCallbackResult::Invalid("KeysetRoot delete is not allowed.".to_string()))
+    Ok(ValidateCallbackResult::Invalid(Error::DeleteAttempted.to_string()))
 }
