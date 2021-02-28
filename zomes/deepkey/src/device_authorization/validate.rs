@@ -112,6 +112,9 @@ fn validate_create_entry_device_authorization(validate_data: ValidateData) -> Ex
             return Ok(ValidateCallbackResult::Invalid(Error::WrongKeysetRoot.to_string()));
         }
     }
+    else {
+        return Ok(ValidateCallbackResult::Invalid(Error::ParentEntryType.to_string()))
+    }
 
     Ok(ValidateCallbackResult::Valid)
 }

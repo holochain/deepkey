@@ -39,6 +39,9 @@ pub enum Error {
     #[error("DeviceAuthorization author is neither of the acceptors")]
     DeviceAuthorizationAuthor,
 
+    #[error("Parent entry is of the wrong type")]
+    ParentEntryType,
+
     #[error("Wasm error {0}")]
     Wasm(WasmError)
 }
