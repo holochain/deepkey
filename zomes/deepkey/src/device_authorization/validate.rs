@@ -107,10 +107,15 @@ fn validate_create_entry_device_authorization(validate_data: ValidateData) -> Ex
             return Ok(ValidateCallbackResult::Invalid(Error::DeviceAuthorizationAuthor.to_string()));
         }
 
-        // If the author is on the root side it must also be one of the parent acceptors.
+        // If the author is on the root side there are additional constraints.
         if device_authorization.as_root_acceptance_ref().0 == create_header.author {
-            if (parent_device_authorization.as_root_acceptance_ref().0 != create_header.author) && (parent_device_authorization.as_device_acceptance_ref().0 != create_header.author) {
+            // The root side author must also be the author of the parent.
+            if parent_create_header.author != create_header.author {
                 return Ok(ValidateCallbackResult::Invalid(Error::DeviceAuthorizationParentAuthor.to_string()))
+            }
+            // The root author must also be one of the parent acceptors.
+            if (parent_device_authorization.as_root_acceptance_ref().0 != create_header.author) && (parent_device_authorization.as_device_acceptance_ref().0 != create_header.author) {
+                return Ok(ValidateCallbackResult::Invalid(Error::DeviceAuthorizationParentAcceptor.to_string()))
             }
         }
 
