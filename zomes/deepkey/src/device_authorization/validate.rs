@@ -107,6 +107,13 @@ fn validate_create_entry_device_authorization(validate_data: ValidateData) -> Ex
             return Ok(ValidateCallbackResult::Invalid(Error::DeviceAuthorizationAuthor.to_string()));
         }
 
+        // If the author is on the root side it must also be one of the parent acceptors.
+        if device_authorization.as_root_acceptance_ref().0 == create_header.author {
+            if (parent_device_authorization.as_root_acceptance_ref().0 != create_header.author) && (parent_device_authorization.as_device_acceptance_ref().0 != create_header.author) {
+                return Ok(ValidateCallbackResult::Invalid(Error::DeviceAuthorizationParentAuthor.to_string()))
+            }
+        }
+
         // The parent must have the same KSR.
         if device_authorization.as_keyset_root_authority_ref() != parent_device_authorization.as_keyset_root_authority_ref() {
             return Ok(ValidateCallbackResult::Invalid(Error::WrongKeysetRoot.to_string()));

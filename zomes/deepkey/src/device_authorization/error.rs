@@ -39,6 +39,9 @@ pub enum Error {
     #[error("DeviceAuthorization author is neither of the acceptors")]
     DeviceAuthorizationAuthor,
 
+    #[error("DeviceAuthorization author is a root acceptor but not referenced by the parent")]
+    DeviceAuthorizationParentAuthor,
+
     #[error("Parent entry is of the wrong type")]
     ParentEntryType,
 
