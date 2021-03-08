@@ -14,6 +14,18 @@ pub struct KeysetRoot {
 }
 
 impl KeysetRoot {
+    pub fn new(
+        first_deepkey_agent: AgentPubKey,
+        root_pub_key: AgentPubKey,
+        fda_pubkey_signed_by_root_key: Signature
+    ) -> Self {
+        Self {
+            first_deepkey_agent,
+            root_pub_key,
+            fda_pubkey_signed_by_root_key,
+        }
+    }
+
     pub fn as_first_deepkey_agent_ref(&self) -> &AgentPubKey {
         &self.first_deepkey_agent
     }

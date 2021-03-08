@@ -12,7 +12,7 @@ fn validate_create_entry_device_authorization(validate_data: ValidateData) -> Ex
     // Header is a create as per validate callback name.
     let create_header = match signed_header.header() {
         Header::Create(create_header) => create_header,
-        // Holochain sent us the wrong header!.
+        // Holochain sent the wrong header!
         _ => unreachable!(),
     };
 
@@ -25,6 +25,15 @@ fn validate_create_entry_device_authorization(validate_data: ValidateData) -> Ex
         },
         _ => return Ok(ValidateCallbackResult::Invalid(Error::EntryMissing.to_string())),
     };
+
+    // The KSR needs to be valid in its own right.
+    if get(device_authorization.as_keyset_root_authority_ref().to_owned(), GetOptions::content())?.is_none() {
+        return Ok(
+            ValidateCallbackResult::UnresolvedDependencies(
+                vec![device_authorization.as_keyset_root_authority_ref().to_owned().into()]
+            )
+        );
+    }
 
     // Is parent found and valid on the DHT?
     // The parent can be in any CRUD state for the purpose of validation.
@@ -39,10 +48,10 @@ fn validate_create_entry_device_authorization(validate_data: ValidateData) -> Ex
     if device_authorization.as_device_acceptance_ref().0 == device_authorization.as_root_acceptance_ref().0 {
         return Ok(ValidateCallbackResult::Invalid(Error::UniqueAgent.to_string()));
     }
-    if !get(device_authorization.as_root_acceptance_ref().0.clone(), GetOptions::content())?.is_some() {
+    if get(device_authorization.as_root_acceptance_ref().0.clone(), GetOptions::content())?.is_none() {
         return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![device_authorization.as_root_acceptance_ref().0.clone().into()]));
     }
-    if !get(device_authorization.as_device_acceptance_ref().0.clone(), GetOptions::content())?.is_some() {
+    if get(device_authorization.as_device_acceptance_ref().0.clone(), GetOptions::content())?.is_none() {
         return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![device_authorization.as_device_acceptance_ref().0.clone().into()]));
     }
 
@@ -141,4 +150,18 @@ fn validate_update_entry_device_authorization(_: ValidateData) -> ExternResult<V
 /// Deletes are not allowed for DeviceAuthorization.
 fn validate_delete_entry_device_authorization(_: ValidateData) -> ExternResult<ValidateCallbackResult> {
     Ok(ValidateCallbackResult::Invalid(Error::DeleteAttempted.to_string()))
+}
+
+#[cfg(test)]
+pub mod test {
+    #[test]
+    fn validate_valid_ksr_da() {
+        // let app_entry_type = AppEntryType::new()
+        // let element = Element::new(signed_header, maybe_entry);
+        // let validation_package = None;
+        // let validate_data = ValidateData {
+        //     element,
+        //     validation_package,
+        // };
+    }
 }

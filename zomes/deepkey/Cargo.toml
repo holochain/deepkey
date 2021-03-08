@@ -19,3 +19,11 @@ path = "src/lib.rs"
 hdk = {path = "../../../holochain/crates/hdk" }
 serde = "1"
 thiserror = "1"
+mockall = "0.9"
+
+[dev-dependencies]
+fixt = { path = "../../../holochain/crates/fixt" }
+holochain_types = { path = "../../../holochain/crates/holochain_types" }
+
+[features]
+mock = ["hdk/mock"]

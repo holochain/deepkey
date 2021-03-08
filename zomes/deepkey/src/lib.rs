@@ -14,11 +14,11 @@ mod keyset_root;
 mod link;
 
 entry_defs![
+    keyset_root::entry::KeysetRoot::entry_def(),
     device_authorization::entry::DeviceAuthorization::entry_def(),
     dna_key_binding::DnaKeyBinding::entry_def(),
     generator::Generator::entry_def(),
     key_change_rule::KeyChangeRule::entry_def(),
-    key_registration::KeyRegistration::entry_def(),
-    keyset_root::entry::KeysetRoot::entry_def()
+    key_registration::KeyRegistration::entry_def()
 ];
 
