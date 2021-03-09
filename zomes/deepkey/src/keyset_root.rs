@@ -1,5 +1,5 @@
 pub mod entry;
-pub mod link;
-pub mod zome_call;
-pub mod validate;
 pub mod error;
+pub mod link;
+pub mod validate;
+pub mod zome_call;

@@ -1,4 +1,8 @@
 use hdk::prelude::*;
+use crate::change_rule::error::Error;
+use crate::keyset_root::entry::KeysetRoot;
+
+pub const CHANGE_RULE_INDEX: EntryDefIndex = EntryDefIndex(0);
 
 /// Represents an M:N multisignature spec.
 /// The trivial case 1:1 represents a single agent to sign.
@@ -20,18 +24,23 @@ struct AuthorizedSpecChange {
     authorization_of_new_spec: Vec<Signature>,
 }
 
-#[hdk_entry(id = "key_change_rule")]
-pub struct KeyChangeRule {
-    keyset_root: EntryHash,
+#[hdk_entry(id = "change_rule")]
+pub struct ChangeRule {
+    keyset_root: HeaderHash,
     spec_change: AuthorizedSpecChange,
 }
 
-#[hdk_extern]
-fn create_key_change_rule(new_key_change_rule: KeyChangeRule) -> ExternResult<HeaderHash> {
-    create_entry(new_key_change_rule)
-}
+#[cfg(test)]
+pub mod tests {
+    use hdk::prelude::*;
+    use super::CHANGE_RULE_INDEX;
+    use super::ChangeRule;
 
-#[hdk_extern]
-fn update_key_change_rule((old_key_change_rule, new_key_change_rule): (HeaderHash, KeyChangeRule)) -> ExternResult<HeaderHash> {
-    update_entry(old_key_change_rule, new_key_change_rule)
+    #[test]
+    fn change_rule_index_test() {
+        assert_eq!(
+            CHANGE_RULE_INDEX,
+            entry_def_index!(ChangeRule)
+        )
+    }
 }

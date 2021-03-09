@@ -1,5 +1,5 @@
 use hdk::prelude::*;
-use crate::key_registration;
+use crate::key_registration::entry::KeyRegistration;
 
 pub const DERIVATION_PATH_LEN: usize = 32;
 
@@ -18,7 +18,7 @@ fixed_array_serialization!(DerivationPath, DERIVATION_PATH_LEN);
 
 #[hdk_entry(id = "key_meta", visibility = "private")]
 pub struct KeyMeta {
-    new_key: key_registration::KeyRegistration,
+    new_key: KeyRegistration,
     derivation_path: DerivationPath,
     key_type: KeyType,
 }
