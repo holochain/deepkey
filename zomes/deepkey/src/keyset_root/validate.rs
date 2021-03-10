@@ -13,6 +13,19 @@ impl KeysetRoot {
     }
 }
 
+impl TryFrom<&Element> for KeysetRoot {
+    type Error = Error;
+    fn try_from(element: &Element) -> Result<Self, Self::Error> {
+        Ok(match element.entry() {
+            ElementEntry::Present(serialized_keyset_root) => match KeysetRoot::try_from(serialized_keyset_root) {
+                Ok(keyset_root) => keyset_root,
+                Err(e) => return Err(Error::Wasm(e)),
+            },
+            _ => return Err(Error::EntryMissing),
+        })
+    }
+}
+
 #[hdk_extern]
 /// Create only.
 fn validate_create_entry_keyset_root(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {

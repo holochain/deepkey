@@ -1,4 +1,5 @@
 use hdk::prelude::*;
+use crate::dna_binding::entry::DnaKeyBinding;
 
 #[hdk_extern]
 fn create_dna_key_binding(new_dna_key_binding: DnaKeyBinding) -> ExternResult<HeaderHash> {
@@ -6,7 +7,7 @@ fn create_dna_key_binding(new_dna_key_binding: DnaKeyBinding) -> ExternResult<He
 }
 
 #[hdk_extern]
-fn install_an_app(app_info: AppInfo) -> ExternResult<()> {
+fn install_an_app(_app_info: AppInfo) -> ExternResult<()> {
     // @todo
     Ok(())
 }

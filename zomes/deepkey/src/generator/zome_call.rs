@@ -1,4 +1,5 @@
 use hdk::prelude::*;
+use crate::generator::entry::Generator;
 
 #[hdk_extern]
 fn create_generator(new_generator: Generator) -> ExternResult<HeaderHash> {

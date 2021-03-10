@@ -1,5 +1,3 @@
-use hdk::prelude::*;
-
 pub mod change_rule;
 pub mod device_authorization;
 pub mod dna_binding;
@@ -10,3 +8,6 @@ pub mod key_registration;
 pub mod keyset_root;
 pub mod link;
 pub mod meta;
+
+/// Re-export at the root for tests to use entry def macros.
+pub use entry::entry_defs;

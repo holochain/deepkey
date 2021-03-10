@@ -1,10 +1,19 @@
 use hdk::prelude::*;
 
+use crate::change_rule::entry::ChangeRule;
+use crate::device_authorization::device_invite::entry::DeviceInvite;
+use crate::device_authorization::device_invite_accepted::entry::DeviceInviteAccepted;
+use crate::keyset_root::entry::KeysetRoot;
+use crate::dna_binding::entry::DnaKeyBinding;
+use crate::generator::entry::Generator;
+use crate::key_registration::entry::KeyRegistration;
+
 entry_defs![
-    keyset_root::entry::KeysetRoot::entry_def(),
-    device_authorization::entry::DeviceAuthorization::entry_def(),
-    change_rule::entry::ChangeRule::entry_def(),
-    dna_key_binding::DnaKeyBinding::entry_def(),
-    generator::Generator::entry_def(),
-    key_registration::KeyRegistration::entry_def()
+    ChangeRule::entry_def(),
+    DeviceInvite::entry_def(),
+    DeviceInviteAccepted::entry_def(),
+    KeysetRoot::entry_def(),
+    DnaKeyBinding::entry_def(),
+    Generator::entry_def(),
+    KeyRegistration::entry_def()
 ];

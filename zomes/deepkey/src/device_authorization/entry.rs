@@ -1,37 +1,13 @@
 use hdk::prelude::*;
 use crate::keyset_root::entry::KeysetRoot;
+use crate::device_authorization::device_invite_accepted::entry::DeviceInviteAccepted;
 
-pub type Acceptance = (AgentPubKey, Signature);
-
-#[hdk_entry(id = "device_invite")]
-pub struct DeviceInvite {
-    keyset_root_authority: HeaderHash,
-    parent: HeaderHash,
-    root_acceptance: Acceptance,
-    device_agent: AgentPubKey,
-}
-
-#[hdk_entry(id = "device_invite_accepted")]
-pub struct DeviceInviteAccepted {
-    invite: HeaderHash,
-    device_acceptance: Acceptance,
-}
-
+/// Not an entry, just an enum representing the union of things that can authorize a device.
+/// Which can be a self-signed keyset root in addition to a third party invite.
 #[derive(Serialize, Deserialize, Debug)]
 pub enum DeviceAuthorization {
     KeysetRoot(KeysetRoot),
     DeviceInviteAccepted(DeviceInviteAccepted),
-}
-
-// Should we have a membrane for deepkey?
-enum JoiningProofData {
-    ProofOfWork(pow),
-    Invite(invite),
-    StakeProof(stake_proof),
-}
-pub struct JoiningProof {
-    device_authorization: DeviceAuthorization,
-    additional_data: JoiningProofData
 }
 
 // Use case: A is root and B has a device invite bundle
@@ -81,29 +57,3 @@ pub struct JoiningProof {
 //     root_acceptance: Acceptance,
 //     device_acceptance: Acceptance,
 // }
-
-impl DeviceAuthorization {
-    pub fn verify_signatures(&self) -> ExternResult<bool> {
-        let bytes = [self.root_acceptance.0.get_raw_32(), self.device_acceptance.0.get_raw_32()].concat();
-        Ok(
-            verify_signature_raw(self.root_acceptance.0.clone(), self.root_acceptance.1.clone(), bytes.to_vec())?
-            && verify_signature_raw(self.device_acceptance.0.clone(), self.device_acceptance.1.clone(), bytes.to_vec())?
-        )
-    }
-
-    pub fn as_keyset_root_authority_ref(&self) -> &HeaderHash {
-        &self.keyset_root_authority
-    }
-
-    pub fn as_parent_ref(&self) -> &HeaderHash {
-        &self.parent
-    }
-
-    pub fn as_root_acceptance_ref(&self) -> &Acceptance {
-        &self.root_acceptance
-    }
-
-    pub fn as_device_acceptance_ref(&self) -> &Acceptance {
-        &self.device_acceptance
-    }
-}

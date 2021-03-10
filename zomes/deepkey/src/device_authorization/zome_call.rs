@@ -1,5 +1,4 @@
 use hdk::prelude::*;
-use crate::device_authorization::entry;
 
 // @todo does this still make sense?
 // #[hdk_extern]
@@ -8,7 +7,7 @@ use crate::device_authorization::entry;
 // }
 
 #[hdk_extern]
-fn invite_agent(invitee: AgentPubKey) -> ExternResult<()> {
+fn invite_agent(_invitee: AgentPubKey) -> ExternResult<()> {
     // @todo
     // let device_authorizatation: DeviceAuthorization = current_device_authorization();
     // create_entry(DeviceInvite {
