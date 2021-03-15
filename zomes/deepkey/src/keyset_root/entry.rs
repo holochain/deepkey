@@ -1,5 +1,8 @@
 use hdk::prelude::*;
 
+#[cfg(test)]
+use ::fixt::prelude::*;
+
 /// KeysetRoot must be the 4th entry on `FirstDeepkeyAgent`'s chain.
 pub const KEYSET_ROOT_CHAIN_INDEX: u32 = 3;
 
@@ -39,3 +42,9 @@ impl KeysetRoot {
         &self.fda_pubkey_signed_by_root_key
     }
 }
+
+#[cfg(test)]
+fixturator!(
+    KeysetRoot;
+    constructor fn new(AgentPubKey, AgentPubKey, Signature);
+);

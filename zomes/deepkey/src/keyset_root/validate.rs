@@ -111,14 +111,12 @@ pub mod test {
             .times(1)
             .return_once(move |_| Ok(zome_info));
 
-        let _mock_lock = hdk::prelude::set_global_hdk(mock_hdk).unwrap();
+        hdk::prelude::set_hdk(mock_hdk);
 
         let (_entry, entry_hash) = EntryHashed::from_content_sync(
             Entry::try_from(&keyset_root).unwrap()
         ).into_inner();
         let entry_type = entry_type!(KeysetRoot).unwrap();
-
-        dbg!(&entry_type);
 
         let header_builder = builder::Create {
             entry_type,
@@ -131,8 +129,6 @@ pub mod test {
             header_seq: KEYSET_ROOT_CHAIN_INDEX,
             prev_header,
         };
-        let header = header_builder.build(common);
-
-        dbg!(&header);
+        let _header = header_builder.build(common);
     }
 }
