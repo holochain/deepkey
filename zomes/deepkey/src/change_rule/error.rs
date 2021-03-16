@@ -39,6 +39,12 @@ pub enum Error {
     #[error("The new ChangeRule has fewer authorized signers than the minimum required signatures")]
     NotEnoughSigners,
 
+    #[error("The new ChangeRule requires zero signatures")]
+    NotEnoughSignatures,
+
+    #[error("The new ChangeRule has the same spec as the previous one")]
+    IdenticalUpdate,
+
     #[error("Wasm error {0}")]
     Wasm(WasmError)
 }

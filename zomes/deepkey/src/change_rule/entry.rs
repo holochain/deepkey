@@ -12,7 +12,7 @@ pub const CHANGE_RULE_INDEX: EntryDefIndex = EntryDefIndex(0);
 /// We need an entry to define the rules of authority
 /// (for authorizing or revoking) keys in the space under a KeysetRoot.
 /// This is only committed by the FDA.
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct AuthoritySpec {
     /// set to 1 for a single signer scenario
     pub sigs_required: u8,
@@ -34,7 +34,7 @@ impl AuthoritySpec {
     }
 }
 
-type Authorization = (u8, Signature);
+pub type Authorization = (u8, Signature);
 
 #[cfg(test)]
 pub fn new_authorization(position: u8, signature: Signature) -> Authorization {
@@ -79,7 +79,7 @@ impl AuthorizedSpecChange {
 // The author needs to be linked from the KeysetRoot
 #[derive(Clone)]
 pub struct ChangeRule {
-    keyset_root: HeaderHash,
+    pub keyset_root: HeaderHash,
     pub spec_change: AuthorizedSpecChange,
 }
 
