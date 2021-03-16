@@ -29,7 +29,7 @@ fn resolve_dependency<'a, O>(hash: AnyDhtHash) -> ExternResult<Result<ResolvedDe
 
     let output: O = match element.entry().to_app_option() {
         Ok(Some(output)) => output,
-        Ok(None) => return Ok(Err(ValidateCallbackResult::Invalid(Error::EntryMissing.to_string()))),
+        Ok(None) => return Ok(Err(Error::EntryMissing.into())),
         Err(e) => return Ok(Err(ValidateCallbackResult::Invalid(e.to_string()))),
     };
 
@@ -39,11 +39,7 @@ fn resolve_dependency<'a, O>(hash: AnyDhtHash) -> ExternResult<Result<ResolvedDe
 fn _validate_keyset_root(validate_data: &ValidateData, _: &ChangeRule, keyset_root: &KeysetRoot) -> ExternResult<ValidateCallbackResult> {
     // // The KSR needs to reference the author as the FDA.
     if keyset_root.as_first_deepkey_agent_ref() != validate_data.element.signed_header().header().author() {
-        return Ok(
-            ValidateCallbackResult::Invalid(
-                Error::AuthorNotFda.to_string()
-            )
-        );
+        return Error::AuthorNotFda.into();
     }
     Ok(ValidateCallbackResult::Valid)
 }
@@ -51,11 +47,11 @@ fn _validate_keyset_root(validate_data: &ValidateData, _: &ChangeRule, keyset_ro
 fn _validate_create_spec_change(_: &ValidateData, change_rule: &ChangeRule, keyset_root: &KeysetRoot) -> ExternResult<ValidateCallbackResult> {
     // Signed by throwaway RootKey on Create, must have exactly one signature.
     if change_rule.as_spec_change_ref().as_authorization_of_new_spec_ref().len() > 1 {
-        return Ok(ValidateCallbackResult::Invalid(Error::MultipleCreateSignatures.to_string()));
+        return Error::MultipleCreateSignatures.into();
     }
     let authorization_signature = match change_rule.as_spec_change_ref().as_authorization_of_new_spec_ref().iter().next() {
-        Some(signature) => signature,
-        None => return Ok(ValidateCallbackResult::Invalid(Error::NoCreateSignature.to_string())),
+        Some(signature) => &signature.1,
+        None => return Error::NoCreateSignature.into(),
     };
 
     // The signature must be valid.
@@ -66,14 +62,14 @@ fn _validate_create_spec_change(_: &ValidateData, change_rule: &ChangeRule, keys
     )? {
         Ok(ValidateCallbackResult::Valid)
     } else {
-        Ok(ValidateCallbackResult::Invalid(Error::BadCreateSignature.to_string()))
+        Error::BadCreateSignature.into()
     }
 }
 
 #[hdk_extern]
 fn validate_create_entry_key_change_rule(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     let change_rule = match ChangeRule::try_from(&validate_data.element) {
-        Ok(key_change_rule) => key_change_rule,
+        Ok(change_rule) => change_rule,
         Err(e) => return Ok(ValidateCallbackResult::Invalid(e.to_string())),
     };
 
@@ -96,10 +92,67 @@ fn validate_create_entry_key_change_rule(validate_data: ValidateData) -> ExternR
 }
 
 #[hdk_extern]
-fn validate_update_entry_key_change_rule(_: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    // Ok(ValidateCallbackResult::Invalid(Error::UpdateAttempted.to_string()))
-    // or according to previous AuthSpec upon Update.
-    Ok(ValidateCallbackResult::Valid)
+fn validate_update_entry_key_change_rule(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
+    let proposed_change_rule = match ChangeRule::try_from(&validate_data.element) {
+        Ok(change_rule) => change_rule,
+        Err(e) => return e.into(),
+    };
+
+    // KeysetRoot needs to exist.
+    match resolve_dependency::<KeysetRoot>(proposed_change_rule.as_keyset_root_ref().clone().into())? {
+        Err(validate_callback_result) => return Ok(validate_callback_result),
+        _ => { },
+    }
+
+    // On update we need to validate the proposed change rule under the rules of the previous rule.
+    if let Header::Update(update_header) = validate_data.element.header().clone() {
+        let previous_chain_rule: ChangeRule = match resolve_dependency(update_header.original_header_address.into())? {
+            Ok(ResolvedDependency(_, change_rule)) => change_rule,
+            Err(validate_callback_result) => return Ok(validate_callback_result),
+        };
+
+        // Do all the new signers exist?
+        for agent in proposed_change_rule.spec_change.new_spec.authorized_signers.iter() {
+            match resolve_dependency::<AgentPubKey>(agent.to_owned().into())? {
+                Err(validate_callback_result) => return Ok(validate_callback_result),
+                _ => { },
+            }
+        }
+
+        // The keyset root needs to be the same
+        if proposed_change_rule.as_keyset_root_ref() != previous_chain_rule.as_keyset_root_ref() {
+            return Error::KeysetRootMismatch.into();
+        }
+
+        if proposed_change_rule.spec_change.authorization_of_new_spec.len() != previous_chain_rule.spec_change.new_spec.sigs_required as usize {
+            return Error::WrongNumberOfSignatures.into();
+        }
+
+        // Doing this imperative style to allow returning on ExternResult failure.
+        let mut verifications = vec![];
+        for (position, signature) in proposed_change_rule.spec_change.authorization_of_new_spec.iter() {
+            match previous_chain_rule.spec_change.new_spec.authorized_signers.get(*position as usize) {
+                Some(agent) => verifications.push(verify_signature(
+                    agent.to_owned(),
+                    signature.to_owned(),
+                    proposed_change_rule.spec_change.new_spec.clone()
+                )?),
+                None => return Error::AuthorizedPositionOutOfBounds.into(),
+            }
+        }
+        if !verifications.iter().all(|&v| v) {
+            return Error::BadUpdateSignature.into();
+        }
+
+        if proposed_change_rule.spec_change.new_spec.sigs_required as usize > proposed_change_rule.spec_change.new_spec.authorized_signers.len() {
+            return Error::NotEnoughSigners.into();
+        }
+
+        Ok(ValidateCallbackResult::Valid)
+    } else {
+        // Holochain sent a non-update to an update validation.
+        unreachable!();
+    }
 }
 
 #[hdk_extern]
@@ -114,6 +167,126 @@ pub mod tests {
     use crate::change_rule::entry::ChangeRuleFixturator;
     use crate::keyset_root::entry::KeysetRootFixturator;
     use crate::change_rule::error::Error;
+    use crate::change_rule::entry::AuthorizationFixturator;
+
+    #[test]
+    fn test_validate_update() {
+        // Random garbage won't have a valid ChangeRule on it.
+        assert_eq!(
+            Ok(ValidateCallbackResult::Invalid("Element missing its ChangeRule".to_string())),
+            super::validate_update_entry_key_change_rule(fixt!(ValidateData)),
+        );
+
+        let mut validate_data = fixt!(ValidateData);
+        let mut change_rule = fixt!(ChangeRule);
+        // Ensure at least one signer.
+        change_rule.spec_change.new_spec.authorized_signers.push(fixt!(AgentPubKey));
+
+        let update_header = fixt!(Update);
+        validate_data.element.signed_header.header.content = Header::Update(update_header.clone());
+
+        let mut keyset_root_element = fixt!(Element);
+        let keyset_root = fixt!(KeysetRoot);
+        keyset_root_element.entry = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
+
+        validate_data.element.entry = ElementEntry::Present(change_rule.clone().try_into().unwrap());
+
+        let previous_change_rule = fixt!(ChangeRule);
+        let mut previous_element = fixt!(Element);
+        previous_element.entry = ElementEntry::Present(previous_change_rule.clone().try_into().unwrap());
+
+        let mut mock_hdk = hdk::prelude::MockHdkT::new();
+
+        mock_hdk.expect_get()
+        .with(mockall::predicate::eq(
+            GetInput::new(
+                change_rule.as_keyset_root_ref().clone().into(),
+                GetOptions::content()
+            )
+        ))
+        .times(1)
+        .return_const(Ok(None));
+
+        hdk::prelude::set_hdk(mock_hdk);
+
+        assert_eq!(
+            Ok(
+                ValidateCallbackResult::UnresolvedDependencies(vec![change_rule.as_keyset_root_ref().clone().into()])
+            ),
+            super::validate_update_entry_key_change_rule(validate_data.clone()),
+        );
+
+        let mut mock_hdk = hdk::prelude::MockHdkT::new();
+
+        mock_hdk.expect_get()
+            .with(mockall::predicate::eq(
+                GetInput::new(
+                    change_rule.as_keyset_root_ref().clone().into(),
+                    GetOptions::content()
+                )
+            ))
+            .times(1)
+            .return_const(Ok(Some(keyset_root_element.clone())));
+
+        mock_hdk.expect_get()
+            .with(mockall::predicate::eq(
+                GetInput::new(
+                    update_header.original_header_address.clone().into(),
+                    GetOptions::content(),
+                )
+            ))
+            .times(1)
+            .return_const(Ok(None));
+
+        hdk::prelude::set_hdk(mock_hdk);
+
+        assert_eq!(
+            Ok(
+                ValidateCallbackResult::UnresolvedDependencies(vec![update_header.original_header_address.clone().into()])
+            ),
+            super::validate_update_entry_key_change_rule(validate_data.clone()),
+        );
+
+        // New signers need to exist.
+        let mut mock_hdk = hdk::prelude::MockHdkT::new();
+
+        mock_hdk.expect_get()
+            .with(mockall::predicate::eq(
+                GetInput::new(
+                    change_rule.as_keyset_root_ref().clone().into(),
+                    GetOptions::content()
+                )
+            ))
+            .times(1)
+            .return_const(Ok(Some(keyset_root_element)));
+
+        mock_hdk.expect_get()
+            .with(mockall::predicate::eq(
+                GetInput::new(
+                    update_header.original_header_address.clone().into(),
+                    GetOptions::content(),
+                )
+            ))
+            .times(1)
+            .return_const(Ok(Some(previous_element)));
+
+        mock_hdk.expect_get()
+            .with(mockall::predicate::eq(
+                GetInput::new(
+                    change_rule.spec_change.new_spec.authorized_signers[0].clone().into(),
+                    GetOptions::content(),
+                )
+            ))
+            .times(1)
+            .return_const(Ok(None));
+
+        hdk::prelude::set_hdk(mock_hdk);
+
+        assert_eq!(
+            Ok(ValidateCallbackResult::UnresolvedDependencies(vec![change_rule.spec_change.new_spec.authorized_signers[0].clone().into()])),
+            super::validate_update_entry_key_change_rule(validate_data),
+        );
+    }
 
     #[test]
     fn test_validate_delete() {
@@ -192,8 +365,8 @@ pub mod tests {
         let mut change_rule = fixt!(ChangeRule);
         let keyset_root = fixt!(KeysetRoot);
 
-        change_rule.spec_change.authorization_of_new_spec.push(fixt!(Signature));
-        change_rule.spec_change.authorization_of_new_spec.push(fixt!(Signature));
+        change_rule.spec_change.authorization_of_new_spec.push(fixt!(Authorization));
+        change_rule.spec_change.authorization_of_new_spec.push(fixt!(Authorization));
 
         // Too many sigs fails.
         assert_eq!(
@@ -214,13 +387,13 @@ pub mod tests {
         );
 
         // Invalid sig fails.
-        let signature = fixt!(Signature);
+        let authorization = fixt!(Authorization);
         let mut mock_hdk = hdk::prelude::MockHdkT::new();
 
         mock_hdk.expect_verify_signature()
             .with(mockall::predicate::eq(VerifySignature::new(
                 keyset_root.as_root_pub_key_ref().clone(),
-                signature.clone(),
+                authorization.1.clone(),
                 change_rule.as_spec_change_ref().as_new_spec_ref().clone()
             ).unwrap()))
             .times(1)
@@ -228,7 +401,7 @@ pub mod tests {
 
         hdk::prelude::set_hdk(mock_hdk);
 
-        change_rule.spec_change.authorization_of_new_spec = vec![signature];
+        change_rule.spec_change.authorization_of_new_spec = vec![authorization];
 
         assert_eq!(
             Ok(ValidateCallbackResult::Invalid(

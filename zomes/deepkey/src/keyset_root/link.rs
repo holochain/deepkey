@@ -7,6 +7,8 @@ use hdk::prelude::*;
 /// MUST be globally (to the happ) unique.
 pub const KEYSET_ROOT_TO_AGENT_TAG: u8 = 0;
 
+pub const KEYSET_ROOT_TO_AGENT_TAG_LEN: usize = 1;
+
 // impl entry::KeysetRoot {
 //     pub fn link_to_deepkey_agent(&self, target: DeepKeyAgent) -> ExternResult<HeaderHash> {
 //         match target {

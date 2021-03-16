@@ -15,9 +15,15 @@ pub const CHANGE_RULE_INDEX: EntryDefIndex = EntryDefIndex(0);
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct AuthoritySpec {
     /// set to 1 for a single signer scenario
-    sigs_required: u8,
-    authorized_signers: Vec<AgentPubKey>,
+    pub sigs_required: u8,
+    pub authorized_signers: Vec<AgentPubKey>,
 }
+
+#[cfg(test)]
+fixturator!(
+    AuthoritySpec;
+    constructor fn new(U8, AgentPubKeyVec);
+);
 
 impl AuthoritySpec {
     pub fn new(sigs_required: u8, authorized_signers: Vec<AgentPubKey>) -> Self {
@@ -28,23 +34,43 @@ impl AuthoritySpec {
     }
 }
 
+type Authorization = (u8, Signature);
+
+#[cfg(test)]
+pub fn new_authorization(position: u8, signature: Signature) -> Authorization {
+    (position, signature)
+}
+
+#[cfg(test)]
+fixturator!(
+    with_vec 0 5;
+    Authorization;
+    vanilla fn new_authorization(U8, Signature);
+);
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct AuthorizedSpecChange {
-    new_spec: AuthoritySpec,
+    pub new_spec: AuthoritySpec,
     /// Signature of the content of the authority_spec field,
     /// signed by throwaway RootKey on Create,
     /// or according to previous AuthSpec upon Update.
-    pub authorization_of_new_spec: Vec<Signature>,
+    pub authorization_of_new_spec: Vec<Authorization>,
 }
 
+#[cfg(test)]
+fixturator!(
+    AuthorizedSpecChange;
+    constructor fn new(AuthoritySpec, AuthorizationVec);
+);
+
 impl AuthorizedSpecChange {
-    pub fn new(new_spec: AuthoritySpec, authorization_of_new_spec: Vec<Signature>) -> Self {
+    pub fn new(new_spec: AuthoritySpec, authorization_of_new_spec: Vec<Authorization>) -> Self {
         Self { new_spec, authorization_of_new_spec }
     }
     pub fn as_new_spec_ref(&self) -> &AuthoritySpec {
         &self.new_spec
     }
-    pub fn as_authorization_of_new_spec_ref(&self) -> &Vec<Signature> {
+    pub fn as_authorization_of_new_spec_ref(&self) -> &Vec<Authorization> {
         &self.authorization_of_new_spec
     }
 }
@@ -56,6 +82,12 @@ pub struct ChangeRule {
     keyset_root: HeaderHash,
     pub spec_change: AuthorizedSpecChange,
 }
+
+#[cfg(test)]
+fixturator!(
+    ChangeRule;
+    constructor fn new(HeaderHash, AuthorizedSpecChange);
+);
 
 impl ChangeRule {
     pub fn new(keyset_root: HeaderHash, spec_change: AuthorizedSpecChange) -> Self {
@@ -70,24 +102,6 @@ impl ChangeRule {
         &self.spec_change
     }
 }
-
-#[cfg(test)]
-fixturator!(
-    AuthoritySpec;
-    constructor fn new(U8, AgentPubKeyVec);
-);
-
-#[cfg(test)]
-fixturator!(
-    AuthorizedSpecChange;
-    constructor fn new(AuthoritySpec, SignatureVec);
-);
-
-#[cfg(test)]
-fixturator!(
-    ChangeRule;
-    constructor fn new(HeaderHash, AuthorizedSpecChange);
-);
 
 #[cfg(test)]
 pub mod tests {
