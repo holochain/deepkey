@@ -229,8 +229,8 @@ pub mod tests {
     fn test_validate_update() {
         // Random garbage won't have a valid ChangeRule on it.
         assert_eq!(
-            Ok(ValidateCallbackResult::Invalid("Element missing its ChangeRule".to_string())),
             super::validate_update_entry_key_change_rule(fixt!(ValidateData)),
+            Ok(ValidateCallbackResult::Invalid("Element missing its ChangeRule".to_string())),
         );
 
         let mut validate_data = fixt!(ValidateData);
