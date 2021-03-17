@@ -212,7 +212,7 @@ fn validate_update_entry_key_change_rule(validate_data: ValidateData) -> ExternR
 
 #[hdk_extern]
 fn validate_delete_entry_key_change_rule(_: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    Ok(ValidateCallbackResult::Invalid(Error::DeleteAttempted.to_string()))
+    Error::DeleteAttempted.into()
 }
 
 #[cfg(test)]
@@ -617,7 +617,7 @@ pub mod tests {
 
     #[test]
     fn test_validate_update_spec() {
-        let change_rule = fixt!(ChangeRule);
+        let mut change_rule = fixt!(ChangeRule);
 
         assert_eq!(
             super::_validate_update_spec(&change_rule, &change_rule),
@@ -625,7 +625,8 @@ pub mod tests {
         );
 
         let mut different_change_rule = change_rule.clone();
-        different_change_rule.spec_change.new_spec.sigs_required += 1;
+        change_rule.spec_change.new_spec.sigs_required = 30;
+        different_change_rule.spec_change.new_spec.sigs_required = 50;
 
         assert_eq!(
             super::_validate_update_spec(&change_rule, &different_change_rule),
