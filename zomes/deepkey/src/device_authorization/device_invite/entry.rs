@@ -5,9 +5,9 @@ use ::fixt::prelude::*;
 #[hdk_entry(id = "device_invite")]
 #[derive(Clone)]
 pub struct DeviceInvite {
-    keyset_root_authority: HeaderHash,
-    parent: HeaderHash,
-    device_agent: AgentPubKey,
+    pub keyset_root_authority: HeaderHash,
+    pub parent: HeaderHash,
+    pub device_agent: AgentPubKey,
 }
 
 #[cfg(test)]
