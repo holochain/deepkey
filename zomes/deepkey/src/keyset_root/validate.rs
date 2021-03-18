@@ -16,13 +16,20 @@ impl KeysetRoot {
 impl TryFrom<&Element> for KeysetRoot {
     type Error = Error;
     fn try_from(element: &Element) -> Result<Self, Self::Error> {
-        Ok(match element.entry() {
-            ElementEntry::Present(serialized_keyset_root) => match KeysetRoot::try_from(serialized_keyset_root) {
-                Ok(keyset_root) => keyset_root,
-                Err(e) => return Err(Error::Wasm(e)),
+        match element.header() {
+            // Only creates are allowed for a KeysetRoot.
+            Header::Create(_) => {
+                Ok(match element.entry() {
+                    ElementEntry::Present(serialized_keyset_root) => match KeysetRoot::try_from(serialized_keyset_root) {
+                        Ok(keyset_root) => keyset_root,
+                        Err(e) => return Err(Error::Wasm(e)),
+                    },
+                    _ => return Err(Error::EntryMissing),
+                })
             },
-            _ => return Err(Error::EntryMissing),
-        })
+            _ => Err(Error::WrongHeader),
+        }
+
     }
 }
 
@@ -187,19 +194,21 @@ pub mod test {
 
     #[test]
     fn test_validate_create() {
-        // Random garbage won't have a KeysetRoot on it.
-        assert_eq!(
-            super::validate_create_entry_keyset_root(fixt!(ValidateData)),
-            Ok(ValidateCallbackResult::Invalid("Element missing its KeysetRoot".to_string())),
-        );
-
         let mut validate_data = fixt!(ValidateData);
         let mut keyset_root = fixt!(KeysetRoot);
         let mut create_header = fixt!(Create);
         create_header.header_seq = KEYSET_ROOT_CHAIN_INDEX;
         keyset_root.first_deepkey_agent = create_header.author.clone();
-        validate_data.element.entry = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
         validate_data.element.signed_header.header.content = Header::Create(create_header);
+
+        validate_data.element.entry = ElementEntry::NotStored;
+
+        assert_eq!(
+            super::validate_create_entry_keyset_root(validate_data.clone()),
+            Ok(ValidateCallbackResult::Invalid("Element missing its KeysetRoot".to_string())),
+        );
+
+        validate_data.element.entry = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
 
         let mut mock_hdk = hdk::prelude::MockHdkT::new();
 
