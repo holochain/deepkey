@@ -151,19 +151,19 @@ pub mod tests {
         let device_invite = fixt!(DeviceInvite);
         let device_invite_create_header = fixt!(Create);
         let mut device_invite_element = fixt!(Element);
-        device_invite_element.signed_header.header.content = Header::Create(device_invite_create_header);
-        device_invite_element.entry = ElementEntry::Present(device_invite.clone().try_into().unwrap());
+        *device_invite_element.as_header_mut() = Header::Create(device_invite_create_header);
+        *device_invite_element.as_entry_mut() = ElementEntry::Present(device_invite.clone().try_into().unwrap());
 
         create_header.author = device_invite.as_device_agent_ref().clone();
         device_invite_acceptance.keyset_root_authority = device_invite.as_keyset_root_authority_ref().clone();
-        validate_data.element.signed_header.header.content = Header::Create(create_header);
+        *validate_data.element.as_header_mut() = Header::Create(create_header);
 
         assert_eq!(
             super::validate_create_entry_device_invite_acceptance(validate_data.clone()),
             Error::EntryMissing.into(),
         );
 
-        validate_data.element.entry = ElementEntry::Present(device_invite_acceptance.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut() = ElementEntry::Present(device_invite_acceptance.clone().try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 

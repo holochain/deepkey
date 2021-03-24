@@ -213,20 +213,20 @@ pub mod tests {
         let mut create_header = fixt!(Create);
         let keyset_root_authority = fixt!(KeysetRoot);
         let mut keyset_root_authority_element = fixt!(Element);
-        keyset_root_authority_element.entry = ElementEntry::Present(keyset_root_authority.clone().try_into().unwrap());
+        *keyset_root_authority_element.as_entry_mut() = ElementEntry::Present(keyset_root_authority.clone().try_into().unwrap());
         let mut device_invite = fixt!(DeviceInvite);
 
         device_invite.keyset_root_authority = device_invite.parent.clone();
         create_header.author = keyset_root_authority.as_first_deepkey_agent_ref().clone();
 
-        validate_data.element.signed_header.header.content = Header::Create(create_header);
+        *validate_data.element.as_header_mut() = Header::Create(create_header);
 
         assert_eq!(
             super::validate_create_entry_device_invite(validate_data.clone()),
             Error::EntryMissing.into(),
         );
 
-        validate_data.element.entry = ElementEntry::Present(device_invite.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut() = ElementEntry::Present(device_invite.clone().try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -276,7 +276,7 @@ pub mod tests {
         let mut validate_data = fixt!(ValidateData);
         let keyset_root = fixt!(KeysetRoot);
         let mut keyset_root_authority_element = fixt!(Element);
-        keyset_root_authority_element.entry = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
+        *keyset_root_authority_element.as_entry_mut() = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
         let mut create_header = fixt!(Create);
         let parent = fixt!(DeviceInviteAcceptance);
         let device_invite = fixt!(DeviceInvite);
@@ -286,19 +286,19 @@ pub mod tests {
         create_header.author = parent_invite.device_agent.clone();
 
         let mut parent_element = fixt!(Element);
-        parent_element.entry = ElementEntry::Present(parent.clone().try_into().unwrap());
+        *parent_element.as_entry_mut() = ElementEntry::Present(parent.clone().try_into().unwrap());
 
         let mut parent_invite_element = fixt!(Element);
-        parent_invite_element.entry = ElementEntry::Present(parent_invite.clone().try_into().unwrap());
+        *parent_invite_element.as_entry_mut() = ElementEntry::Present(parent_invite.clone().try_into().unwrap());
 
-        validate_data.element.signed_header.header.content = Header::Create(create_header);
+        *validate_data.element.as_header_mut() = Header::Create(create_header);
 
         assert_eq!(
             super::validate_create_entry_device_invite(validate_data.clone()),
             Error::EntryMissing.into(),
         );
 
-        validate_data.element.entry = ElementEntry::Present(device_invite.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut() = ElementEntry::Present(device_invite.clone().try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 

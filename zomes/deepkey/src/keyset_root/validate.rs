@@ -199,16 +199,17 @@ pub mod test {
         let mut create_header = fixt!(Create);
         create_header.header_seq = KEYSET_ROOT_CHAIN_INDEX;
         keyset_root.first_deepkey_agent = create_header.author.clone();
-        validate_data.element.signed_header.header.content = Header::Create(create_header);
+        *validate_data.element.as_entry_mut() = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
+        *validate_data.element.as_header_mut() = Header::Create(create_header);
 
-        validate_data.element.entry = ElementEntry::NotStored;
+        *validate_data.element.as_entry_mut() = ElementEntry::NotStored;
 
         assert_eq!(
             super::validate_create_entry_keyset_root(validate_data.clone()),
             Ok(ValidateCallbackResult::Invalid("Element missing its KeysetRoot".to_string())),
         );
 
-        validate_data.element.entry = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut() = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
 
         let mut mock_hdk = hdk::prelude::MockHdkT::new();
 
