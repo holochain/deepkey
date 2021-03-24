@@ -30,7 +30,7 @@ fn _validate_self(create_header: &Create, device_invite: &DeviceInvite) -> Exter
     // Cannot self-invite.
     // Note: A device _MAY_ still be referenced multiple times from a branching tree of invites.
     if &create_header.author == device_invite.as_device_agent_ref() {
-        return Error::SelfInvite.into()
+        Error::SelfInvite.into()
     }
     else {
         Ok(ValidateCallbackResult::Valid)
