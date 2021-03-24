@@ -1,7 +1,7 @@
 use hdk::prelude::*;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum Error {
     #[error("Element missing its ChangeRule")]
     EntryMissing,
@@ -58,5 +58,11 @@ impl From<Error> for ValidateCallbackResult {
 impl From<Error> for ExternResult<ValidateCallbackResult> {
     fn from(e: Error) -> Self {
         Ok(e.into())
+    }
+}
+
+impl From<WasmError> for Error {
+    fn from(e: WasmError) -> Error {
+        Error::Wasm(e)
     }
 }

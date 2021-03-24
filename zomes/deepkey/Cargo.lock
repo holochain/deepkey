@@ -505,7 +505,10 @@ dependencies = [
  "hdk",
  "holochain_types",
  "mockall 0.9.1",
+ "rand 0.7.3",
  "serde",
+ "strum",
+ "strum_macros",
  "thiserror",
 ]
 

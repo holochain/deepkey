@@ -1,16 +1,19 @@
 use hdk::prelude::*;
+
 #[cfg(test)]
 use ::fixt::prelude::*;
 
-#[hdk_entry(id = "device_invite")]
+#[hdk_entry(id = "device_invite_acceptance")]
 #[derive(Clone)]
-pub struct DeviceInvite {
+pub struct DeviceInviteAcceptance {
+    /// The KSRA for the invite being accepted.
+    /// Not strictly required for validation as this is on the DeviceInvite.
+    /// This is here as it may save network hops other than during.
     pub keyset_root_authority: HeaderHash,
-    pub parent: HeaderHash,
-    pub device_agent: AgentPubKey,
+    invite: HeaderHash,
 }
 
-impl TryFrom<&Element> for DeviceInvite {
+impl TryFrom<&Element> for DeviceInviteAcceptance {
     type Error = crate::error::Error;
     fn try_from(element: &Element) -> Result<Self, Self::Error> {
         match element.header() {
@@ -32,24 +35,20 @@ impl TryFrom<&Element> for DeviceInvite {
 
 #[cfg(test)]
 fixturator!(
-    DeviceInvite;
-    constructor fn new(HeaderHash, HeaderHash, AgentPubKey);
+    DeviceInviteAcceptance;
+    constructor fn new(HeaderHash, HeaderHash);
 );
 
-impl DeviceInvite {
-    pub fn new(keyset_root_authority: HeaderHash, parent: HeaderHash, device_agent: AgentPubKey) -> Self {
-        Self { keyset_root_authority, parent, device_agent }
+impl DeviceInviteAcceptance {
+    pub fn new(keyset_root_authority: HeaderHash, invite: HeaderHash) -> Self {
+        Self { keyset_root_authority, invite }
     }
 
     pub fn as_keyset_root_authority_ref(&self) -> &HeaderHash {
         &self.keyset_root_authority
     }
 
-    pub fn as_parent_ref(&self) -> &HeaderHash {
-        &self.parent
-    }
-
-    pub fn as_device_agent_ref(&self) -> &AgentPubKey {
-        &self.device_agent
+    pub fn as_invite_ref(&self) -> &HeaderHash {
+        &self.invite
     }
 }

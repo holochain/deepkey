@@ -11,7 +11,7 @@ pub const KEYSET_ROOT_CHAIN_INDEX: u32 = 3;
 /// This is commited only by the FirstDeepkeyAgent (FDA) not later devices that are joining this same agency context.
 #[derive(Clone)]
 pub struct KeysetRoot {
-    first_deepkey_agent: AgentPubKey,
+    pub first_deepkey_agent: AgentPubKey,
     /// The private key is thrown away.
     root_pub_key: AgentPubKey,
     fda_pubkey_signed_by_root_key: Signature,
