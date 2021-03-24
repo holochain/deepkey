@@ -90,7 +90,7 @@ fn _validate_update_keyset_root(_: &ValidateData, previous_change_rule: &ChangeR
 }
 
 fn _validate_update_authorization(_: &ValidateData, previous_change_rule: &ChangeRule, proposed_change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResult> {
-    match previous_change_rule.authorize(proposed_change_rule.spec_change.authorization_of_new_spec.clone(), holochain_serialized_bytes::encode(&proposed_change_rule.spec_change.new_spec)?) {
+    match previous_change_rule.authorize(&proposed_change_rule.spec_change.authorization_of_new_spec, &holochain_serialized_bytes::encode(&proposed_change_rule.spec_change.new_spec)?) {
         Ok(_) => Ok(ValidateCallbackResult::Valid),
         Err(e) => e.into(),
     }
