@@ -27,4 +27,4 @@ fixt = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-de
 holochain_types = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
 
 [features]
-mock = ["hdk/mock", "hdk/mut_element"]
+mock = ["hdk/mock", "hdk/test_utils"]
