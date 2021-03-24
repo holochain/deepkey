@@ -6,26 +6,6 @@ use crate::keyset_root::entry::KeysetRoot;
 use crate::device_authorization::device_invite::entry::DeviceInvite;
 use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
 
-impl TryFrom<&Element> for DeviceInvite {
-    type Error = Error;
-    fn try_from(element: &Element) -> Result<Self, Self::Error> {
-        match element.header() {
-            // Only creates are allowed for a DeviceInvite.
-            Header::Create(_) => {
-                Ok(match element.entry() {
-                    ElementEntry::Present(serialized) => match DeviceInvite::try_from(serialized) {
-                        Ok(deserialized) => deserialized,
-                        Err(e) => return Err(Error::Wasm(e)),
-                    }
-                    __ => return Err(Error::EntryMissing),
-                })
-            },
-            _ => Err(Error::WrongHeader),
-        }
-
-    }
-}
-
 fn _validate_self(create_header: &Create, device_invite: &DeviceInvite) -> ExternResult<ValidateCallbackResult> {
     // Cannot self-invite.
     // Note: A device _MAY_ still be referenced multiple times from a branching tree of invites.
@@ -223,7 +203,7 @@ pub mod tests {
 
         assert_eq!(
             super::validate_create_entry_device_invite(validate_data.clone()),
-            Error::EntryMissing.into(),
+            crate::error::Error::EntryMissing.into(),
         );
 
         *validate_data.element.as_entry_mut() = ElementEntry::Present(device_invite.clone().try_into().unwrap());
@@ -295,7 +275,7 @@ pub mod tests {
 
         assert_eq!(
             super::validate_create_entry_device_invite(validate_data.clone()),
-            Error::EntryMissing.into(),
+            crate::error::Error::EntryMissing.into(),
         );
 
         *validate_data.element.as_entry_mut() = ElementEntry::Present(device_invite.clone().try_into().unwrap());

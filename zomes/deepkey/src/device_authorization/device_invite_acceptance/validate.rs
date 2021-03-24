@@ -5,26 +5,6 @@ use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAc
 use crate::device_authorization::device_invite::entry::DeviceInvite;
 use crate::device_authorization::device_invite_acceptance::error::Error;
 
-impl TryFrom<&Element> for DeviceInviteAcceptance {
-    type Error = Error;
-    fn try_from(element: &Element) -> Result<Self, Self::Error> {
-        match element.header() {
-            // Only creates are allowed for a DeviceInvite.
-            Header::Create(_) => {
-                Ok(match element.entry() {
-                    ElementEntry::Present(serialized) => match DeviceInviteAcceptance::try_from(serialized) {
-                        Ok(deserialized) => deserialized,
-                        Err(e) => return Err(Error::Wasm(e)),
-                    }
-                    __ => return Err(Error::EntryMissing),
-                })
-            },
-            _ => Err(Error::WrongHeader),
-        }
-
-    }
-}
-
 fn _validate_create_authorization(create_header: &Create, device_invite: &DeviceInvite) -> ExternResult<ValidateCallbackResult> {
     // Only the intended recipient of a device invite can accept it.
     if &create_header.author != device_invite.as_device_agent_ref() {
@@ -160,7 +140,7 @@ pub mod tests {
 
         assert_eq!(
             super::validate_create_entry_device_invite_acceptance(validate_data.clone()),
-            Error::EntryMissing.into(),
+            crate::error::Error::EntryMissing.into(),
         );
 
         *validate_data.element.as_entry_mut() = ElementEntry::Present(device_invite_acceptance.clone().try_into().unwrap());

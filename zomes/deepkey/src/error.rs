@@ -3,8 +3,11 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("Element missing its KeysetRoot")]
+    #[error("Element missing its Entry")]
     EntryMissing,
+
+    #[error("Wrong header for an Element")]
+    WrongHeader,
 
     #[error("Wasm error {0}")]
     Wasm(WasmError)

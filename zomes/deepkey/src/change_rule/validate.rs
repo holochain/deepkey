@@ -5,19 +5,6 @@ use crate::keyset_root::entry::KeysetRoot;
 use crate::validate::ResolvedDependency;
 use crate::validate::resolve_dependency;
 
-impl TryFrom<&Element> for ChangeRule {
-    type Error = Error;
-    fn try_from(element: &Element) -> Result<Self, Self::Error> {
-        Ok(match element.entry() {
-            ElementEntry::Present(serialized_change_rule) => match ChangeRule::try_from(serialized_change_rule) {
-                Ok(change_rule) => change_rule,
-                Err(e) => return Err(Error::Wasm(e)),
-            }
-            __ => return Err(Error::EntryMissing),
-        })
-    }
-}
-
 fn _validate_spec(change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResult> {
     if change_rule.spec_change.new_spec.sigs_required as usize > change_rule.spec_change.new_spec.authorized_signers.len() {
         Error::NotEnoughSigners.into()
@@ -103,28 +90,9 @@ fn _validate_update_keyset_root(_: &ValidateData, previous_change_rule: &ChangeR
 }
 
 fn _validate_update_authorization(_: &ValidateData, previous_change_rule: &ChangeRule, proposed_change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResult> {
-    if proposed_change_rule.spec_change.authorization_of_new_spec.len() != previous_change_rule.spec_change.new_spec.sigs_required as usize {
-        Error::WrongNumberOfSignatures.into()
-    }
-    else {
-        // Doing this imperative style to allow returning on ExternResult failure.
-        let mut verifications = vec![];
-        for (position, signature) in proposed_change_rule.spec_change.authorization_of_new_spec.iter() {
-            match previous_change_rule.spec_change.new_spec.authorized_signers.get(*position as usize) {
-                Some(agent) => verifications.push(verify_signature(
-                    agent.to_owned(),
-                    signature.to_owned(),
-                    proposed_change_rule.spec_change.new_spec.clone()
-                )?),
-                None => return Error::AuthorizedPositionOutOfBounds.into(),
-            }
-        }
-        if !verifications.iter().all(|&v| v) {
-            Error::BadUpdateSignature.into()
-        }
-        else {
-            Ok(ValidateCallbackResult::Valid)
-        }
+    match previous_change_rule.authorize(proposed_change_rule.spec_change.authorization_of_new_spec.clone(), holochain_serialized_bytes::encode(&proposed_change_rule.spec_change.new_spec)?) {
+        Ok(_) => Ok(ValidateCallbackResult::Valid),
+        Err(e) => e.into(),
     }
 }
 

@@ -13,6 +13,26 @@ pub struct DeviceInviteAcceptance {
     invite: HeaderHash,
 }
 
+impl TryFrom<&Element> for DeviceInviteAcceptance {
+    type Error = crate::error::Error;
+    fn try_from(element: &Element) -> Result<Self, Self::Error> {
+        match element.header() {
+            // Only creates are allowed for a DeviceInvite.
+            Header::Create(_) => {
+                Ok(match element.entry() {
+                    ElementEntry::Present(serialized) => match Self::try_from(serialized) {
+                        Ok(deserialized) => deserialized,
+                        Err(e) => return Err(crate::error::Error::Wasm(e)),
+                    }
+                    __ => return Err(crate::error::Error::EntryMissing),
+                })
+            },
+            _ => Err(crate::error::Error::WrongHeader),
+        }
+
+    }
+}
+
 #[cfg(test)]
 fixturator!(
     DeviceInviteAcceptance;

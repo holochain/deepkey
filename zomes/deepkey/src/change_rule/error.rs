@@ -60,3 +60,9 @@ impl From<Error> for ExternResult<ValidateCallbackResult> {
         Ok(e.into())
     }
 }
+
+impl From<WasmError> for Error {
+    fn from(e: WasmError) -> Error {
+        Error::Wasm(e)
+    }
+}

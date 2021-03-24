@@ -1,4 +1,5 @@
 use hdk::prelude::*;
+use crate::change_rule::error::Error;
 
 #[cfg(test)]
 use ::fixt::prelude::*;
@@ -83,6 +84,19 @@ pub struct ChangeRule {
     pub spec_change: AuthorizedSpecChange,
 }
 
+impl TryFrom<&Element> for ChangeRule {
+    type Error = Error;
+    fn try_from(element: &Element) -> Result<Self, Self::Error> {
+        Ok(match element.entry() {
+            ElementEntry::Present(serialized_change_rule) => match ChangeRule::try_from(serialized_change_rule) {
+                Ok(change_rule) => change_rule,
+                Err(e) => return Err(Error::Wasm(e)),
+            }
+            __ => return Err(Error::EntryMissing),
+        })
+    }
+}
+
 #[cfg(test)]
 fixturator!(
     ChangeRule;
@@ -100,6 +114,32 @@ impl ChangeRule {
 
     pub fn as_spec_change_ref(&self) -> &AuthorizedSpecChange {
         &self.spec_change
+    }
+
+    pub fn authorize(&self, authorization: Vec<Authorization>, data: Vec<u8>) -> Result<(), Error> {
+        if authorization.len() != self.spec_change.new_spec.sigs_required as usize {
+            Err(Error::WrongNumberOfSignatures)
+        }
+        else {
+            // Doing this imperative style to allow returning on ExternResult failure.
+            let mut verifications = vec![];
+            for (position, signature) in authorization.iter() {
+                match self.spec_change.new_spec.authorized_signers.get(*position as usize) {
+                    Some(agent) => verifications.push(verify_signature_raw(
+                        agent.to_owned(),
+                        signature.to_owned(),
+                        data.clone()
+                    )?),
+                    None => return Err(Error::AuthorizedPositionOutOfBounds),
+                }
+            }
+            if !verifications.iter().all(|&v| v) {
+                Err(Error::BadUpdateSignature)
+            }
+            else {
+                Ok(())
+            }
+        }
     }
 }
 
