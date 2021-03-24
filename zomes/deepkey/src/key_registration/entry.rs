@@ -24,7 +24,7 @@ impl TryFrom<&Element> for KeyRegistration {
     type Error = crate::error::Error;
     fn try_from(element: &Element) -> Result<Self, Self::Error> {
         match element.header() {
-            // All CRUD are allowed for a Generator.
+            // All CRUD are allowed for a KeyRegistration.
             Header::Create(_) | Header::Update(_) | Header::Delete(_) => {
                 Ok(match element.entry() {
                     ElementEntry::Present(serialized) => match Self::try_from(serialized) {
