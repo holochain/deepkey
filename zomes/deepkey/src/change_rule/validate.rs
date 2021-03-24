@@ -239,17 +239,17 @@ pub mod tests {
         change_rule.spec_change.new_spec.authorized_signers.push(fixt!(AgentPubKey));
 
         let update_header = fixt!(Update);
-        validate_data.element.signed_header.header.content = Header::Update(update_header.clone());
+        *validate_data.element.as_header_mut_ref() = Header::Update(update_header.clone());
 
         let mut keyset_root_element = fixt!(Element);
         let keyset_root = fixt!(KeysetRoot);
-        keyset_root_element.entry = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
+        *keyset_root_element.as_entry_mut_ref() = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
 
-        validate_data.element.entry = ElementEntry::Present(change_rule.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut_ref() = ElementEntry::Present(change_rule.clone().try_into().unwrap());
 
         let previous_change_rule = fixt!(ChangeRule);
         let mut previous_element = fixt!(Element);
-        previous_element.entry = ElementEntry::Present(previous_change_rule.clone().try_into().unwrap());
+        *previous_element.as_entry_mut_ref() = ElementEntry::Present(previous_change_rule.clone().try_into().unwrap());
 
         let mut mock_hdk = hdk::prelude::MockHdkT::new();
 
@@ -363,7 +363,7 @@ pub mod tests {
         let mut validate_data = fixt!(ValidateData);
         let change_rule = fixt!(ChangeRule);
 
-        validate_data.element.entry = ElementEntry::Present(change_rule.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut_ref() = ElementEntry::Present(change_rule.clone().try_into().unwrap());
 
         let mut mock_hdk = hdk::prelude::MockHdkT::new();
 
@@ -420,7 +420,7 @@ pub mod tests {
         let keyset_root = fixt!(KeysetRoot);
         let mut create_header = fixt!(Create);
 
-        validate_data.element.signed_header.header.content = Header::Create(create_header.clone());
+        *validate_data.element.as_header_mut_ref() = Header::Create(create_header.clone());
 
         // The FDA cannot be valid unless the validation element and keyset root FDA are the same.
         assert_eq!(
@@ -429,7 +429,7 @@ pub mod tests {
         );
 
         create_header.author = keyset_root.as_first_deepkey_agent_ref().clone();
-        validate_data.element.signed_header.header.content = Header::Create(create_header);
+        *validate_data.element.as_header_mut_ref() = Header::Create(create_header);
 
         assert_eq!(
             Ok(ValidateCallbackResult::Valid),
@@ -625,8 +625,8 @@ pub mod tests {
         );
 
         let mut different_change_rule = change_rule.clone();
-        change_rule.spec_change.new_spec.sigs_required = 30;
-        different_change_rule.spec_change.new_spec.sigs_required = 50;
+        change_rule.spec_change.new_spec.sigs_required = 5;
+        different_change_rule.spec_change.new_spec.sigs_required = 10;
 
         assert_eq!(
             super::_validate_update_spec(&change_rule, &different_change_rule),

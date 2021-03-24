@@ -16,14 +16,15 @@ crate-type = [ "cdylib", "rlib" ]
 path = "src/lib.rs"
 
 [dependencies]
-hdk = {path = "../../../holochain/crates/hdk" }
-serde = "1"
+hdk = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
+# use whatever serde hdk gives us
+serde = "*"
 thiserror = "1"
 mockall = "0.9"
 
 [dev-dependencies]
-fixt = { path = "../../../holochain/crates/fixt" }
-holochain_types = { path = "../../../holochain/crates/holochain_types" }
+fixt = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
+holochain_types = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
 
 [features]
-mock = ["hdk/mock"]
+mock = ["hdk/mock", "hdk/mut_element"]
