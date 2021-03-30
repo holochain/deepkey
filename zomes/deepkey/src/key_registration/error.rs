@@ -9,6 +9,9 @@ pub enum Error {
     #[error("Wrong KeyRegistration variant for this validation op")]
     BadOp,
 
+    #[error("KeyRegistration referenced wrong prior HeaderHash as per Element Header")]
+    BadHeaderRef,
+
     #[error("Bad signature for key generation on KeyRegistration")]
     BadGeneratorSignature,
 

@@ -30,7 +30,17 @@ fn _validate_key_generation(validate_data: &ValidateData, key_generation: &KeyGe
     }
 }
 
-fn _validate_key_revocation(prior_key_change_rule: &ChangeRule, key_revocation: &KeyRevocation) -> ExternResult<ValidateCallbackResult> {
+fn _validate_key_revocation(validate_data: &ValidateData, prior_key_change_rule: &ChangeRule, key_revocation: &KeyRevocation) -> ExternResult<ValidateCallbackResult> {
+    match validate_data.element.header() {
+        Header::Update(update) => if &update.original_header_address != key_revocation.as_prior_key_registration_ref() {
+            return Error::BadHeaderRef.into()
+        },
+        Header::Delete(delete) => if &delete.deletes_address != key_revocation.as_prior_key_registration_ref() {
+            return Error::BadHeaderRef.into()
+        },
+        _ => return Error::BadOp.into(),
+    }
+
     match prior_key_change_rule.authorize(
         key_revocation.as_revocation_authorization_ref(),
         key_revocation.as_prior_key_registration_ref().get_raw_32()
@@ -82,7 +92,7 @@ fn validate_update_entry_key_registration(validate_data: ValidateData) -> Extern
                         Ok(ResolvedDependency(_, prior_change_rule)) => prior_change_rule,
                         Err(validate_callback_result) => return Ok(validate_callback_result),
                     };
-                    _validate_key_revocation(&prior_key_change_rule, &proposed_key_revocation)
+                    _validate_key_revocation(&validate_data, &prior_key_change_rule, &proposed_key_revocation)
                 },
                 _ => Error::RevokeRevoke.into(),
             }
@@ -115,7 +125,7 @@ fn validate_delete_entry_key_registration(validate_data: ValidateData) -> Extern
                         Ok(ResolvedDependency(_, prior_change_rule)) => prior_change_rule,
                         Err(validate_callback_result) => return Ok(validate_callback_result),
                     };
-                    _validate_key_revocation(&prior_key_change_rule, &proposed_key_revocation)
+                    _validate_key_revocation(&validate_data, &prior_key_change_rule, &proposed_key_revocation)
                 },
                 _ => Error::RevokeRevoke.into(),
             }
