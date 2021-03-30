@@ -1,22 +1,50 @@
 use hdk::prelude::*;
 use crate::key::entry::Key;
+use crate::change_rule::entry::Authorization;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct KeyAuthorization {
-    key: Key,
-    signature: Signature,
+pub struct KeyGeneration {
+    new_key: Key,
+    // Ensure the generator has the same author as the KeyRegistration.
+    generator: HeaderHash,
+    generator_signature: Signature,
+}
+
+impl KeyGeneration {
+    pub fn as_new_key_ref(&self) -> &Key {
+        &self.new_key
+    }
+
+    pub fn as_generator_ref(&self) -> &HeaderHash {
+        &self.generator
+    }
+
+    pub fn as_generator_signature_ref(&self) -> &Signature {
+        &self.generator_signature
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct KeyRevocation {
-    key: Key,
-    signature: Signature,
+    prior_key_registration: HeaderHash,
+    // To be validated according to the change rule of the generator of the prior key.
+    revocation_authorization: Vec<Authorization>,
+}
+
+impl KeyRevocation {
+    pub fn as_prior_key_registration_ref(&self) -> &HeaderHash {
+        &self.prior_key_registration
+    }
+
+    pub fn as_revocation_authorization_ref(&self) -> &[Authorization] {
+        &self.revocation_authorization
+    }
 }
 
 #[hdk_entry(id = "key_registration")]
 pub enum KeyRegistration {
-    Create(KeyAuthorization),
-    Update(KeyRevocation, KeyAuthorization),
+    Create(KeyGeneration),
+    Update(KeyRevocation, KeyGeneration),
     Delete(KeyRevocation)
 }
 

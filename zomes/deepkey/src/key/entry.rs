@@ -10,6 +10,12 @@ const SR25519_KEY_LEN: usize = 32;
 #[derive(Clone, Copy, Debug)]
 pub struct Ed25519([u8; ED25519_KEY_LEN]);
 
+impl AsRef<[u8]> for Ed25519 {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
 #[cfg(test)]
 fixturator!(
     Ed25519;
@@ -21,6 +27,12 @@ fixturator!(
 #[derive(Clone, Copy, Debug)]
 pub struct Secp256k1([u8; SECP256K1_KEY_LEN]);
 
+impl AsRef<[u8]> for Secp256k1 {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
 #[cfg(test)]
 fixturator!(
     Secp256k1;
@@ -31,6 +43,12 @@ fixturator!(
 
 #[derive(Clone, Copy, Debug)]
 pub struct Schnorr([u8; SCHNORR_KEY_LEN]);
+
+impl AsRef<[u8]> for Schnorr {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
 
 #[cfg(test)]
 pub type ThirtyThreeBytes = [u8; 33];
@@ -68,6 +86,12 @@ fixturator!(
 #[derive(Clone, Copy, Debug)]
 pub struct Sr25519([u8; SR25519_KEY_LEN]);
 
+impl AsRef<[u8]> for Sr25519 {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
 #[cfg(test)]
 fixturator!(
     Sr25519;
@@ -99,3 +123,14 @@ fixturator!(
     Key;
     variants [ Ed25519(Ed25519) Secp256k1(Secp256k1) Schnorr(Schnorr) Sr25519(Sr25519) ];
 );
+
+impl AsRef<[u8]> for Key {
+    fn as_ref(&self) -> &[u8] {
+        match self {
+            Key::Ed25519(ed25519) => ed25519.as_ref(),
+            Key::Secp256k1(secp256k1) => secp256k1.as_ref(),
+            Key::Schnorr(schnorr) => schnorr.as_ref(),
+            Key::Sr25519(sr25519) => sr25519.as_ref(),
+        }
+    }
+}
