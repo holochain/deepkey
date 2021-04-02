@@ -1,8 +1,14 @@
 use hdk::prelude::*;
 use crate::key::entry::Key;
 use crate::change_rule::entry::Authorization;
+#[cfg(test)]
+use ::fixt::prelude::*;
+#[cfg(test)]
+use crate::change_rule::entry::AuthorizationVecFixturator;
+#[cfg(test)]
+use crate::key::entry::KeyFixturator;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct KeyGeneration {
     new_key: Key,
     // Ensure the generator has the same author as the KeyRegistration.
@@ -10,7 +16,17 @@ pub struct KeyGeneration {
     generator_signature: Signature,
 }
 
+#[cfg(test)]
+fixturator!(
+    KeyGeneration;
+    constructor fn new(Key, HeaderHash, Signature);
+);
+
 impl KeyGeneration {
+    pub fn new(new_key: Key, generator: HeaderHash, generator_signature: Signature) -> Self {
+        Self { new_key, generator, generator_signature }
+    }
+
     pub fn as_new_key_ref(&self) -> &Key {
         &self.new_key
     }
@@ -24,14 +40,24 @@ impl KeyGeneration {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct KeyRevocation {
     prior_key_registration: HeaderHash,
     // To be validated according to the change rule of the generator of the prior key.
     revocation_authorization: Vec<Authorization>,
 }
 
+#[cfg(test)]
+fixturator!(
+    KeyRevocation;
+    constructor fn new(HeaderHash, AuthorizationVec);
+);
+
 impl KeyRevocation {
+    pub fn new(prior_key_registration: HeaderHash, revocation_authorization: Vec<Authorization>) -> Self {
+        Self { prior_key_registration, revocation_authorization }
+    }
+
     pub fn as_prior_key_registration_ref(&self) -> &HeaderHash {
         &self.prior_key_registration
     }
@@ -42,11 +68,19 @@ impl KeyRevocation {
 }
 
 #[hdk_entry(id = "key_registration")]
+#[derive(Clone)]
 pub enum KeyRegistration {
     Create(KeyGeneration),
     Update(KeyRevocation, KeyGeneration),
     Delete(KeyRevocation)
 }
+
+#[cfg(test)]
+fixturator!(
+    KeyRegistration;
+    // @todo support Update as a variant (it has two inner types).
+    variants [ Create(KeyGeneration) Delete(KeyRevocation) ];
+);
 
 impl TryFrom<&Element> for KeyRegistration {
     type Error = crate::error::Error;

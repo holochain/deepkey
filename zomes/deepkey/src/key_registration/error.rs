@@ -16,7 +16,7 @@ pub enum Error {
     BadGeneratorSignature,
 
     #[error("Attempted to revoke a revoke of a KeyRegistration")]
-    RevokeRevoke,
+    Tombstone,
 }
 
 impl From<Error> for ValidateCallbackResult {
