@@ -123,16 +123,14 @@ impl ChangeRule {
         else {
             for (position, signature) in authorization.iter() {
                 match self.spec_change.new_spec.authorized_signers.get(*position as usize) {
-                    Some(agent) => {
-                        trace!(?agent, ?signature, ?data);
-                        if !verify_signature_raw(
+                    Some(agent) => if !verify_signature_raw(
                         agent.to_owned(),
                         signature.to_owned(),
                         data.to_vec()
                     )? {
                         // Short circuit any failed sig.
                         return Err(Error::BadUpdateSignature);
-                    }},
+                    },
                     None => return Err(Error::AuthorizedPositionOutOfBounds),
                 }
             }
