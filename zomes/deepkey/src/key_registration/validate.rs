@@ -35,9 +35,6 @@ fn _validate_key_revocation(validate_data: &ValidateData, prior_key_change_rule:
         Header::Update(update) => if &update.original_header_address != key_revocation.as_prior_key_registration_ref() {
             return Error::BadHeaderRef.into()
         },
-        Header::Delete(delete) => if &delete.deletes_address != key_revocation.as_prior_key_registration_ref() {
-            return Error::BadHeaderRef.into()
-        },
         _ => return Error::BadOp.into(),
     }
 
@@ -63,13 +60,6 @@ fn validate_create_entry_key_registration(validate_data: ValidateData) -> Extern
     }
 }
 
-// @todo make this work
-// Result<(), ValidationError>
-// #[validate_extern]
-// fn validate_update_entry_key_registration(validate_data: ValidateData) -> ValidateResult<()> {
-//
-// }
-
 #[hdk_extern]
 fn validate_update_entry_key_registration(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     let proposed_key_registration = match KeyRegistration::try_from(&validate_data.element) {
@@ -79,7 +69,7 @@ fn validate_update_entry_key_registration(validate_data: ValidateData) -> Extern
 
     // All updates MUST revoke a prior generation.
     match proposed_key_registration {
-        KeyRegistration::Update(proposed_key_revocation, _) | KeyRegistration::Delete(proposed_key_revocation) => {
+        KeyRegistration::Update(ref proposed_key_revocation, _) | KeyRegistration::Delete(ref proposed_key_revocation) => {
             let prior_key_registration: KeyRegistration = match resolve_dependency(proposed_key_revocation.as_prior_key_registration_ref().to_owned().into())? {
                 Ok(ResolvedDependency(_, prior_key_registration)) => prior_key_registration,
                 Err(validate_callback_result) => return Ok(validate_callback_result),
@@ -95,13 +85,26 @@ fn validate_update_entry_key_registration(validate_data: ValidateData) -> Extern
                         Ok(ResolvedDependency(_, prior_change_rule)) => prior_change_rule,
                         Err(validate_callback_result) => return Ok(validate_callback_result),
                     };
-                    _validate_key_revocation(&validate_data, &prior_key_change_rule, &proposed_key_revocation)
+                    match _validate_key_revocation(&validate_data, &prior_key_change_rule, &proposed_key_revocation) {
+                        Ok(ValidateCallbackResult::Valid) => { },
+                        validate_callback_result => return validate_callback_result,
+                    }
                 },
-                _ => Error::Tombstone.into(),
+                _ => return Error::Tombstone.into(),
             }
         },
-        _ => Error::BadOp.into(),
+        _ => return Error::BadOp.into(),
     }
+
+    // KeyRegistration::Update updates must also be a valid generation.
+    if let KeyRegistration::Update(_, proposed_key_generation) = proposed_key_registration {
+        match _validate_key_generation(&validate_data, &proposed_key_generation) {
+            Ok(ValidateCallbackResult::Valid) => { },
+            validate_callback_result => return validate_callback_result,
+        }
+    }
+
+    Ok(ValidateCallbackResult::Valid)
 }
 
 #[hdk_extern]
@@ -138,6 +141,9 @@ pub mod test {
     use holochain_types::prelude::ElementFixturator;
     use crate::generator::entry::GeneratorFixturator;
     use crate::key_registration::error::Error;
+    use crate::change_rule::entry::ChangeRuleFixturator;
+    use crate::key_registration::validate::KeyRevocation;
+    use crate::change_rule::entry::AuthoritySpec;
 
     #[test]
     fn test_validate_create_entry_key_registration() {
@@ -173,16 +179,23 @@ pub mod test {
 
     #[test]
     fn test_validate_update_entry_key_registration() {
-        let mut validate_data = fixt!(ValidateData);
-        let key_registration_create = KeyRegistration::Create(fixt!(KeyGeneration));
-        let key_registration_delete = KeyRegistration::Delete(fixt!(KeyRevocation));
+        let mut rng = rand::thread_rng();
 
-        *validate_data.element.as_entry_mut() = ElementEntry::NotStored;
+        let mut validate_data = fixt!(ValidateData);
+        let key_revocation = fixt!(KeyRevocation);
+        let key_registration_create = KeyRegistration::Create(fixt!(KeyGeneration));
+        let key_registration_update = KeyRegistration::Update(key_revocation.clone(), fixt!(KeyGeneration));
+        let key_registration_delete = KeyRegistration::Delete(key_revocation.clone());
+
+        // Garbage entry.
+        *validate_data.element.as_header_mut() = Header::Update(fixt!(Update));
+        *validate_data.element.as_entry_mut() = ElementEntry::NotApplicable;
         assert_eq!(
             super::validate_update_entry_key_registration(validate_data.clone()),
             crate::error::Error::EntryMissing.into(),
         );
 
+        // Cannot send a KeyRegistration::Create to an update.
         *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_create.clone().try_into().unwrap());
 
         assert_eq!(
@@ -190,11 +203,131 @@ pub mod test {
             crate::key_registration::error::Error::BadOp.into(),
         );
 
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_delete.clone().try_into().unwrap());
+        // Update and delete should work exactly the same apart from the additional generation check for Update.
+        if rng.gen::<bool>() {
+            *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_update.clone().try_into().unwrap());
+        }
+        else {
+            *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_delete.clone().try_into().unwrap());
+        }
+
+        let mut prior_key_registration_element = fixt!(Element);
+        let prior_generator = fixt!(Generator);
+        let mut prior_generator_element = fixt!(Element);
+        *prior_generator_element.as_entry_mut() = ElementEntry::Present(prior_generator.clone().try_into().unwrap());
+        let key_generation = fixt!(KeyGeneration);
+        let prior_key_registration_delete = KeyRegistration::Delete(fixt!(KeyRevocation));
+        let prior_key_registration_create = KeyRegistration::Create(key_generation.clone());
+        let prior_key_registration_update = KeyRegistration::Update(fixt!(KeyRevocation), key_generation.clone());
+
+        // Can't "delete" a delete.
+        *prior_key_registration_element.as_entry_mut() = ElementEntry::Present(prior_key_registration_delete.clone().try_into().unwrap());
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_get().with(mockall::predicate::eq(
+            GetInput::new(
+                key_revocation.as_prior_key_registration_ref().clone().into(),
+                GetOptions::content(),
+            )
+        ))
+        .times(1)
+        .return_const(Ok(None));
+
+        set_hdk(mock_hdk);
 
         assert_eq!(
             super::validate_update_entry_key_registration(validate_data.clone()),
-            crate::key_registration::error::Error::BadOp.into(),
+            Ok(ValidateCallbackResult::UnresolvedDependencies(vec![key_revocation.as_prior_key_registration_ref().clone().into()])),
+        );
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_get().with(mockall::predicate::eq(
+            GetInput::new(
+                key_revocation.as_prior_key_registration_ref().clone().into(),
+                GetOptions::content(),
+            )
+        ))
+        .times(1)
+        .return_const(Ok(Some(prior_key_registration_element.clone())));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::validate_update_entry_key_registration(validate_data.clone()),
+            Error::Tombstone.into(),
+        );
+
+        // Can "delete" a create or update exactly the same.
+        if rng.gen::<bool>() {
+            *prior_key_registration_element.as_entry_mut() = ElementEntry::Present(prior_key_registration_create.clone().try_into().unwrap());
+        }
+        else {
+            *prior_key_registration_element.as_entry_mut() = ElementEntry::Present(prior_key_registration_update.clone().try_into().unwrap());
+        }
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_get().with(mockall::predicate::eq(
+            GetInput::new(
+                key_revocation.as_prior_key_registration_ref().clone().into(),
+                GetOptions::content(),
+            )
+        ))
+        .times(1)
+        .return_const(Ok(Some(prior_key_registration_element.clone())));
+
+        mock_hdk.expect_get().with(mockall::predicate::eq(
+            GetInput::new(
+                key_generation.as_generator_ref().to_owned().into(),
+                GetOptions::content(),
+            )
+        ))
+        .times(1)
+        .return_const(Ok(None));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::validate_update_entry_key_registration(validate_data.clone()),
+            Ok(ValidateCallbackResult::UnresolvedDependencies(vec![key_generation.as_generator_ref().to_owned().into()])),
+        );
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_get().with(mockall::predicate::eq(
+            GetInput::new(
+                key_revocation.as_prior_key_registration_ref().clone().into(),
+                GetOptions::content(),
+            )
+        ))
+        .times(1)
+        .return_const(Ok(Some(prior_key_registration_element.clone())));
+
+        mock_hdk.expect_get().with(mockall::predicate::eq(
+            GetInput::new(
+                key_generation.as_generator_ref().to_owned().into(),
+                GetOptions::content(),
+            )
+        ))
+        .times(1)
+        .return_const(Ok(Some(prior_generator_element)));
+
+        mock_hdk.expect_get().with(mockall::predicate::eq(
+            GetInput::new(
+                prior_generator.as_change_rule_ref().clone().into(),
+                GetOptions::content(),
+            )
+        ))
+        .times(1)
+        .return_const(Ok(None));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::validate_update_entry_key_registration(validate_data.clone()),
+            Ok(ValidateCallbackResult::UnresolvedDependencies(vec![prior_generator.as_change_rule_ref().clone().into()])),
         );
     }
 
@@ -209,6 +342,7 @@ pub mod test {
         let key_registration_delete = KeyRegistration::Delete(fixt!(KeyRevocation));
 
         *validate_data.element.as_header_mut() = Header::Create(create_header);
+        *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_create.clone().try_into().unwrap());
 
         assert_eq!(
             super::validate_delete_entry_key_registration(validate_data.clone()),
@@ -216,6 +350,7 @@ pub mod test {
         );
 
         *validate_data.element.as_header_mut() = Header::Update(update_header);
+        *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_update.clone().try_into().unwrap());
 
         assert_eq!(
             super::validate_delete_entry_key_registration(validate_data.clone()),
@@ -223,6 +358,7 @@ pub mod test {
         );
 
         *validate_data.element.as_header_mut() = Header::Delete(delete_header.clone());
+        *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_delete.clone().try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -244,8 +380,8 @@ pub mod test {
 
         let mut return_element = fixt!(Element);
 
-        *return_element.as_header_mut() = Header::Create(fixt!(Create));
-        *return_element.as_entry_mut() = ElementEntry::Present(fixt!(Entry));
+        *return_element.as_header_mut() = Header::Delete(fixt!(Delete));
+        *return_element.as_entry_mut() = ElementEntry::NotApplicable;
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -333,8 +469,6 @@ pub mod test {
 
         let mut generator_element = fixt!(Element);
         let generator = fixt!(Generator);
-
-        // *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_create.clone().try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -442,6 +576,92 @@ pub mod test {
 
         assert_eq!(
             super::_validate_key_generation(&validate_data, &key_generation),
+            Ok(ValidateCallbackResult::Valid),
+        );
+    }
+
+    #[test]
+    pub fn test_validate_key_revocation() {
+        let mut validate_data = fixt!(ValidateData);
+        let mut prior_key_change_rule = fixt!(ChangeRule);
+        let prior_authority_spec = AuthoritySpec {
+            sigs_required: 1,
+            authorized_signers: vec![fixt!(AgentPubKey)],
+        };
+        prior_key_change_rule.spec_change.new_spec = prior_authority_spec.clone();
+
+        let revocation_authorization = vec![(0, fixt!(Signature))];
+        let key_revocation = KeyRevocation::new(
+            fixt!(HeaderHash),
+            revocation_authorization.clone(),
+        );
+
+        let create_header = fixt!(Create);
+        let mut update_header = fixt!(Update);
+        let delete_header = fixt!(Delete);
+
+        *validate_data.element.as_header_mut() = Header::Create(create_header.clone());
+        assert_eq!(
+            super::_validate_key_revocation(&validate_data, &prior_key_change_rule, &key_revocation),
+            Error::BadOp.into(),
+        );
+
+        *validate_data.element.as_header_mut() = Header::Delete(delete_header.clone());
+        assert_eq!(
+            super::_validate_key_revocation(&validate_data, &prior_key_change_rule, &key_revocation),
+            Error::BadOp.into(),
+        );
+
+        *validate_data.element.as_header_mut() = Header::Update(update_header.clone());
+        assert_eq!(
+            super::_validate_key_revocation(&validate_data, &prior_key_change_rule, &key_revocation),
+            Error::BadHeaderRef.into(),
+        );
+
+        update_header.original_header_address = key_revocation.as_prior_key_registration_ref().clone();
+        *validate_data.element.as_header_mut() = Header::Update(update_header.clone());
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_verify_signature()
+        .with(
+            mockall::predicate::eq(
+                VerifySignature::new_raw(
+                    prior_authority_spec.authorized_signers[0].clone(),
+                    revocation_authorization[0].1.clone(),
+                    key_revocation.as_prior_key_registration_ref().get_raw_32().to_vec()
+                )
+            )
+        )
+        .times(1)
+        .return_const(Ok(false));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::_validate_key_revocation(&validate_data, &prior_key_change_rule, &key_revocation),
+            crate::change_rule::error::Error::BadUpdateSignature.into(),
+        );
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_verify_signature()
+        .with(
+            mockall::predicate::eq(
+                VerifySignature::new_raw(
+                    prior_authority_spec.authorized_signers[0].clone(),
+                    revocation_authorization[0].1.clone(),
+                    key_revocation.as_prior_key_registration_ref().get_raw_32().to_vec()
+                )
+            )
+        )
+        .times(1)
+        .return_const(Ok(true));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::_validate_key_revocation(&validate_data, &prior_key_change_rule, &key_revocation),
             Ok(ValidateCallbackResult::Valid),
         );
     }
