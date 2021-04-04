@@ -15,7 +15,20 @@ fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule)
     };
 
     match leaf_header_element.header().entry_type() {
-        Some(EntryType::App(app_entry_type)) => if app_entry_type.id() != KEYSET_ROOT_INDEX && app_entry_type.id() != DEVICE_INVITE_ACCEPTANCE_INDEX {
+        Some(EntryType::App(app_entry_type)) => if app_entry_type.id() == KEYSET_ROOT_INDEX {
+            if change_rule.keyset_root != change_rule.keyset_leaf {
+                return Error::BadKeysetLeaf.into();
+            }
+        } else if app_entry_type.id() == DEVICE_INVITE_ACCEPTANCE_INDEX {
+            let device_invite_acceptance = match DeviceInviteAcceptance::try_from(&leaf_header_element) {
+                Ok(device_invite_acceptance) => device_invite_acceptance,
+                Err(e) => return Ok(ValidateCallbackResult::Invalid(e.to_string())),
+            };
+            if change_rule.keyset_root != device_invite_acceptance.keyset_root_authority {
+                return Error::BadKeysetLeaf.into();
+            }
+        }
+        else {
             return Error::BadKeysetLeafType.into();
         },
         _ => return Error::BadKeysetLeafType.into(),

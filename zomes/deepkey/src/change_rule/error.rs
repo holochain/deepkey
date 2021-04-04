@@ -36,6 +36,9 @@ pub enum Error {
     #[error("The new ChangeRule references an Element that is not a keyset leaf")]
     BadKeysetLeafType,
 
+    #[error("The new ChangeRule references a KeysetLeaf that is incompatible with its KeysetRoot")]
+    BadKeysetLeaf,
+
     #[error("The new ChangeRule references a stale keyset leaf")]
     StaleKeysetLeaf,
 
