@@ -3,6 +3,10 @@ use hdk::prelude::*;
 #[cfg(test)]
 use ::fixt::prelude::*;
 
+/// Same as entry_def_index! but constant.
+/// Has test coverage in case entry_defs! ever changes.
+pub const DEVICE_INVITE_ACCEPTANCE_INDEX: EntryDefIndex = EntryDefIndex(2);
+
 #[hdk_entry(id = "device_invite_acceptance")]
 #[derive(Clone)]
 pub struct DeviceInviteAcceptance {
@@ -50,5 +54,20 @@ impl DeviceInviteAcceptance {
 
     pub fn as_invite_ref(&self) -> &HeaderHash {
         &self.invite
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use hdk::prelude::*;
+    use super::DEVICE_INVITE_ACCEPTANCE_INDEX;
+    use super::DeviceInviteAcceptance;
+
+    #[test]
+    fn device_invite_acceptance_index_test() {
+        assert_eq!(
+            DEVICE_INVITE_ACCEPTANCE_INDEX,
+            entry_def_index!(DeviceInviteAcceptance).unwrap()
+        )
     }
 }

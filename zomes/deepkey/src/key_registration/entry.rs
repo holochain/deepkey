@@ -8,6 +8,10 @@ use crate::change_rule::entry::AuthorizationVecFixturator;
 #[cfg(test)]
 use crate::key::entry::KeyFixturator;
 
+/// Same as entry_def_index! but constant.
+/// Has test coverage in case entry_defs! ever changes.
+pub const KEY_REGISTRATION_INDEX: EntryDefIndex = EntryDefIndex(6);
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct KeyGeneration {
     new_key: Key,
@@ -99,5 +103,20 @@ impl TryFrom<&Element> for KeyRegistration {
             _ => Err(crate::error::Error::WrongHeader),
         }
 
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use hdk::prelude::*;
+    use super::KEY_REGISTRATION_INDEX;
+    use super::KeyRegistration;
+
+    #[test]
+    fn key_registration_index_test() {
+        assert_eq!(
+            KEY_REGISTRATION_INDEX,
+            entry_def_index!(KeyRegistration).unwrap()
+        )
     }
 }

@@ -3,6 +3,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("Generator ChangeRule has wrong author")]
+    ChangeRuleAuthor,
+
     #[error("Attempted to update a Generator")]
     UpdateAttempted,
 

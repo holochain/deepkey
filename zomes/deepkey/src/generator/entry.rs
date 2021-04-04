@@ -5,6 +5,10 @@ use ::fixt::prelude::*;
 #[cfg(test)]
 use crate::change_rule::entry::AuthorizationVecFixturator;
 
+/// Same as entry_def_index! but constant.
+/// Has test coverage in case entry_defs! ever changes.
+pub const GENERATOR_INDEX: EntryDefIndex = EntryDefIndex(5);
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Change {
     new_key: AgentPubKey,
@@ -34,22 +38,22 @@ fixturator!(
 #[hdk_entry(id = "generator")]
 #[derive(Clone)]
 pub struct Generator {
-    change_rule: EntryHash,
+    change_rule: HeaderHash,
     change: Change,
 }
 
 #[cfg(test)]
 fixturator!(
     Generator;
-    constructor fn new(EntryHash, Change);
+    constructor fn new(HeaderHash, Change);
 );
 
 impl Generator {
-    pub fn new(change_rule: EntryHash, change: Change) -> Self {
+    pub fn new(change_rule: HeaderHash, change: Change) -> Self {
         Self { change_rule, change }
     }
 
-    pub fn as_change_rule_ref(&self) -> &EntryHash {
+    pub fn as_change_rule_ref(&self) -> &HeaderHash {
         &self.change_rule
     }
 
@@ -75,5 +79,20 @@ impl TryFrom<&Element> for Generator {
             _ => Err(crate::error::Error::WrongHeader),
         }
 
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use hdk::prelude::*;
+    use super::GENERATOR_INDEX;
+    use super::Generator;
+
+    #[test]
+    fn generator_index_test() {
+        assert_eq!(
+            GENERATOR_INDEX,
+            entry_def_index!(Generator).unwrap()
+        )
     }
 }

@@ -4,6 +4,60 @@ use crate::change_rule::entry::ChangeRule;
 use crate::keyset_root::entry::KeysetRoot;
 use crate::validate::ResolvedDependency;
 use crate::validate::resolve_dependency;
+use crate::keyset_root::entry::KEYSET_ROOT_INDEX;
+use crate::device_authorization::device_invite_acceptance::entry::DEVICE_INVITE_ACCEPTANCE_INDEX;
+use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
+
+fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResult> {
+    let leaf_header_element: Element = match get(change_rule.as_keyset_leaf_ref().clone(), GetOptions::content())? {
+        Some(element) => element,
+        None => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![change_rule.as_keyset_leaf_ref().clone().into()])),
+    };
+
+    match leaf_header_element.header().entry_type() {
+        Some(EntryType::App(app_entry_type)) => if app_entry_type.id() != KEYSET_ROOT_INDEX && app_entry_type.id() != DEVICE_INVITE_ACCEPTANCE_INDEX {
+            return Error::BadKeysetLeafType.into();
+        },
+        _ => return Error::BadKeysetLeafType.into(),
+    }
+
+    let leaf_query = ChainQueryFilter::default()
+        // Inclusive start exclusive end.
+        .sequence_range(leaf_header_element.header().header_seq()..validate_data.element.header().header_seq())
+        // Not possible to have more than one KeysetRoot in a single chain so we only need to check for newer DeviceInviteAcceptance.
+        .entry_type(entry_type!(DeviceInviteAcceptance)?);
+    let leaf_agent_activity = get_agent_activity(validate_data.element.header().author().clone().into(), leaf_query, ActivityRequest::Full)?;
+
+    let prev_header: HeaderHash = match validate_data.element.header().prev_header() {
+        Some(prev_header) => prev_header.clone(),
+        None => return Error::MissingPrevHeader.into(),
+    };
+
+    let highest_observed: HighestObserved = match leaf_agent_activity.highest_observed {
+        Some(highest_observed) => highest_observed,
+        None => return Ok(ValidateCallbackResult::UnresolvedDependencies(
+            vec![prev_header.into()]
+        )),
+    };
+
+    // The agent activity needs to have observed the chain up to the point of this element.
+    if highest_observed.header_seq < ( validate_data.element.header().header_seq() - 1 ) {
+        // This is a bit weird.
+        // It is the _agent activity neighbour_ that has unresolved dependencies from the perspective of the _element authority_.
+        return Ok(
+            ValidateCallbackResult::UnresolvedDependencies(
+                vec![prev_header.into()]
+            )
+        );
+    }
+
+    if leaf_agent_activity.valid_activity.len() != 1 {
+        return Error::StaleKeysetLeaf.into();
+    }
+
+    Ok(ValidateCallbackResult::Valid)
+}
+
 
 fn _validate_spec(change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResult> {
     if change_rule.spec_change.new_spec.sigs_required as usize > change_rule.spec_change.new_spec.authorized_signers.len() {

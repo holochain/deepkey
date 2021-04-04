@@ -33,6 +33,15 @@ pub enum Error {
     #[error("The new ChangeRule referenced an authorizor position that doesn't exist")]
     AuthorizedPositionOutOfBounds,
 
+    #[error("The new ChangeRule references an Element that is not a keyset leaf")]
+    BadKeysetLeafType,
+
+    #[error("The new ChangeRule references a stale keyset leaf")]
+    StaleKeysetLeaf,
+
+    #[error("The new ChangeRule has no previous header")]
+    MissingPrevHeader,
+
     #[error("The new ChangeRule has an invalid signature")]
     BadUpdateSignature,
 

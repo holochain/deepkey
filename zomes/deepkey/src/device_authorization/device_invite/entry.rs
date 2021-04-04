@@ -2,6 +2,10 @@ use hdk::prelude::*;
 #[cfg(test)]
 use ::fixt::prelude::*;
 
+/// Same as entry_def_index! but constant.
+/// Has test coverage in case entry_defs! ever changes.
+pub const DEVICE_INVITE_INDEX: EntryDefIndex = EntryDefIndex(1);
+
 #[hdk_entry(id = "device_invite")]
 #[derive(Clone)]
 pub struct DeviceInvite {
@@ -51,5 +55,20 @@ impl DeviceInvite {
 
     pub fn as_device_agent_ref(&self) -> &AgentPubKey {
         &self.device_agent
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use hdk::prelude::*;
+    use super::DEVICE_INVITE_INDEX;
+    use super::DeviceInvite;
+
+    #[test]
+    fn device_invite_index_test() {
+        assert_eq!(
+            DEVICE_INVITE_INDEX,
+            entry_def_index!(DeviceInvite).unwrap()
+        )
     }
 }

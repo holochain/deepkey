@@ -5,6 +5,15 @@ use crate::change_rule::entry::ChangeRule;
 use crate::generator::entry::Generator;
 use crate::generator::error::Error;
 
+fn _validate_create_entry_generator_change_rule(generator_element: &Element, change_rule_element: &Element) -> ExternResult<ValidateCallbackResult> {
+    if generator_element.header().author() != change_rule_element.header().author() {
+        return Error::ChangeRuleAuthor.into()
+    }
+    else {
+        Ok(ValidateCallbackResult::Valid)
+    }
+}
+
 fn _validate_create_entry_generator_authorize(change_rule: &ChangeRule, generator: &Generator) -> ExternResult<ValidateCallbackResult> {
     match change_rule.authorize(
         generator.as_change_ref().as_authorization_ref(),
@@ -22,10 +31,15 @@ fn validate_create_entry_generator(validate_data: ValidateData) -> ExternResult<
         Err(e) => return Ok(ValidateCallbackResult::Invalid(e.to_string())),
     };
 
-    let change_rule: ChangeRule = match resolve_dependency(proposed_generator.as_change_rule_ref().clone().into())? {
-        Ok(ResolvedDependency(_, change_rule)) => change_rule,
+    let (_change_rule_element, change_rule) = match resolve_dependency::<ChangeRule>(proposed_generator.as_change_rule_ref().clone().into())? {
+        Ok(ResolvedDependency(change_rule_element, change_rule)) => (change_rule_element, change_rule),
         Err(validate_callback_result) => return Ok(validate_callback_result),
     };
+
+    // match _validate_create_entry_generator_change_rule(&validate_data.element, &change_rule_element) {
+    //     Ok(ValidateCallbackResult::Valid) => { },
+    //     validate_callback_result => return validate_callback_result,
+    // }
 
     _validate_create_entry_generator_authorize(&change_rule, &proposed_generator)
 }
