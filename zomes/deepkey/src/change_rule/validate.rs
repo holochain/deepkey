@@ -128,19 +128,24 @@ fn validate_create_entry_key_change_rule(validate_data: ValidateData) -> ExternR
         Err(validate_callback_result) => return Ok(validate_callback_result),
     };
 
-    match _validate_create_keyset_root(&validate_data, &proposed_change_rule, &keyset_root)? {
-        ValidateCallbackResult::Valid => { },
-        validate_callback_result => return Ok(validate_callback_result),
+    match _validate_keyset_leaf(&validate_data, &proposed_change_rule) {
+        Ok(ValidateCallbackResult::Valid) => { },
+        validate_callback_result => return validate_callback_result,
     }
 
-    match _validate_create_authorization(&validate_data, &proposed_change_rule, &keyset_root)? {
-        ValidateCallbackResult::Valid => { },
-        validate_callback_result => return Ok(validate_callback_result),
+    match _validate_create_keyset_root(&validate_data, &proposed_change_rule, &keyset_root) {
+        Ok(ValidateCallbackResult::Valid) => { },
+        validate_callback_result => return validate_callback_result,
     }
 
-    match _validate_spec(&proposed_change_rule)? {
-        ValidateCallbackResult::Valid => { },
-        validate_callback_result => return Ok(validate_callback_result),
+    match _validate_create_authorization(&validate_data, &proposed_change_rule, &keyset_root) {
+        Ok(ValidateCallbackResult::Valid) => { },
+        validate_callback_result => return validate_callback_result,
+    }
+
+    match _validate_spec(&proposed_change_rule) {
+        Ok(ValidateCallbackResult::Valid) => { },
+        validate_callback_result => return validate_callback_result,
     }
 
     Ok(ValidateCallbackResult::Valid)
@@ -200,24 +205,29 @@ fn validate_update_entry_key_change_rule(validate_data: ValidateData) -> ExternR
             }
         }
 
-        match _validate_update_keyset_root(&validate_data, &previous_change_rule, &proposed_change_rule)? {
-            ValidateCallbackResult::Valid => { },
-            validate_callback_result => return Ok(validate_callback_result),
+        match _validate_keyset_leaf(&validate_data, &proposed_change_rule) {
+            Ok(ValidateCallbackResult::Valid) => { },
+            validate_callback_result => return validate_callback_result,
         }
 
-        match _validate_update_authorization(&validate_data, &previous_change_rule, &proposed_change_rule)? {
-            ValidateCallbackResult::Valid => { },
-            validate_callback_result => return Ok(validate_callback_result),
+        match _validate_update_keyset_root(&validate_data, &previous_change_rule, &proposed_change_rule) {
+            Ok(ValidateCallbackResult::Valid) => { },
+            validate_callback_result => return validate_callback_result,
         }
 
-        match _validate_update_spec(&previous_change_rule, &proposed_change_rule)? {
-            ValidateCallbackResult::Valid => { },
-            validate_callback_result => return Ok(validate_callback_result),
+        match _validate_update_authorization(&validate_data, &previous_change_rule, &proposed_change_rule) {
+            Ok(ValidateCallbackResult::Valid) => { },
+            validate_callback_result => return validate_callback_result,
         }
 
-        match _validate_spec(&proposed_change_rule)? {
-            ValidateCallbackResult::Valid => { },
-            validate_callback_result => return Ok(validate_callback_result),
+        match _validate_update_spec(&previous_change_rule, &proposed_change_rule) {
+            Ok(ValidateCallbackResult::Valid) => { },
+            validate_callback_result => return validate_callback_result,
+        }
+
+        match _validate_spec(&proposed_change_rule) {
+            Ok(ValidateCallbackResult::Valid) => { },
+            validate_callback_result => return validate_callback_result,
         }
 
         Ok(ValidateCallbackResult::Valid)
