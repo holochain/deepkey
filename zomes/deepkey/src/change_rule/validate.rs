@@ -49,10 +49,10 @@ fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule)
             return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![prev_header.into()]));
         },
         ChainStatus::Empty => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![prev_header.into()])),
-        ChainStatus::Invalid(ChainHead{ header_seq, .. }) => if header_seq < must_be_valid_top {
+        ChainStatus::Invalid(ChainHead{ header_seq, .. }) => if header_seq <= must_be_valid_top {
             return Error::InvalidChain.into();
         },
-        ChainStatus::Forked(ChainFork { fork_seq, .. }) => if fork_seq < must_be_valid_top {
+        ChainStatus::Forked(ChainFork { fork_seq, .. }) => if fork_seq <= must_be_valid_top {
             return Error::InvalidChain.into();
         },
     };
