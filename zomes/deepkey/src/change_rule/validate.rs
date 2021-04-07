@@ -41,25 +41,21 @@ fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule)
         .entry_type(entry_type!(DeviceInviteAcceptance)?);
     let leaf_agent_activity = get_agent_activity(validate_data.element.header().author().clone().into(), leaf_query, ActivityRequest::Full)?;
 
-    let valid_top: u32 = match leaf_agent_activity.status {
-        ChainStatus::Valid(ChainHead { header_seq, .. }) => header_seq,
-        ChainStatus::Empty => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![prev_header.into()])),
-        // Forked or Invalid
-        // @todo is this deterministic when combined with a range filter?
-        // i.e. if it is invalid or forked later does this change validation?
-        _ => return Error::InvalidChain.into(),
-    };
-
     // The agent activity needs to have validated the headers of the chain up to the point of this element.
-    if valid_top < (validate_data.element.header().header_seq() - 1 ) {
-        // This is a bit weird.
-        // It is the _agent activity neighbour_ that has unresolved dependencies from the perspective of the _element authority_.
-        return Ok(
-            ValidateCallbackResult::UnresolvedDependencies(
-                vec![prev_header.into()]
-            )
-        );
-    }
+    // It is the _agent activity neighbour_ that has unresolved dependencies from the perspective of the _element authority_.
+    let must_be_valid_top = validate_data.element.header().header_seq() - 1;
+    match leaf_agent_activity.status {
+        ChainStatus::Valid(ChainHead { header_seq, .. }) => if header_seq < must_be_valid_top {
+            return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![prev_header.into()]));
+        },
+        ChainStatus::Empty => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![prev_header.into()])),
+        ChainStatus::Invalid(ChainHead{ header_seq, .. }) => if header_seq < must_be_valid_top {
+            return Error::InvalidChain.into();
+        },
+        ChainStatus::Forked(ChainFork { fork_seq, .. }) => if fork_seq < must_be_valid_top {
+            return Error::InvalidChain.into();
+        },
+    };
 
     if leaf_agent_activity.valid_activity.len() != 1 {
         return Error::StaleKeysetLeaf.into();
@@ -362,6 +358,41 @@ pub mod tests {
         assert_eq!(
             super::_validate_keyset_leaf(&validate_data, &change_rule),
             Ok(ValidateCallbackResult::UnresolvedDependencies(vec![validate_data.element.header().prev_header().unwrap().clone().into()]))
+        );
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_get().return_const(Ok(Some(device_invite_acceptance_element.clone())));
+        mock_hdk.expect_zome_info().return_const(Ok(fixt!(ZomeInfo)));
+        agent_activity.status = ChainStatus::Invalid(ChainHead {
+            hash: fixt!(HeaderHash),
+            header_seq: 20,
+        });
+        mock_hdk.expect_get_agent_activity().return_const(Ok(agent_activity.clone()));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::_validate_keyset_leaf(&validate_data, &change_rule),
+            Error::InvalidChain.into(),
+        );
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_get().return_const(Ok(Some(device_invite_acceptance_element.clone())));
+        mock_hdk.expect_zome_info().return_const(Ok(fixt!(ZomeInfo)));
+        agent_activity.status = ChainStatus::Forked(ChainFork {
+            first_header: fixt!(HeaderHash),
+            second_header: fixt!(HeaderHash),
+            fork_seq: 20,
+        });
+        mock_hdk.expect_get_agent_activity().return_const(Ok(agent_activity.clone()));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::_validate_keyset_leaf(&validate_data, &change_rule),
+            Error::InvalidChain.into(),
         );
 
         let mut mock_hdk = MockHdkT::new();
