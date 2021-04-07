@@ -57,6 +57,12 @@ pub enum Error {
     #[error("The new ChangeRule has the same spec as the previous one")]
     IdenticalUpdate,
 
+    #[error("The new ChangeRule update does not reference the root ChangeRule")]
+    BranchingUpdates,
+
+    #[error("The ChangeRule created does not immediately follow its KeysetRoot")]
+    CreateNotAfterKeysetRoot,
+
     #[error("Wasm error {0}")]
     Wasm(WasmError)
 }

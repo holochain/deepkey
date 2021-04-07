@@ -1,5 +1,5 @@
 use hdk::prelude::*;
-use crate::key::entry::Key;
+use crate::key::entry::KeyAnchor;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum KeyState {
@@ -11,7 +11,7 @@ pub enum KeyState {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct KeyStateInput {
-    key: Key,
+    key: KeyAnchor,
     // @todo the timestamp needs to do something.
     timestamp: Timestamp,
 }
@@ -21,7 +21,7 @@ pub struct KeyStateInput {
 // This is not about the device or keyset root, this is about the registered and revoked keys in the system
 // so this is a key::PubKey
 fn key_state(input: KeyStateInput) -> ExternResult<KeyState> {
-    Ok(match get_details(hash_entry(Key::from(input.key))?, GetOptions::latest())? {
+    Ok(match get_details(hash_entry(KeyAnchor::from(input.key))?, GetOptions::latest())? {
         Some(details) => {
             match details {
                 Details::Entry(entry_details) => {

@@ -8,6 +8,19 @@ use crate::key_registration::entry::KeyGeneration;
 use crate::change_rule::entry::ChangeRule;
 use crate::key_registration::error::Error;
 
+fn _validate_key_self_signing(validate_data: &ValidateData, key_generation: &KeyGeneration) -> ExternResult<ValidateCallbackResult> {
+    if verify_signature_raw(
+        key_generation.as_new_key_ref().to_owned(),
+        key_generation.as_new_key_signing_of_author_ref().to_owned(),
+        validate_data.element.header().author().get_raw_32().to_vec()
+    )? {
+        Ok(ValidateCallbackResult::Valid)
+    }
+    else {
+        Error::BadSelfSignature.into()
+    }
+}
+
 fn _validate_key_generation(validate_data: &ValidateData, key_generation: &KeyGeneration) -> ExternResult<ValidateCallbackResult> {
     let (generator_element, generator) = match resolve_dependency::<Generator>(key_generation.as_generator_ref().to_owned().into())? {
         Ok(ResolvedDependency(generator_element, generator)) => (generator_element, generator),
@@ -16,6 +29,11 @@ fn _validate_key_generation(validate_data: &ValidateData, key_generation: &KeyGe
 
     if generator_element.header().author() != validate_data.element.header().author() {
         return Error::BadAuthor.into()
+    }
+
+    match _validate_key_self_signing(validate_data, key_generation) {
+        Ok(ValidateCallbackResult::Valid) => { },
+        validate_callback_result => return validate_callback_result,
     }
 
     if verify_signature_raw(

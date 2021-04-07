@@ -84,14 +84,17 @@ fn _validate_spec(change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResu
     }
 }
 
-fn _validate_create_keyset_root(validate_data: &ValidateData, _: &ChangeRule, keyset_root: &KeysetRoot) -> ExternResult<ValidateCallbackResult> {
+fn _validate_create_keyset_root(validate_data: &ValidateData, change_rule: &ChangeRule, keyset_root: &KeysetRoot) -> ExternResult<ValidateCallbackResult> {
     // // The KSR needs to reference the author as the FDA.
     if keyset_root.as_first_deepkey_agent_ref() != validate_data.element.signed_header().header().author() {
-        Error::AuthorNotFda.into()
+        return Error::AuthorNotFda.into()
     }
-    else {
-        Ok(ValidateCallbackResult::Valid)
+
+    if validate_data.element.header().prev_header() != Some(change_rule.as_keyset_root_ref()) {
+        return Error::CreateNotAfterKeysetRoot.into()
     }
+
+    Ok(ValidateCallbackResult::Valid)
 }
 
 fn _validate_create_authorization(_: &ValidateData, change_rule: &ChangeRule, keyset_root: &KeysetRoot) -> ExternResult<ValidateCallbackResult> {
@@ -177,6 +180,17 @@ fn _validate_update_spec(previous_change_rule: &ChangeRule, proposed_change_rule
     }
 }
 
+// We want a flat CRUD tree so that get_details on the first change rule returns all the subsequent change rules.
+fn _validate_flat_update_tree(previous_change_rule_element: &Element)  -> ExternResult<ValidateCallbackResult> {
+    // The previous change rule MUST be the root of the CRUD tree.
+    // i.e. the updates MUST always point to the original Create header (not an Update).
+    // The create validation ensures that it always immediately follows the KeysetRoot
+    match previous_change_rule_element.header() {
+        Header::Create(_) => Ok(ValidateCallbackResult::Valid),
+        _ => Error::BranchingUpdates.into(),
+    }
+}
+
 #[hdk_extern]
 fn validate_update_entry_key_change_rule(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     let proposed_change_rule = match ChangeRule::try_from(&validate_data.element) {
@@ -192,8 +206,8 @@ fn validate_update_entry_key_change_rule(validate_data: ValidateData) -> ExternR
 
     // On update we need to validate the proposed change rule under the rules of the previous rule.
     if let Header::Update(update_header) = validate_data.element.header().clone() {
-        let previous_change_rule: ChangeRule = match resolve_dependency(update_header.original_header_address.into())? {
-            Ok(ResolvedDependency(_, change_rule)) => change_rule,
+        let (previous_change_rule_element, previous_change_rule) = match resolve_dependency::<ChangeRule>(update_header.original_header_address.into())? {
+            Ok(ResolvedDependency(previous_change_rule_element, change_rule)) => (previous_change_rule_element, change_rule),
             Err(validate_callback_result) => return Ok(validate_callback_result),
         };
 
@@ -203,6 +217,11 @@ fn validate_update_entry_key_change_rule(validate_data: ValidateData) -> ExternR
                 Err(validate_callback_result) => return Ok(validate_callback_result),
                 _ => { },
             }
+        }
+
+        match _validate_flat_update_tree(&previous_change_rule_element) {
+            Ok(ValidateCallbackResult::Valid) => { },
+            validate_callback_result => return validate_callback_result,
         }
 
         match _validate_keyset_leaf(&validate_data, &proposed_change_rule) {

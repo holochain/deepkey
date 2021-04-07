@@ -1,12 +1,9 @@
 use hdk::prelude::*;
-use crate::key::entry::Key;
 use crate::change_rule::entry::Authorization;
 #[cfg(test)]
 use ::fixt::prelude::*;
 #[cfg(test)]
 use crate::change_rule::entry::AuthorizationVecFixturator;
-#[cfg(test)]
-use crate::key::entry::KeyFixturator;
 
 /// Same as entry_def_index! but constant.
 /// Has test coverage in case entry_defs! ever changes.
@@ -14,7 +11,8 @@ pub const KEY_REGISTRATION_INDEX: EntryDefIndex = EntryDefIndex(6);
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct KeyGeneration {
-    new_key: Key,
+    new_key: AgentPubKey,
+    new_key_signing_of_author: Signature,
     // Ensure the generator has the same author as the KeyRegistration.
     generator: HeaderHash,
     generator_signature: Signature,
@@ -23,16 +21,20 @@ pub struct KeyGeneration {
 #[cfg(test)]
 fixturator!(
     KeyGeneration;
-    constructor fn new(Key, HeaderHash, Signature);
+    constructor fn new(AgentPubKey, Signature, HeaderHash, Signature);
 );
 
 impl KeyGeneration {
-    pub fn new(new_key: Key, generator: HeaderHash, generator_signature: Signature) -> Self {
-        Self { new_key, generator, generator_signature }
+    pub fn new(new_key: AgentPubKey, new_key_signing_of_author: Signature, generator: HeaderHash, generator_signature: Signature) -> Self {
+        Self { new_key, new_key_signing_of_author, generator, generator_signature }
     }
 
-    pub fn as_new_key_ref(&self) -> &Key {
+    pub fn as_new_key_ref(&self) -> &AgentPubKey {
         &self.new_key
+    }
+
+    pub fn as_new_key_signing_of_author_ref(&self) -> &Signature {
+        &self.new_key_signing_of_author
     }
 
     pub fn as_generator_ref(&self) -> &HeaderHash {
