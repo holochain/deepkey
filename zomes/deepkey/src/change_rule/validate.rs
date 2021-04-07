@@ -46,15 +46,17 @@ fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule)
         None => return Error::MissingPrevHeader.into(),
     };
 
-    let highest_observed: HighestObserved = match leaf_agent_activity.highest_observed {
-        Some(highest_observed) => highest_observed,
-        None => return Ok(ValidateCallbackResult::UnresolvedDependencies(
-            vec![prev_header.into()]
-        )),
+    let valid_top: HeaderHash = match leaf_agent_activity.status {
+        ChainStatus::Valid(ChainHead { hash, .. }) => hash,
+        ChainStatus::Empty => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![prev_header.into()])),
+        // Forked or Invalid
+        // @todo is this deterministic when combined with a range filter?
+        // i.e. if it is invalid or forked later does this change validation?
+        _ => return Error::InvalidChain.into(),
     };
 
-    // The agent activity needs to have observed the chain up to the point of this element.
-    if highest_observed.header_seq < ( validate_data.element.header().header_seq() - 1 ) {
+    // The agent activity needs to have validated the headers of the chain up to the point of this element.
+    if Some(&valid_top) == validate_data.element.header().prev_header() {
         // This is a bit weird.
         // It is the _agent activity neighbour_ that has unresolved dependencies from the perspective of the _element authority_.
         return Ok(
