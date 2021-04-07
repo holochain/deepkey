@@ -4,34 +4,34 @@ use crate::change_rule::entry::ChangeRule;
 use crate::keyset_root::entry::KeysetRoot;
 use crate::validate::ResolvedDependency;
 use crate::validate::resolve_dependency;
-use crate::keyset_root::entry::KEYSET_ROOT_INDEX;
-use crate::device_authorization::device_invite_acceptance::entry::DEVICE_INVITE_ACCEPTANCE_INDEX;
 use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
 
 fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResult> {
+    // System validation should be catching this...
+    let prev_header: HeaderHash = match validate_data.element.header().prev_header() {
+        Some(prev_header) => prev_header.clone(),
+        None => return Error::MissingPrevHeader.into(),
+    };
+
     let leaf_header_element: Element = match get(change_rule.as_keyset_leaf_ref().clone(), GetOptions::content())? {
         Some(element) => element,
         None => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![change_rule.as_keyset_leaf_ref().clone().into()])),
     };
 
-    match leaf_header_element.header().entry_type() {
-        Some(EntryType::App(app_entry_type)) => if app_entry_type.id() == KEYSET_ROOT_INDEX {
-            if change_rule.keyset_root != change_rule.keyset_leaf {
-                return Error::BadKeysetLeaf.into();
-            }
-        } else if app_entry_type.id() == DEVICE_INVITE_ACCEPTANCE_INDEX {
-            let device_invite_acceptance = match DeviceInviteAcceptance::try_from(&leaf_header_element) {
-                Ok(device_invite_acceptance) => device_invite_acceptance,
-                Err(e) => return Ok(ValidateCallbackResult::Invalid(e.to_string())),
-            };
-            if change_rule.keyset_root != device_invite_acceptance.keyset_root_authority {
-                return Error::BadKeysetLeaf.into();
-            }
+    // The leaf MUST be a device acceptance if not the root itself.
+    if change_rule.keyset_root != change_rule.keyset_leaf {
+        // so it MUST deserialize cleanly
+        let device_invite_acceptance = match DeviceInviteAcceptance::try_from(&leaf_header_element) {
+            Ok(device_invite_acceptance) => device_invite_acceptance,
+            Err(e) => return Ok(ValidateCallbackResult::Invalid(e.to_string())),
+        };
+        // and the keyset root MUST be the same on the leaf and change rule
+        if change_rule.as_keyset_root_ref() != device_invite_acceptance.as_keyset_root_authority_ref() {
+            return Error::BadKeysetLeaf.into();
         }
-        else {
-            return Error::BadKeysetLeafType.into();
-        },
-        _ => return Error::BadKeysetLeafType.into(),
+    }
+    else {
+        // We already validate the keyset root as a root elsewhere so nothing to do here...
     }
 
     let leaf_query = ChainQueryFilter::default()
@@ -41,13 +41,8 @@ fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule)
         .entry_type(entry_type!(DeviceInviteAcceptance)?);
     let leaf_agent_activity = get_agent_activity(validate_data.element.header().author().clone().into(), leaf_query, ActivityRequest::Full)?;
 
-    let prev_header: HeaderHash = match validate_data.element.header().prev_header() {
-        Some(prev_header) => prev_header.clone(),
-        None => return Error::MissingPrevHeader.into(),
-    };
-
-    let valid_top: HeaderHash = match leaf_agent_activity.status {
-        ChainStatus::Valid(ChainHead { hash, .. }) => hash,
+    let valid_top: u32 = match leaf_agent_activity.status {
+        ChainStatus::Valid(ChainHead { header_seq, .. }) => header_seq,
         ChainStatus::Empty => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![prev_header.into()])),
         // Forked or Invalid
         // @todo is this deterministic when combined with a range filter?
@@ -56,7 +51,7 @@ fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule)
     };
 
     // The agent activity needs to have validated the headers of the chain up to the point of this element.
-    if Some(&valid_top) == validate_data.element.header().prev_header() {
+    if valid_top < (validate_data.element.header().header_seq() - 1 ) {
         // This is a bit weird.
         // It is the _agent activity neighbour_ that has unresolved dependencies from the perspective of the _element authority_.
         return Ok(
@@ -67,6 +62,9 @@ fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule)
     }
 
     if leaf_agent_activity.valid_activity.len() != 1 {
+        return Error::StaleKeysetLeaf.into();
+    }
+    if leaf_agent_activity.valid_activity[0].1 != change_rule.keyset_leaf {
         return Error::StaleKeysetLeaf.into();
     }
 
@@ -246,6 +244,7 @@ fn validate_delete_entry_key_change_rule(_: ValidateData) -> ExternResult<Valida
 
 #[cfg(test)]
 pub mod tests {
+    use hdk::prelude::*;
     use ::fixt::prelude::*;
     use holochain_types::prelude::*;
     use crate::change_rule::entry::ChangeRuleFixturator;
@@ -253,6 +252,236 @@ pub mod tests {
     use crate::change_rule::error::Error;
     use crate::change_rule::entry::AuthorizationFixturator;
     use crate::change_rule::entry::Authorization;
+    use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptanceFixturator;
+
+    #[test]
+    fn test_validate_keyset_leaf() {
+        let mut validate_data = fixt!(ValidateData);
+        let mut validate_header = fixt!(Update);
+        validate_header.header_seq = 50;
+
+        *validate_data.element.as_header_mut() = Header::Update(validate_header);
+
+        let change_rule = fixt!(ChangeRule);
+        let mut device_invite_acceptance = fixt!(DeviceInviteAcceptance);
+        let mut device_invite_acceptance_element = fixt!(Element);
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_get().with(
+            mockall::predicate::eq(
+                GetInput::new(
+                    change_rule.as_keyset_leaf_ref().clone().into(),
+                    GetOptions::content()
+                )
+            )
+        )
+        .return_const(Ok(None));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::_validate_keyset_leaf(&validate_data, &change_rule),
+            Ok(ValidateCallbackResult::UnresolvedDependencies(vec![change_rule.as_keyset_leaf_ref().clone().into()])),
+        );
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_get().with(
+            mockall::predicate::eq(
+                GetInput::new(
+                    change_rule.as_keyset_leaf_ref().clone().into(),
+                    GetOptions::content()
+                )
+            )
+        )
+        .return_const(Ok(Some(device_invite_acceptance_element.clone())));
+
+        set_hdk(mock_hdk);
+
+        *device_invite_acceptance_element.as_header_mut() = Header::Update(fixt!(Update));
+        *device_invite_acceptance_element.as_entry_mut() = ElementEntry::Present(device_invite_acceptance.clone().try_into().unwrap());
+
+        assert_eq!(
+            super::_validate_keyset_leaf(&validate_data, &change_rule),
+            crate::error::Error::WrongHeader.into(),
+        );
+
+        let mut device_invite_element_header = fixt!(Create);
+        device_invite_element_header.header_seq = 25;
+        *device_invite_acceptance_element.as_header_mut() = Header::Create(device_invite_element_header);
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_get().with(
+            mockall::predicate::eq(
+                GetInput::new(
+                    change_rule.as_keyset_leaf_ref().clone().into(),
+                    GetOptions::content()
+                )
+            )
+        )
+        .return_const(Ok(Some(device_invite_acceptance_element.clone())));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::_validate_keyset_leaf(&validate_data, &change_rule),
+            Error::BadKeysetLeaf.into(),
+        );
+
+        device_invite_acceptance.keyset_root_authority = change_rule.as_keyset_root_ref().clone();
+        *device_invite_acceptance_element.as_entry_mut() = ElementEntry::Present(device_invite_acceptance.clone().try_into().unwrap());
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_get().with(
+            mockall::predicate::eq(
+                GetInput::new(
+                    change_rule.as_keyset_leaf_ref().clone().into(),
+                    GetOptions::content()
+                )
+            )
+        )
+        .return_const(Ok(Some(device_invite_acceptance_element.clone())));
+
+        mock_hdk.expect_zome_info().return_const(Ok(fixt!(ZomeInfo)));
+
+        let mut agent_activity = AgentActivity {
+            valid_activity: vec![],
+            rejected_activity: vec![],
+            status: ChainStatus::Empty,
+            highest_observed: None,
+            warrants: vec![],
+        };
+
+        mock_hdk.expect_get_agent_activity().return_const(Ok(agent_activity.clone()));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::_validate_keyset_leaf(&validate_data, &change_rule),
+            Ok(ValidateCallbackResult::UnresolvedDependencies(vec![validate_data.element.header().prev_header().unwrap().clone().into()]))
+        );
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_get().with(
+            mockall::predicate::eq(
+                GetInput::new(
+                    change_rule.as_keyset_leaf_ref().clone().into(),
+                    GetOptions::content()
+                )
+            )
+        )
+        .return_const(Ok(Some(device_invite_acceptance_element.clone())));
+
+        mock_hdk.expect_zome_info().return_const(Ok(fixt!(ZomeInfo)));
+
+        agent_activity.status = ChainStatus::Valid(ChainHead {
+            hash: fixt!(HeaderHash),
+            header_seq: 20
+        });
+
+        mock_hdk.expect_get_agent_activity().return_const(Ok(agent_activity.clone()));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::_validate_keyset_leaf(&validate_data, &change_rule),
+            Ok(ValidateCallbackResult::UnresolvedDependencies(vec![validate_data.element.header().prev_header().unwrap().clone().into()]))
+        );
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_get().with(
+            mockall::predicate::eq(
+                GetInput::new(
+                    change_rule.as_keyset_leaf_ref().clone().into(),
+                    GetOptions::content()
+                )
+            )
+        )
+        .return_const(Ok(Some(device_invite_acceptance_element.clone())));
+
+        mock_hdk.expect_zome_info().return_const(Ok(fixt!(ZomeInfo)));
+
+        agent_activity.status = ChainStatus::Valid(ChainHead {
+            hash: fixt!(HeaderHash),
+            header_seq: 200
+        });
+
+        agent_activity.valid_activity = vec![(0, fixt!(HeaderHash)), (30, fixt!(HeaderHash))];
+
+        mock_hdk.expect_get_agent_activity().return_const(Ok(agent_activity.clone()));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::_validate_keyset_leaf(&validate_data, &change_rule),
+            Error::StaleKeysetLeaf.into(),
+        );
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_get().with(
+            mockall::predicate::eq(
+                GetInput::new(
+                    change_rule.as_keyset_leaf_ref().clone().into(),
+                    GetOptions::content()
+                )
+            )
+        )
+        .return_const(Ok(Some(device_invite_acceptance_element.clone())));
+
+        mock_hdk.expect_zome_info().return_const(Ok(fixt!(ZomeInfo)));
+
+        agent_activity.status = ChainStatus::Valid(ChainHead {
+            hash: fixt!(HeaderHash),
+            header_seq: 200
+        });
+
+        agent_activity.valid_activity = vec![(30, fixt!(HeaderHash))];
+
+        mock_hdk.expect_get_agent_activity().return_const(Ok(agent_activity.clone()));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::_validate_keyset_leaf(&validate_data, &change_rule),
+            Error::StaleKeysetLeaf.into(),
+        );
+
+        let mut mock_hdk = MockHdkT::new();
+
+        mock_hdk.expect_get().with(
+            mockall::predicate::eq(
+                GetInput::new(
+                    change_rule.as_keyset_leaf_ref().clone().into(),
+                    GetOptions::content()
+                )
+            )
+        )
+        .return_const(Ok(Some(device_invite_acceptance_element.clone())));
+
+        mock_hdk.expect_zome_info().return_const(Ok(fixt!(ZomeInfo)));
+
+        agent_activity.status = ChainStatus::Valid(ChainHead {
+            hash: fixt!(HeaderHash),
+            header_seq: 200
+        });
+
+        agent_activity.valid_activity = vec![(30, change_rule.as_keyset_leaf_ref().clone())];
+
+        mock_hdk.expect_get_agent_activity().return_const(Ok(agent_activity.clone()));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::_validate_keyset_leaf(&validate_data, &change_rule),
+            Ok(ValidateCallbackResult::Valid)
+        );
+    }
 
     #[test]
     fn test_validate_update() {
