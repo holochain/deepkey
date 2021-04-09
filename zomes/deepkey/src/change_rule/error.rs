@@ -39,8 +39,8 @@ pub enum Error {
     #[error("The new ChangeRule references a stale keyset leaf")]
     StaleKeysetLeaf,
 
-    #[error("The new ChangeRule has no previous header")]
-    MissingPrevHeader,
+    #[error("The new ChangeRule has no validation package")]
+    MissingValidationPackage,
 
     #[error("The new ChangeRule is being proposed on an invalid chain")]
     InvalidChain,
