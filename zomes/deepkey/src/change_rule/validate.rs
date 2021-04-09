@@ -6,15 +6,7 @@ use crate::validate::ResolvedDependency;
 use crate::validate::resolve_dependency;
 use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
 
-
-
 fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResult> {
-    // // System validation should be catching this...
-    // let prev_header: HeaderHash = match validate_data.element.header().prev_header() {
-    //     Some(prev_header) => prev_header.clone(),
-    //     None => return Error::MissingPrevHeader.into(),
-    // };
-
     let leaf_header_element: Element = match get(change_rule.as_keyset_leaf_ref().clone(), GetOptions::content())? {
         Some(element) => element,
         None => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![change_rule.as_keyset_leaf_ref().clone().into()])),

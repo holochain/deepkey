@@ -42,9 +42,6 @@ pub enum Error {
     #[error("The new ChangeRule has no validation package")]
     MissingValidationPackage,
 
-    #[error("The new ChangeRule is being proposed on an invalid chain")]
-    InvalidChain,
-
     #[error("The new ChangeRule has an invalid signature")]
     BadUpdateSignature,
 
