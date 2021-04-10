@@ -128,21 +128,23 @@ fn validate_update_entry_key_registration(validate_data: ValidateData) -> Extern
 #[hdk_extern]
 /// It is possible to delete a key registration entry IFF the previous element was an update that included a KeyRegistration::Delete
 ///
+/// Currently this MUST be committed immediately after an update KeyRegistration::Delete and the KeyAnchor validation for Delete will check this and must reference this.
+///
 /// @todo
 ///  - not sure of the usefulness of this, seems like it could open up optimisations on the get side of things later
 ///  - an attacker can always NOT include this, so it's intentionally left open for anyone to be able to "heal" a CRUD tree that has not been properly tombstoned
 fn validate_delete_entry_key_registration(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     match validate_data.element.header() {
         Header::Delete(delete_header) => {
-            let prior_key_registration: KeyRegistration = match resolve_dependency(delete_header.deletes_address.clone().into())? {
-                Ok(ResolvedDependency(_, prior_key_registration)) => prior_key_registration,
-                Err(validate_callback_result) => return Ok(validate_callback_result),
+            match resolve_dependency::<KeyRegistration>(delete_header.deletes_address.clone().into())? {
+                Ok(ResolvedDependency(_, prior_key_registration)) => match prior_key_registration {
+                    KeyRegistration::Delete(_) => Ok(ValidateCallbackResult::Valid),
+                    // Can only Delete a KeyRegistration::Delete from an Update.
+                    // Tombstoning logic for that is in the update validation.
+                    _ => Error::BadOp.into(),
+                },
+                Err(validate_callback_result) => Ok(validate_callback_result),
             };
-
-            match prior_key_registration {
-                KeyRegistration::Delete(_) => Ok(ValidateCallbackResult::Valid),
-                _ => Error::BadOp.into(),
-            }
         },
         _ => crate::error::Error::WrongHeader.into(),
     }

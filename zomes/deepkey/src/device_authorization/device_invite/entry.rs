@@ -6,7 +6,7 @@ use ::fixt::prelude::*;
 /// Has test coverage in case entry_defs! ever changes.
 pub const DEVICE_INVITE_INDEX: EntryDefIndex = EntryDefIndex(1);
 
-#[hdk_entry(id = "device_invite")]
+#[hdk_entry(id = "device_invite", required_validation_type = "full")]
 #[derive(Clone)]
 pub struct DeviceInvite {
     pub keyset_root_authority: HeaderHash,

@@ -3,7 +3,7 @@ pub mod device_authorization;
 pub mod dna_binding;
 pub mod entry;
 pub mod generator;
-pub mod key;
+pub mod key_anchor;
 pub mod key_registration;
 pub mod keyset_root;
 pub mod link;
