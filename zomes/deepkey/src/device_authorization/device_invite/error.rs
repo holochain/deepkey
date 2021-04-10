@@ -27,6 +27,12 @@ pub enum Error {
     #[error("DeviceInvite attempted to self-invite author")]
     SelfInvite,
 
+    #[error("The new DeviceInvite references a stale keyset leaf")]
+    StaleKeysetLeaf,
+
+    #[error("The new ChangeRule has no validation package")]
+    MissingValidationPackage,
+
     #[error("Wasm error {0}")]
     Wasm(WasmError)
 }

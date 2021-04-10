@@ -17,6 +17,28 @@ fn _validate_self(create_header: &Create, device_invite: &DeviceInvite) -> Exter
     }
 }
 
+fn _validate_parent_current(validate_data: &ValidateData, device_invite: &DeviceInvite) -> ExternResult<ValidateCallbackResult> {
+    let parent_element: Element = match get(device_invite.as_parent_ref().clone(), GetOptions::content())? {
+        Some(element) => element,
+        None => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![device_invite.as_parent_ref().clone().into()])),
+    };
+    match &validate_data.validation_package {
+        Some(ValidationPackage(elements)) => {
+            let device_invite_acceptance_type = entry_type!(DeviceInviteAcceptance)?;
+            let device_invite_acceptances: Vec<&Element> = elements.iter()
+                .filter(|element| element.header().entry_type() == Some(&device_invite_acceptance_type))
+                .filter(|element| element.header().header_seq() >= parent_element.header().header_seq())
+                .collect();
+            if device_invite_acceptances.len() != 1 {
+                return Error::StaleKeysetLeaf.into();
+            }
+        },
+        None => return Error::MissingValidationPackage.into(),
+    }
+
+    Ok(ValidateCallbackResult::Valid)
+}
+
 /// If the parent _is_ the KSRA then it gets special treatment.
 /// All we care about is that the invitor is the FDA, in which case they can invite any device.
 fn _validate_create_parent_ksr(create_header: &Create, parent: &KeysetRoot, _: &DeviceInvite) -> ExternResult<ValidateCallbackResult> {
@@ -57,6 +79,11 @@ fn validate_create_entry_device_invite(validate_data: ValidateData) -> ExternRes
 
     if let Header::Create(create_header) = validate_data.element.header().clone() {
         match _validate_self(&create_header, &device_invite) {
+            Ok(ValidateCallbackResult::Valid) => { },
+            validate_callback_result => return validate_callback_result,
+        }
+
+        match _validate_parent_current(&validate_data, &device_invite) {
             Ok(ValidateCallbackResult::Valid) => { },
             validate_callback_result => return validate_callback_result,
         }
