@@ -76,7 +76,7 @@ impl AuthorizedSpecChange {
     }
 }
 
-#[hdk_entry(id = "change_rule")]
+#[hdk_entry(id = "change_rule", required_validation_type = "full")]
 // The author needs to be linked from the KeysetRoot
 #[derive(Clone)]
 pub struct ChangeRule {
