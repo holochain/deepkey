@@ -1,9 +1,18 @@
 use hdk::prelude::*;
 
+/// The revoked key anchor must match the revoked generation of that key.
 fn _validate_key_revocation(revoked_key_anchor: &KeyAnchor, key_revocation: &KeyRevocation) -> ExternResult<ValidateCallbackResult> {
-
+    let revoked_registration: KeyRegistration = match resolve_dependency(key_revocation.prior_key_registration.clone())? {
+        Ok(ResolvedDependency(_, revoked_registration)) => revoked_registration,
+        Err(validate_callback_result) => return Ok(validate_callback_result),
+    };
+    match revoked_registration {
+        KeyRegistration::Create(key_generation) | KeyRegistration::Update(_, key_generation) => _validate_key_generation(revoked_key_anchor, key_generation),
+        KeyRegistration::Delete(_) => Error::RegistrationWrongOp.into(),
+    }
 }
 
+/// The new key anchor must match the generation of the key.
 fn _validate_key_generation(proposed_key_anchor: &KeyAnchor, key_generation: &KeyGeneration) -> ExternResult<ValidateCallbackResult> {
     if key_generation.new_key.get_raw_32() == proposed_key_anchor.as_ref() {
         Ok(ValidateCallbackResult::Valid)
@@ -83,13 +92,18 @@ fn validate_delete_entry_key_anchor(validate_data: ValidateData) -> ExternResult
         None => Error::RegistrationNone.into(),
     };
 
+    let revoked_key_anchor: KeyAnchor = match resolve_dependency(validate_data.element.header().deletes_address.clone().into())? {
+        Ok(ResolvedDependency(_, revoked_key_anchor)) => revoked_key_anchor,
+        Err(validate_callback_result) => return Ok(validate_callback_result),
+    };
+
     match prev_element.header() {
         Header::Delete(delete_header) => {
             match resolve_dependency::<KeyRegistration>(delete_header.deletes_address.clone().into())? {
                 Ok(ResolvedDependency(key_registration_element, key_registration)) => match key_registration_element.header() {
                     Header::Update(_) => match key_registration {
                         KeyRegistration::Delete(key_revocation) => {
-                            _validate_key_revocation()
+                            _validate_key_revocation(&revoked_key_anchor, key_revocation)
                         },
                         _ => Error::RegistrationWrongOp.into(),
                     },

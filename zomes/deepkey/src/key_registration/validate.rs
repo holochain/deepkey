@@ -144,7 +144,7 @@ fn validate_delete_entry_key_registration(validate_data: ValidateData) -> Extern
                     _ => Error::BadOp.into(),
                 },
                 Err(validate_callback_result) => Ok(validate_callback_result),
-            };
+            }
         },
         _ => crate::error::Error::WrongHeader.into(),
     }
