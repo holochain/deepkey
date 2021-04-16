@@ -10,6 +10,7 @@ pub const DEVICE_INVITE_INDEX: EntryDefIndex = EntryDefIndex(1);
 #[derive(Clone)]
 pub struct DeviceInvite {
     pub keyset_root_authority: HeaderHash,
+    // Either the KeysetRoot or the DeviceInviteAcceptance
     pub parent: HeaderHash,
     pub device_agent: AgentPubKey,
 }

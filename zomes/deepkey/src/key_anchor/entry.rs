@@ -1,9 +1,18 @@
 use hdk::prelude::*;
+use crate::key_registration::entry::KeyGeneration;
 
 pub const KEY_ANCHOR_BYTES: usize = 32;
 
 #[derive(Clone, Copy, Debug, SerializedBytes)]
 pub struct KeyAnchor([u8; KEY_ANCHOR_BYTES]);
+
+impl From<&KeyGeneration> for KeyAnchor {
+    fn from(key_registration: &KeyGeneration) -> Self {
+        let mut bytes = [0; 32];
+        bytes.copy_from_slice(key_registration.as_new_key_ref().get_raw_32());
+        Self(bytes)
+    }
+}
 
 entry_def!(KeyAnchor EntryDef {
     id: "key_anchor".into(),

@@ -33,6 +33,9 @@ pub enum Error {
     #[error("The new ChangeRule has no validation package")]
     MissingValidationPackage,
 
+    #[error("No KeysetFound on chain")]
+    MissingKeyset,
+
     #[error("Wasm error {0}")]
     Wasm(WasmError)
 }
@@ -40,6 +43,12 @@ pub enum Error {
 impl From<Error> for ValidateCallbackResult {
     fn from(e: Error) -> Self {
         Self::Invalid(e.to_string())
+    }
+}
+
+impl From<Error> for WasmError {
+    fn from(e: Error) -> Self {
+        Self::Guest(e.to_string())
     }
 }
 

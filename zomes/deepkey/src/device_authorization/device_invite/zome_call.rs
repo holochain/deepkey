@@ -1,20 +1,31 @@
 use hdk::prelude::*;
-
-// @todo does this still make sense?
-// #[hdk_extern]
-// fn create_device_authorization(device: entry::DeviceAuthorization) -> ExternResult<HeaderHash> {
-//     create_entry(device)
-// }
+use crate::device_authorization::device_invite::entry::DeviceInvite;
+use crate::keyset_root::entry::KEYSET_ROOT_CHAIN_INDEX;
+use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
+use crate::device_authorization::device_invite::error::Error;
 
 #[hdk_extern]
-fn invite_agent(_invitee: AgentPubKey) -> ExternResult<()> {
-    // @todo
-    // let device_authorizatation: DeviceAuthorization = current_device_authorization();
-    // create_entry(DeviceInvite {
-    //     keyset_root_authority: device_authorization.keyset_root_authority(),
-    //     parent: device_authorization,
-    //     root_acceptance: accept(),
-    //     device_agent: invitee,
-    // })
-    Ok(())
+fn invite_agent(invitee: AgentPubKey) -> ExternResult<HeaderHash> {
+    let device_invite_acceptance_query = ChainQueryFilter::new().entry_type(entry_type!(DeviceInviteAcceptance)?);
+    let (keyset_root, parent) = match query(device_invite_acceptance_query)?.iter().next() {
+        Some(device_invite_acceptance_element) => {
+            let device_invite_acceptance = DeviceInviteAcceptance::try_from(device_invite_acceptance_element)?;
+            (device_invite_acceptance.keyset_root_authority, device_invite_acceptance_element.header_hashed().as_hash().to_owned())
+        },
+        None => {
+            let keyset_root_query = ChainQueryFilter::new().sequence_range(KEYSET_ROOT_CHAIN_INDEX..KEYSET_ROOT_CHAIN_INDEX);
+            match query(keyset_root_query)?.iter().next() {
+                Some(keyset_root_element) => {
+                    let header_hash = keyset_root_element.header_hashed().as_hash();
+                    (header_hash.clone(), header_hash.clone())
+                },
+                None => return Err(Error::MissingKeyset.into()),
+            }
+        }
+    };
+    create_entry(DeviceInvite::new(
+        keyset_root,
+        parent,
+        invitee,
+    ))
 }
