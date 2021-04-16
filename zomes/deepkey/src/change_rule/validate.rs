@@ -60,11 +60,12 @@ fn _validate_spec(change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResu
 }
 
 fn _validate_create_keyset_root(validate_data: &ValidateData, change_rule: &ChangeRule, keyset_root: &KeysetRoot) -> ExternResult<ValidateCallbackResult> {
-    // // The KSR needs to reference the author as the FDA.
+    // The KSR needs to reference the author as the FDA.
     if keyset_root.as_first_deepkey_agent_ref() != validate_data.element.signed_header().header().author() {
         return Error::AuthorNotFda.into()
     }
 
+    // Create must be immediately after KeysetRoot.
     if validate_data.element.header().prev_header() != Some(change_rule.as_keyset_root_ref()) {
         return Error::CreateNotAfterKeysetRoot.into()
     }

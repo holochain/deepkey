@@ -94,6 +94,7 @@ fn validate_update_entry_key_registration(validate_data: ValidateData) -> Extern
             };
 
             match prior_key_registration {
+                KeyRegistration::CreateOnly(_) => return Error::CreateOnlyUpdate.into(),
                 KeyRegistration::Create(prior_key_generation) | KeyRegistration::Update(_, prior_key_generation) => {
                     let prior_generator: Generator = match resolve_dependency(prior_key_generation.as_generator_ref().to_owned().into())? {
                         Ok(ResolvedDependency(_, prior_generator)) => prior_generator,

@@ -9,6 +9,15 @@ pub enum Error {
     #[error("Wrong header for an Element")]
     WrongHeader,
 
+    #[error("Keyset sequence is wrong")]
+    KeysetSeq,
+
+    #[error("KeyRegistration sequence is wrong")]
+    KeyRegistrationSeq,
+
+    #[error("KeysetRoot not followed by ChangeRule")]
+    KeysetRootThenChangeRule,
+
     #[error("Wasm error {0}")]
     Wasm(WasmError)
 }

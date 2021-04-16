@@ -18,6 +18,9 @@ pub enum Error {
     #[error("Attempted to revoke a revoke of a KeyRegistration")]
     Tombstone,
 
+    #[error("Attempted to update a CreateOnly KeyRegistration")]
+    CreateOnlyUpdate,
+
     #[error("Attempted to register a key under an agent that was not signed for")]
     BadSelfSignature,
 }

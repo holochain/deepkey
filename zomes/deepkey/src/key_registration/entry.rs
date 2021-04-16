@@ -77,6 +77,7 @@ impl KeyRevocation {
 #[derive(Clone)]
 pub enum KeyRegistration {
     Create(KeyGeneration),
+    CreateOnly(KeyGeneration), // Keys for hosted web users may be of this type, cannot revoke
     Update(KeyRevocation, KeyGeneration),
     Delete(KeyRevocation)
 }
