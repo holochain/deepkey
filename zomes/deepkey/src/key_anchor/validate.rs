@@ -1,20 +1,29 @@
 use hdk::prelude::*;
+use crate::key_registration::entry::KeyRegistration;
+use crate::key_anchor::error::Error;
+use crate::key_anchor::entry::KeyAnchor;
+use crate::key_registration::entry::KeyRevocation;
+use crate::validate::resolve_dependency;
+use crate::validate::ResolvedDependency;
+use crate::key_registration::entry::KeyGeneration;
 
 /// The revoked key anchor must match the revoked generation of that key.
 fn _validate_key_revocation(revoked_key_anchor: &KeyAnchor, key_revocation: &KeyRevocation) -> ExternResult<ValidateCallbackResult> {
-    let revoked_registration: KeyRegistration = match resolve_dependency(key_revocation.prior_key_registration.clone())? {
+    let revoked_registration: KeyRegistration = match resolve_dependency(key_revocation.as_prior_key_registration_ref().clone().into())? {
         Ok(ResolvedDependency(_, revoked_registration)) => revoked_registration,
         Err(validate_callback_result) => return Ok(validate_callback_result),
     };
     match revoked_registration {
-        KeyRegistration::Create(key_generation) | KeyRegistration::Update(_, key_generation) => _validate_key_generation(revoked_key_anchor, key_generation),
+        KeyRegistration::Create(key_generation) | KeyRegistration::Update(_, key_generation) => _validate_key_generation(revoked_key_anchor, &key_generation),
+        // Cannot revoke a CreateOnly.
+        KeyRegistration::CreateOnly(_) => Error::RegistrationWrongOp.into(),
         KeyRegistration::Delete(_) => Error::RegistrationWrongOp.into(),
     }
 }
 
 /// The new key anchor must match the generation of the key.
 fn _validate_key_generation(proposed_key_anchor: &KeyAnchor, key_generation: &KeyGeneration) -> ExternResult<ValidateCallbackResult> {
-    if key_generation.new_key.get_raw_32() == proposed_key_anchor.as_ref() {
+    if key_generation.as_new_key_ref().get_raw_32() == proposed_key_anchor.as_ref() {
         Ok(ValidateCallbackResult::Valid)
     }
     else {
@@ -64,8 +73,8 @@ fn validate_update_entry_key_anchor(validate_data: ValidateData) -> ExternResult
                         }
 
                         match validate_data.element.header() {
-                            Update(key_anchor_update_header) => match resolve_dependency::<KeyAnchor>(key_anchor_update_header.original_header_address.clone())? {
-                                Some(ResolvedDependency(_, updated_key_anchor)) => _validate_key_revocation(&updated_key_anchor, &key_revocation),
+                            Header::Update(key_anchor_update_header) => match resolve_dependency::<KeyAnchor>(key_anchor_update_header.original_header_address.clone().into())? {
+                                Ok(ResolvedDependency(_, updated_key_anchor)) => _validate_key_revocation(&updated_key_anchor, &key_revocation),
                                 Err(validate_callback_result) => Ok(validate_callback_result),
                             },
                             _ => Error::RegistrationWrongHeader.into(),
@@ -85,16 +94,21 @@ fn validate_update_entry_key_anchor(validate_data: ValidateData) -> ExternResult
 /// All we care about is that the previous element deleted (revoked) the right key.
 fn validate_delete_entry_key_anchor(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     let prev_element: Element = match validate_data.element.header().prev_header() {
-        Some(prev_header) => match get(prev_header.clone().into(), GetOptions::content())? {
-            Some(element) => prev_element,
+        Some(prev_header) => match get(prev_header.clone(), GetOptions::content())? {
+            Some(prev_element) => prev_element,
             None => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![prev_header.clone().into()])),
         },
-        None => Error::RegistrationNone.into(),
+        None => return Error::RegistrationNone.into(),
     };
 
-    let revoked_key_anchor: KeyAnchor = match resolve_dependency(validate_data.element.header().deletes_address.clone().into())? {
-        Ok(ResolvedDependency(_, revoked_key_anchor)) => revoked_key_anchor,
-        Err(validate_callback_result) => return Ok(validate_callback_result),
+    let revoked_key_anchor: KeyAnchor = match validate_data.element.header() {
+        Header::Delete(delete_header) => {
+            match resolve_dependency(delete_header.deletes_address.clone().into())? {
+                Ok(ResolvedDependency(_, revoked_key_anchor)) => revoked_key_anchor,
+                Err(validate_callback_result) => return Ok(validate_callback_result),
+            }
+        },
+        _ => return Error::RegistrationWrongHeader.into(),
     };
 
     match prev_element.header() {
@@ -103,14 +117,14 @@ fn validate_delete_entry_key_anchor(validate_data: ValidateData) -> ExternResult
                 Ok(ResolvedDependency(key_registration_element, key_registration)) => match key_registration_element.header() {
                     Header::Update(_) => match key_registration {
                         KeyRegistration::Delete(key_revocation) => {
-                            _validate_key_revocation(&revoked_key_anchor, key_revocation)
+                            _validate_key_revocation(&revoked_key_anchor, &key_revocation)
                         },
                         _ => Error::RegistrationWrongOp.into(),
                     },
                     _ => Error::RegistrationWrongHeader.into()
                 },
                 Err(validate_callback_result) => return Ok(validate_callback_result),
-            },
+            }
         },
         _ => Error::RegistrationWrongHeader.into(),
     }
