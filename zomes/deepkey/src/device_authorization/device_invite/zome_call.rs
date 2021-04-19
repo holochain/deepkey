@@ -13,7 +13,7 @@ fn invite_agent(invitee: AgentPubKey) -> ExternResult<HeaderHash> {
             (device_invite_acceptance.keyset_root_authority, device_invite_acceptance_element.header_hashed().as_hash().to_owned())
         },
         None => {
-            let keyset_root_query = ChainQueryFilter::new().sequence_range(KEYSET_ROOT_CHAIN_INDEX..KEYSET_ROOT_CHAIN_INDEX);
+            let keyset_root_query = ChainQueryFilter::new().sequence_range(KEYSET_ROOT_CHAIN_INDEX..KEYSET_ROOT_CHAIN_INDEX+1);
             match query(keyset_root_query)?.iter().next() {
                 Some(keyset_root_element) => {
                     let header_hash = keyset_root_element.header_hashed().as_hash();

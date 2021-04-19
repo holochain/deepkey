@@ -10,7 +10,7 @@ fn revoked_anchor_element(key_revocation: &KeyRevocation) -> ExternResult<Elemen
         None => return Err(Error::UpdatedKeyRegistrationLookup.into()),
     };
     let old_key_anchor_seq = old_key_registration_element.header().header_seq() + 1;
-    let query = ChainQueryFilter::new().sequence_range(old_key_anchor_seq..old_key_anchor_seq);
+    let query = ChainQueryFilter::new().sequence_range(old_key_anchor_seq..old_key_anchor_seq+1);
     let agent_activty = get_agent_activity(
         old_key_registration_element.header().author().to_owned(),
         query,

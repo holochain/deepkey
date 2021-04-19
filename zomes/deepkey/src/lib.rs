@@ -9,6 +9,7 @@ pub mod keyset_root;
 pub mod meta;
 pub mod validate;
 pub mod error;
+pub mod init;
 
 /// Re-export at the root for tests to use entry def macros.
 pub use entry::entry_defs;
