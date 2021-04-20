@@ -5,7 +5,7 @@ use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAc
 use crate::device_authorization::device_invite::error::Error;
 
 #[hdk_extern]
-fn invite_agent(invitee: AgentPubKey) -> ExternResult<HeaderHash> {
+fn invite_agent(invitee: AgentPubKey) -> ExternResult<DeviceInviteAcceptance> {
     let device_invite_acceptance_query = ChainQueryFilter::new().entry_type(entry_type!(DeviceInviteAcceptance)?);
     let (keyset_root, parent) = match query(device_invite_acceptance_query)?.iter().next() {
         Some(device_invite_acceptance_element) => {
@@ -23,9 +23,12 @@ fn invite_agent(invitee: AgentPubKey) -> ExternResult<HeaderHash> {
             }
         }
     };
-    create_entry(DeviceInvite::new(
-        keyset_root,
-        parent,
-        invitee,
+    Ok(DeviceInviteAcceptance::new(
+        keyset_root.clone(),
+        create_entry(DeviceInvite::new(
+            keyset_root,
+            parent,
+            invitee,
+        ))?
     ))
 }

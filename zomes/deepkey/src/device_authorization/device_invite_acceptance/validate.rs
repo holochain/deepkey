@@ -36,16 +36,18 @@ fn validate_create_entry_device_invite_acceptance(validate_data: ValidateData) -
         Err(validate_callback_result) => return Ok(validate_callback_result),
     };
 
-    if let Header::Create(create_header) = validate_data.element.header().clone() {
-        match _validate_create_authorization(&create_header, &device_invite) {
-            Ok(ValidateCallbackResult::Valid) => { },
-            validate_callback_result => return validate_callback_result,
-        }
+    match validate_data.element.header() {
+        Header::Create(create_header) => {
+            match _validate_create_authorization(&create_header, &device_invite) {
+                Ok(ValidateCallbackResult::Valid) => { },
+                validate_callback_result => return validate_callback_result,
+            }
 
-        _validate_create_ksr(&device_invite, &device_invite_acceptance)
-    }
-    else {
-        unreachable!();
+            _validate_create_ksr(&device_invite, &device_invite_acceptance)
+        },
+        Header::Update(_) => Error::UpdateAttempted.into(),
+        Header::Delete(_) => Error::DeleteAttempted.into(),
+        _ => Error::WrongHeader.into(),
     }
 }
 

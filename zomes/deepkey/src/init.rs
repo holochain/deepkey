@@ -14,14 +14,20 @@ pub struct ProofOfWork([u8; 32]);
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProofOfStake([u8; 32]);
 
+// @todo
 #[derive(Debug, Serialize, Deserialize)]
-enum AdditionalData {
+pub struct ProofOfAuthority([u8; 32]);
+
+#[derive(Debug, Serialize, Deserialize)]
+enum MembraneProof {
     // No additional membrane.
     None,
     // Proof of Work membrane.
     ProofOfWork(ProofOfWork),
     // Proof of Stake membrane.
     ProofOfStake(ProofOfStake),
+    // Proof of Authority membrane.
+    ProofOfAuthority(ProofOfAuthority),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -33,7 +39,7 @@ enum KeysetProof {
 #[hdk_entry(id = "joining_proof")]
 pub struct JoiningProof {
     keyset_proof: KeysetProof,
-    additional_data: AdditionalData,
+    membrane_proof: MembraneProof,
 }
 
 impl TryFrom<&Element> for JoiningProof {
@@ -75,10 +81,11 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
     };
 
     // @todo
-    match joining_proof.additional_data {
-        AdditionalData::None => { },
-        AdditionalData::ProofOfWork(_proof_of_work) => { },
-        AdditionalData::ProofOfStake(_proof_of_stake) => { },
+    match joining_proof.membrane_proof {
+        MembraneProof::None => { },
+        MembraneProof::ProofOfWork(_proof_of_work) => { },
+        MembraneProof::ProofOfStake(_proof_of_stake) => { },
+        MembraneProof::ProofOfAuthority(_proof_of_authority) => { },
     }
 
     Ok(InitCallbackResult::Pass)

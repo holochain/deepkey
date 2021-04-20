@@ -77,38 +77,39 @@ fn validate_create_entry_device_invite(validate_data: ValidateData) -> ExternRes
         Err(validate_callback_result) => return Ok(validate_callback_result),
     };
 
-    if let Header::Create(create_header) = validate_data.element.header().clone() {
-        match _validate_self(&create_header, &device_invite) {
-            Ok(ValidateCallbackResult::Valid) => { },
-            validate_callback_result => return validate_callback_result,
-        }
+    match validate_data.element.header().clone() {
+        Header::Create(create_header) => {
+            match _validate_self(&create_header, &device_invite) {
+                Ok(ValidateCallbackResult::Valid) => { },
+                validate_callback_result => return validate_callback_result,
+            }
 
-        match _validate_parent_current(&validate_data, &device_invite) {
-            Ok(ValidateCallbackResult::Valid) => { },
-            validate_callback_result => return validate_callback_result,
-        }
+            match _validate_parent_current(&validate_data, &device_invite) {
+                Ok(ValidateCallbackResult::Valid) => { },
+                validate_callback_result => return validate_callback_result,
+            }
 
-        // Note that we do _NOT_ check that the `device_agent` resolves because it may not exist yet.
-        // It is valid for a device to join the DHT with a reference to an invite as a joining proof.
-        // The `DeviceInviteAcceptance` entry will validate the referential integrity of the `DeviceInvite`.
+            // Note that we do _NOT_ check that the `device_agent` resolves because it may not exist yet.
+            // It is valid for a device to join the DHT with a reference to an invite as a joining proof.
+            // The `DeviceInviteAcceptance` entry will validate the referential integrity of the `DeviceInvite`.
 
-        if device_invite.as_keyset_root_authority_ref() == device_invite.as_parent_ref() {
-            _validate_create_parent_ksr(&create_header, &keyset_root_authority, &device_invite)
-        } else {
-            let parent: DeviceInviteAcceptance = match resolve_dependency(device_invite.as_parent_ref().to_owned().into())? {
-                Ok(ResolvedDependency(_, device_invite_acceptance)) => device_invite_acceptance,
-                Err(validate_callback_result) => return Ok(validate_callback_result),
-            };
-            let parent_invite: DeviceInvite = match resolve_dependency(parent.as_invite_ref().to_owned().into())? {
-                Ok(ResolvedDependency(_, device_invite)) => device_invite,
-                Err(validate_callback_result) => return Ok(validate_callback_result),
-            };
-            _validate_create_parent_device_invite_acceptance(&create_header, &parent_invite, &device_invite)
-        }
-    }
-    // Holochain sent the wrong header to the create callback!
-    else {
-        unreachable!();
+            if device_invite.as_keyset_root_authority_ref() == device_invite.as_parent_ref() {
+                _validate_create_parent_ksr(&create_header, &keyset_root_authority, &device_invite)
+            } else {
+                let parent: DeviceInviteAcceptance = match resolve_dependency(device_invite.as_parent_ref().to_owned().into())? {
+                    Ok(ResolvedDependency(_, device_invite_acceptance)) => device_invite_acceptance,
+                    Err(validate_callback_result) => return Ok(validate_callback_result),
+                };
+                let parent_invite: DeviceInvite = match resolve_dependency(parent.as_invite_ref().to_owned().into())? {
+                    Ok(ResolvedDependency(_, device_invite)) => device_invite,
+                    Err(validate_callback_result) => return Ok(validate_callback_result),
+                };
+                _validate_create_parent_device_invite_acceptance(&create_header, &parent_invite, &device_invite)
+            }
+        },
+        Header::Update(_) => Error::UpdateAttempted.into(),
+        Header::Delete(_) => Error::DeleteAttempted.into(),
+        _ => Error::WrongHeader.into(),
     }
 }
 
