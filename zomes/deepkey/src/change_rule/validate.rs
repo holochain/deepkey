@@ -61,7 +61,7 @@ fn _validate_spec(change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResu
 
 fn _validate_create_keyset_root(validate_data: &ValidateData, change_rule: &ChangeRule, keyset_root: &KeysetRoot) -> ExternResult<ValidateCallbackResult> {
     // The KSR needs to reference the author as the FDA.
-    if keyset_root.as_first_deepkey_agent_ref() != validate_data.element.signed_header().header().author() {
+    if keyset_root.as_first_deepkey_agent_ref() != validate_data.element.header().author() {
         return Error::AuthorNotFda.into()
     }
 
@@ -85,7 +85,7 @@ fn _validate_create_authorization(_: &ValidateData, change_rule: &ChangeRule, ke
 
     // The signature must be valid.
     if verify_signature(
-        keyset_root.as_root_pub_key_ref().clone(),
+        keyset_root.as_first_deepkey_agent_ref().clone(),
         authorization_signature.clone(),
         change_rule.as_spec_change_ref().as_new_spec_ref()
     )? {
@@ -147,15 +147,6 @@ fn _validate_update_authorization(_: &ValidateData, previous_change_rule: &Chang
     }
 }
 
-fn _validate_update_spec(previous_change_rule: &ChangeRule, proposed_change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResult> {
-    if previous_change_rule.spec_change.new_spec == proposed_change_rule.spec_change.new_spec {
-        Error::IdenticalUpdate.into()
-    }
-    else {
-        Ok(ValidateCallbackResult::Valid)
-    }
-}
-
 // We want a flat CRUD tree so that get_details on the first change rule returns all the subsequent change rules.
 fn _validate_flat_update_tree(previous_change_rule_element: &Element)  -> ExternResult<ValidateCallbackResult> {
     // The previous change rule MUST be the root of the CRUD tree.
@@ -181,54 +172,50 @@ fn validate_update_entry_key_change_rule(validate_data: ValidateData) -> ExternR
     }
 
     // On update we need to validate the proposed change rule under the rules of the previous rule.
-    if let Header::Update(update_header) = validate_data.element.header().clone() {
-        let (previous_change_rule_element, previous_change_rule) = match resolve_dependency::<ChangeRule>(update_header.original_header_address.into())? {
-            Ok(ResolvedDependency(previous_change_rule_element, change_rule)) => (previous_change_rule_element, change_rule),
-            Err(validate_callback_result) => return Ok(validate_callback_result),
-        };
-
-        // Do all the new signers exist?
-        for agent in proposed_change_rule.spec_change.new_spec.authorized_signers.iter() {
-            match resolve_dependency::<AgentPubKey>(agent.to_owned().into())? {
+    match validate_data.element.header() {
+        Header::Update(update_header) => {
+            let (previous_change_rule_element, previous_change_rule) = match resolve_dependency::<ChangeRule>(update_header.original_header_address.into())? {
+                Ok(ResolvedDependency(previous_change_rule_element, change_rule)) => (previous_change_rule_element, change_rule),
                 Err(validate_callback_result) => return Ok(validate_callback_result),
-                _ => { },
+            };
+
+            // Do all the new signers exist?
+            for agent in proposed_change_rule.spec_change.new_spec.authorized_signers.iter() {
+                match resolve_dependency::<AgentPubKey>(agent.to_owned().into())? {
+                    Err(validate_callback_result) => return Ok(validate_callback_result),
+                    _ => { },
+                }
             }
-        }
 
-        match _validate_flat_update_tree(&previous_change_rule_element) {
-            Ok(ValidateCallbackResult::Valid) => { },
-            validate_callback_result => return validate_callback_result,
-        }
+            match _validate_flat_update_tree(&previous_change_rule_element) {
+                Ok(ValidateCallbackResult::Valid) => { },
+                validate_callback_result => return validate_callback_result,
+            }
 
-        match _validate_keyset_leaf(&validate_data, &proposed_change_rule) {
-            Ok(ValidateCallbackResult::Valid) => { },
-            validate_callback_result => return validate_callback_result,
-        }
+            match _validate_keyset_leaf(&validate_data, &proposed_change_rule) {
+                Ok(ValidateCallbackResult::Valid) => { },
+                validate_callback_result => return validate_callback_result,
+            }
 
-        match _validate_update_keyset_root(&validate_data, &previous_change_rule, &proposed_change_rule) {
-            Ok(ValidateCallbackResult::Valid) => { },
-            validate_callback_result => return validate_callback_result,
-        }
+            match _validate_update_keyset_root(&validate_data, &previous_change_rule, &proposed_change_rule) {
+                Ok(ValidateCallbackResult::Valid) => { },
+                validate_callback_result => return validate_callback_result,
+            }
 
-        match _validate_update_authorization(&validate_data, &previous_change_rule, &proposed_change_rule) {
-            Ok(ValidateCallbackResult::Valid) => { },
-            validate_callback_result => return validate_callback_result,
-        }
+            match _validate_update_authorization(&validate_data, &previous_change_rule, &proposed_change_rule) {
+                Ok(ValidateCallbackResult::Valid) => { },
+                validate_callback_result => return validate_callback_result,
+            }
 
-        match _validate_update_spec(&previous_change_rule, &proposed_change_rule) {
-            Ok(ValidateCallbackResult::Valid) => { },
-            validate_callback_result => return validate_callback_result,
-        }
+            match _validate_spec(&proposed_change_rule) {
+                Ok(ValidateCallbackResult::Valid) => { },
+                validate_callback_result => return validate_callback_result,
+            }
 
-        match _validate_spec(&proposed_change_rule) {
-            Ok(ValidateCallbackResult::Valid) => { },
-            validate_callback_result => return validate_callback_result,
-        }
-
-        Ok(ValidateCallbackResult::Valid)
-    } else {
-        // Holochain sent a non-update to an update validation.
-        unreachable!();
+            Ok(ValidateCallbackResult::Valid)
+        },
+        Header::Delete(_) => Error::DeleteAttempted.into(),
+        _ => Error::WrongHeader.into(),
     }
 }
 

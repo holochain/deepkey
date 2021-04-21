@@ -362,3 +362,93 @@ The `KeyAnchor` element must always pair with its `KeyRegistration` element. Thi
   - IF any deletes found, first delete is returned in `KeyState::Invalidated`
   - IF any headers found, first header is returned in `KeyState::Valid`
   - IF nothing found `KeyState::NotFound` is returned
+
+### ChangeRule API
+
+A `ChangeRule` is:
+
+- A `keyset_root` reference to the `HeaderHash` of a `KeysetRoot`
+- A `keyset_leaf` reference to the `HeaderHash` of either the `KeysetRoot` or a `DeviceInviteAcceptance`
+- A `spec_change` defining the new multisig rules
+
+A `ChangeRule` can only be created immediately after a `KeysetRoot`.
+
+`ChangeRule` elements can be updated by any device currently under the same `KeysetRoot`.
+
+#### Create
+
+- A `ChangeRule` must deserialize cleanly from the element
+- A `KeysetRoot` must fetch and deserialize cleanly from the keyset root on the `ChangeRule`
+- The keyset leaf must be in the validation package (the author's chain)
+- There must NOT be any newer `DeviceInviteAcceptance` elements in the validation package
+- The `KeysetRoot` FDA must be the author of the `ChangeRule`
+- The `ChangeRule` prev header must be the `KeysetRoot` element
+- The `ChangeRule` authorization of the new spec must have exactly one authorization signature
+- The `ChangeRule` authorization signature must be valid as from the `KeysetRoot` FDA
+- The `ChangeRule` spec must have more or equal signers to required signatures
+- The `ChangeRule` must require at least one signature
+
+#### Read
+
+- `ChangeRule` elements are not directly looked up
+
+#### Update
+
+- A `ChangeRule` must deserialize cleanly from the element
+- A `KeysetRoot` must fetch and deserialize cleanly from the keyset root on the `ChangeRule`
+- A `ChangeRule` must fetch and deserialize cleanly from the `original_header_address` of the update element
+- Every signer from the authorized signers must fetch and deserialize cleanly to an `AgentPubKey`
+- __The previous `ChangeRule` element must be a `Create` element (flat CRUD tree)__
+- The keyset leaf must be in the validation package (the author's chain)
+- There must NOT be any newer `DeviceInviteAcceptance` elements in the validation package
+- The `KeysetRoot` of the proposed `ChangeRule` must be the same as the previous `ChangeRule`
+- __The proposed `ChangeRule` authorization must authorize the new spec according to the rules of the previous `ChangeRule`__
+- The proposed `ChangeRule` must have more or equal signers to required signatures
+- The proposed `ChangeRule` must require at least one signature
+
+#### Delete
+
+n/a
+
+#### Zome calls
+
+- `new_change_rule`:
+  - __input is `HeaderHash` of old change rule and new `ChangeRule`__
+  - updates the entry
+    - create must be done when creating a `KeysetRoot`
+  - output is `HeaderHash` of new change rule
+
+### Generator API
+
+A `Generator` is:
+
+- The `HeaderHash` of a `ChangeRule` that authorizes this `Generator`
+- A new `AgentPubKey` being authorized as a `Generator`
+- A `Vec<Authorization>` that authorizes the `AgentPubKey` according to the `ChangeRule` rules
+
+#### Create
+
+- A `Generator` must deserialize cleanly from the element
+- A `ChangeRule` must fetch and deserialize cleanly from the referenced `HeaderHash`
+- The `AgentPubKey` must be authorized by the authorization vec on the `Generator` according to the `ChangeRule` rules
+
+#### Read
+
+- there is no read or lookup functionality for `Generator`
+- it is used internally to validate `KeyRegistration` key generations
+
+#### Update
+
+n/a
+
+#### Delete
+
+n/a
+
+#### Zome calls
+
+- `new_generator`
+  - input is a `Generator`
+  - output is a `HeaderHash`
+  - creates a `Generator`
+
