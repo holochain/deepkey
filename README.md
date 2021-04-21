@@ -471,7 +471,7 @@ A `KeyMeta` is:
 
 #### Create
 
-@todo
+- A `KeyMeta` must deserialize cleanly from the `Element`
 
 #### Read
 
@@ -479,15 +479,18 @@ A `KeyMeta` is:
 
 #### Update
 
-@todo
+n/a
 
 #### Delete
 
-@todo
+n/a
 
 #### Zome calls
 
-@todo
+- `new_key_meta`
+  - input is `key_meta`
+  - output is `HeaderHash` of the created `KeyMeta`
+  - creates a `KeyMeta`
 
 ### DnaBinding API
 
@@ -499,7 +502,7 @@ A `DnaBinding` is:
 
 #### Create
 
-- A `DnaBinding` must deserialize cleanly from the Element
+- A `DnaBinding` must deserialize cleanly from the `Element`
 
 #### Read
 
