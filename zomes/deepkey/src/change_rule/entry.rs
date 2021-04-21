@@ -17,6 +17,8 @@ pub const CHANGE_RULE_INDEX: EntryDefIndex = EntryDefIndex(0);
 pub struct AuthoritySpec {
     /// set to 1 for a single signer scenario
     pub sigs_required: u8,
+    /// These signers probably do NOT exist on the DHT.
+    /// E.g. a revocation key used to create the first change rule.
     pub authorized_signers: Vec<AgentPubKey>,
 }
 

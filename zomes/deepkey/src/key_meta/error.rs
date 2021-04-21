@@ -12,6 +12,9 @@ pub enum Error {
     #[error("Attempted to update a KeyMeta")]
     UpdateAttempted,
 
+    #[error("KeyMeta points to KeyRegistration of a different author")]
+    WrongAuthor,
+
     #[error("Wasm error {0}")]
     Wasm(WasmError)
 }

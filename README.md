@@ -375,6 +375,10 @@ A `ChangeRule` can only be created immediately after a `KeysetRoot`.
 
 `ChangeRule` elements can be updated by any device currently under the same `KeysetRoot`.
 
+Note that the multisignature valiation does NOT require that all the signers exist as agents in deepkey.
+
+The `Create` for a `ChangeRule` is expected to be signed by a "1 of 1" revocation key that is not a deepkey device.
+
 #### Create
 
 - A `ChangeRule` must deserialize cleanly from the element
@@ -384,7 +388,7 @@ A `ChangeRule` can only be created immediately after a `KeysetRoot`.
 - The `KeysetRoot` FDA must be the author of the `ChangeRule`
 - The `ChangeRule` prev header must be the `KeysetRoot` element
 - The `ChangeRule` authorization of the new spec must have exactly one authorization signature
-- The `ChangeRule` authorization signature must be valid as from the `KeysetRoot` FDA
+- The `ChangeRule` authorization signature must be valid as from the `KeysetRoot` root (throwaway) pub key
 - The `ChangeRule` spec must have more or equal signers to required signatures
 - The `ChangeRule` must require at least one signature
 
@@ -397,7 +401,6 @@ A `ChangeRule` can only be created immediately after a `KeysetRoot`.
 - A `ChangeRule` must deserialize cleanly from the element
 - A `KeysetRoot` must fetch and deserialize cleanly from the keyset root on the `ChangeRule`
 - A `ChangeRule` must fetch and deserialize cleanly from the `original_header_address` of the update element
-- Every signer from the authorized signers must fetch and deserialize cleanly to an `AgentPubKey`
 - __The previous `ChangeRule` element must be a `Create` element (flat CRUD tree)__
 - The keyset leaf must be in the validation package (the author's chain)
 - There must NOT be any newer `DeviceInviteAcceptance` elements in the validation package
@@ -472,6 +475,8 @@ A `KeyMeta` is:
 #### Create
 
 - A `KeyMeta` must deserialize cleanly from the `Element`
+- The `new_key` must fetch and deserialize to a `KeyRegistration` element
+- The author of the `KeyMeta` and the `KeyRegistration` must be the same
 
 #### Read
 

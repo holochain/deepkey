@@ -85,7 +85,7 @@ fn _validate_create_authorization(_: &ValidateData, change_rule: &ChangeRule, ke
 
     // The signature must be valid.
     if verify_signature(
-        keyset_root.as_first_deepkey_agent_ref().clone(),
+        keyset_root.as_root_pub_key_ref().clone(),
         authorization_signature.clone(),
         change_rule.as_spec_change_ref().as_new_spec_ref()
     )? {
@@ -178,14 +178,6 @@ fn validate_update_entry_key_change_rule(validate_data: ValidateData) -> ExternR
                 Ok(ResolvedDependency(previous_change_rule_element, change_rule)) => (previous_change_rule_element, change_rule),
                 Err(validate_callback_result) => return Ok(validate_callback_result),
             };
-
-            // Do all the new signers exist?
-            for agent in proposed_change_rule.spec_change.new_spec.authorized_signers.iter() {
-                match resolve_dependency::<AgentPubKey>(agent.to_owned().into())? {
-                    Err(validate_callback_result) => return Ok(validate_callback_result),
-                    _ => { },
-                }
-            }
 
             match _validate_flat_update_tree(&previous_change_rule_element) {
                 Ok(ValidateCallbackResult::Valid) => { },

@@ -3,7 +3,7 @@ use hdk::prelude::*;
 pub const DERIVATION_PATH_LEN: usize = 32;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
-enum KeyType {
+pub enum KeyType {
     AppUI,
     AppSig,
     AppEncryption,
@@ -11,7 +11,7 @@ enum KeyType {
 }
 
 #[derive(Debug)]
-struct DerivationPath([u8; DERIVATION_PATH_LEN]);
+pub struct DerivationPath([u8; DERIVATION_PATH_LEN]);
 
 fixed_array_serialization!(DerivationPath, DERIVATION_PATH_LEN);
 
@@ -41,5 +41,23 @@ impl TryFrom<&Element> for KeyMeta {
             _ => Err(crate::error::Error::WrongHeader),
         }
 
+    }
+}
+
+impl KeyMeta {
+    pub fn as_new_key_ref(&self) -> &HeaderHash {
+        &self.new_key
+    }
+
+    pub fn as_derivation_path_ref(&self) -> &DerivationPath {
+        &self.derivation_path
+    }
+
+    pub fn as_derivation_index_ref(&self) -> &u32 {
+        &self.derivation_index
+    }
+
+    pub fn as_key_type(&self) -> &KeyType {
+        &self.key_type
     }
 }
