@@ -39,7 +39,7 @@ fn key_state((key, _timestamp): (KeyAnchor, Timestamp)) -> ExternResult<KeyState
                     }
                 },
                 // Holochain returned element details for an entry get!
-                _ => unreachable!(),
+                _ => KeyState::NotFound,
             }
         },
         // Nothing found.

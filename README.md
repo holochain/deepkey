@@ -203,3 +203,162 @@ n/a
   - input is a `DeviceInviteAcceptance`
   - output is the `HeaderHash` of the entry created
   - creates the entry as-is from input
+
+## Key registration
+
+Agents can register public keys on their source chain in deepkey.
+
+In the general sense of all possible deepkey implementations, the public keys can be any type of public key, e.g. for blockchains or other systems.
+
+In the "main" deepkey, or at least the one that needs to be installed into a conductor so that other happs can register their keys in a shared space, only holochain `AgentPubKey` public keys are supported for registration.
+
+The `KeyRegistration` entry is the main entry point into managing public keys.
+
+There are other entry types that track and control how key registrations can work.
+
+The `KeyAnchor` entry is the literal bytes of the registered key so that the status of a key can be looked up in a single `get` call, without needing to first lookup the corresponding `KeyRegistration`.
+
+The `ChangeRule` defines multisig rules.
+
+A `Generator` that has been signed off by the multisig of a `ChangeRule` to authorize the author of the `Generator` to register new keys.
+
+Key revocations must always be fully authorized by a `ChangeRule` multisig.
+
+### KeyRegistration API
+
+A `KeyRegistration` enum supports 4 ops/variants:
+
+- `Create` includes a `KeyGeneration` and can be updated or deleted
+- `CreateOnly` includes a `KeyGeneration` but can never be updated or deleted
+- `Update` includes a `KeyRevocation` and a `KeyGeneration` and must be an Update header
+- `Delete` includes a `KeyRevocation` and must be an `Update` header
+
+`KeyGeneration` and `KeyRevocation` validation logic always work the same regardless of which op they are included in.
+
+The op is used to align the `Entry` intent with the `Element` header.
+
+Note that `Delete` op for a `KeyRegistration` is aligned with the `Update` header for an `Element`. This is because `Delete` headers cannot be associated with an `Entry`.
+
+Note also that the CRUD operations for a `KeyRegistration` must always be performed in the correct sequence with the corresponding CRUD operations for a `KeyAnchor`. This is enforced by happ validation.
+
+#### Create
+
+- A `KeyRegistration` must deserialize cleanly from the element
+- The `KeyRegistration` must be a `Create` or `CreateOnly`
+- The `KeyGeneration` must be valid
+
+#### Read
+
+- not intended for direct lookups
+- the status of a key is read by getting the `KeyAnchor` for a `KeyRegistration`
+
+#### Update
+
+- A `KeyRegistration` must deserialize cleanly from the element
+- The `KeyRegistration` must be an `Update` or `Delete`
+- The prior key registration from the `KeyRevocation` must fetch and deserialize to a `KeyRegistration`
+- The prior `KeyRegistration` must be a `Create` or `Update`
+- The prior `Generator` must fetch and deserialize cleanly from the prior `KeyRegistration`
+- The prior `ChangeRule` must fetch and deserialize cleanly from the prior `Generator`
+- The proposed `KeyRevocation` must validate according to the prior `ChangeRule`
+- IF the `KeyRegistration` is an `Update` then the `KeyGeneration` must be valid
+
+#### Delete
+
+- A `KeyRegistration` must fetch and deserialize cleanly from the `Delete` header's `deletes_address`
+- The `KeyRegistration` must be a `KeyRegistration::Delete` variant
+
+#### Zome functions
+
+- `new_key_registration`:
+  - input is a `KeyRegistration`
+  - IF the `KeyRegistration` is `Create` or `CreateOnly`
+    - creates the `KeyRegistration` element
+    - creates the `KeyAnchor` element
+  - IF the `KeyRegistration` is `Update`
+    - updates the prior key registration to the new key registration
+    - looks up the revoked `KeyAnchor` and updates it to the new `KeyAnchor`
+  - IF the `KeyRegistration` is `Delete`
+    - updates the prior key registration to the new key registration
+    - deletes that update
+    - looks up the revoked `KeyAnchor` and deletes it
+
+### KeyGeneration API
+
+`KeyGeneration` is:
+
+- the `new_key` being associated with the deepkey author
+- the `new_key_signing_of_author` as a `Signature` that the new key accepts being associated with the deepkey author
+  - note that there is NOT a nonce under this `Signature` so the signing is permanent
+- the `generator` as a `HeaderHash` to the `Generator` entry defining the acceptance rules
+- the `generator_signature` as a `Signature` from the generator's `AgentPubKey`
+
+#### validation
+
+- A `Generator` must fetch and deserialize cleanly for the `KeyGeneration` generator
+- The `Generator` author must be the same as the `KeyGeneration` author
+- The `Signature` of the `new_key` signing in the author of the `KeyGeneration` must be valid
+- The `Signature` of the `new_key` from the `AgentPubKey` of the `Generator` must be valid
+
+### KeyRevocation API
+
+`KeyRevocation` is:
+
+- The `prior_key_registration` being revoked
+- The `revocation_authorization` as a `Vec<Authorization>`
+
+#### validation
+
+- The `KeyRevocation` element must be an `Update`
+- The `original_header_address` of the `Update` header must be the `prior_key_registration` of the `KeyRevocation`
+- The prior change rule from the prior generator (see above) must `authorize` the prior `KeyRegistration` with the `KeyRevocation` authorization vec
+
+### KeyAnchor API
+
+A `KeyAnchor` is the literal `32` bytes of a pubkey.
+
+This means that any external consumer of deepkey can query the key status with the `32` bytes of the key only. They do NOT need to know the registration details, or holochainisms such as key prefixes for an `AgentPubKey`.
+
+The `KeyAnchor` element must always pair with its `KeyRegistration` element. This is to avoid the need to manage links between the two entries, the `KeyAnchor` element header always directly references the `KeyRegistration`.
+
+#### Create
+
+- A `KeyAnchor` must deserialize cleanly from the element
+- A `KeyRegistration` must fetch and deserialize cleanly from the `KeyAnchor` prev header
+- The `KeyRegistration` must be a `Create` or `CreateOnly` op
+- The `KeyGeneration` new key's raw 32 bytes must be the `KeyAnchor` bytes
+
+#### Read
+
+- `KeyAnchor` entries are designed to be looked up by their literal bytes
+- The `key_state` zome call fetches relevant details about the `KeyAnchor`
+
+#### Update
+
+- A `KeyAnchor` must deserialize cleanly from the element
+- A `KeyRegistration` must fetch and deserialize cleanly from the `KeyAnchor` prev header
+- The `KeyRegistration` must be an `Update` op
+- The `KeyGeneration` new key's raw 32 bytes must be the `KeyAnchor` bytes
+- A `KeyAnchor` must fetch and deserialize cleanly from the `original_header_address` of the new `KeyAnchor` update header
+- A `KeyRegistration` must fetch and deserialize cleanly from the prior key registration
+- The revoked `KeyRegistration` must be a `Create` or `Update`
+- The new key of the `KeyGeneration` of the revoked `KeyRegistration` must match the revoked `KeyAnchor` bytes
+
+#### Delete
+
+- Must be able to fetch an `Element` from the `KeyAnchor` deletion element
+- A `KeyAnchor` must fetch and deserialize from the `deletes_address` of the deletion element
+- A `KeyRegistration` must fetch and deserialize from the `deletes_address` of the previous element
+- The `KeyRegistration` must be an `Update` of type `KeyRegistration::Delete`
+- The `KeyRevocation` from the `KeyRegistration` must be revoking the deleted `KeyAnchor`
+
+#### Zome calls
+
+- `key_state`:
+  - input is `(KeyAnchor, Timestamp)` tuple
+  - `Timestamp` doesn't do anything yet
+  - output is `KeyState` which is `Valid/Invalidated/NotFound` as `SignedHeaderHashed`
+  - IF any updates found, first update is returned in `KeyState::Invalidated`
+  - IF any deletes found, first delete is returned in `KeyState::Invalidated`
+  - IF any headers found, first header is returned in `KeyState::Valid`
+  - IF nothing found `KeyState::NotFound` is returned

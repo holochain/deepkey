@@ -1,8 +1,8 @@
 use hdk::prelude::*;
-use crate::dna_binding::entry::DnaKeyBinding;
+use crate::dna_binding::entry::DnaBinding;
 
 #[hdk_extern]
-fn create_dna_key_binding(new_dna_key_binding: DnaKeyBinding) -> ExternResult<HeaderHash> {
+fn create_dna_key_binding(new_dna_key_binding: DnaBinding) -> ExternResult<HeaderHash> {
     create_entry(new_dna_key_binding)
 }
 

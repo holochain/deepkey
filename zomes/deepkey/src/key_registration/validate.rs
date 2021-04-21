@@ -73,7 +73,7 @@ fn validate_create_entry_key_registration(validate_data: ValidateData) -> Extern
     };
 
     match proposed_key_registration {
-        KeyRegistration::Create(key_generation) => _validate_key_generation(&validate_data, &key_generation),
+        KeyRegistration::Create(key_generation) | KeyRegistration::CreateOnly(key_generation) => _validate_key_generation(&validate_data, &key_generation),
         _ => Error::BadOp.into(),
     }
 }

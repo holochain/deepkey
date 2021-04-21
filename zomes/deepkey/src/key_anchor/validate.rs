@@ -14,7 +14,7 @@ fn _validate_key_revocation(revoked_key_anchor: &KeyAnchor, key_revocation: &Key
         Err(validate_callback_result) => return Ok(validate_callback_result),
     };
     match revoked_registration {
-        KeyRegistration::Create(key_generation) | KeyRegistration::Update(_, key_generation) => _validate_key_generation(revoked_key_anchor, &key_generation),
+        KeyRegistration::Create(revoked_key_generation) | KeyRegistration::Update(_, revoked_key_generation) => _validate_key_generation(revoked_key_anchor, &revoked_key_generation),
         // Cannot revoke a CreateOnly.
         KeyRegistration::CreateOnly(_) => Error::RegistrationWrongOp.into(),
         KeyRegistration::Delete(_) => Error::RegistrationWrongOp.into(),
@@ -43,7 +43,7 @@ fn validate_create_entry_key_anchor(validate_data: ValidateData) -> ExternResult
         Some(prev_header) => match resolve_dependency::<KeyRegistration>(prev_header.clone().into())? {
             Ok(ResolvedDependency(key_registration_element, key_registration)) => match key_registration_element.header() {
                 Header::Create(_) => match key_registration {
-                    KeyRegistration::Create(key_generation) => _validate_key_generation(&proposed_key_anchor, &key_generation),
+                    KeyRegistration::Create(key_generation) | KeyRegistration::CreateOnly(key_generation) => _validate_key_generation(&proposed_key_anchor, &key_generation),
                     _ => Error::RegistrationWrongOp.into(),
                 },
                 _ => Error::RegistrationWrongHeader.into(),
@@ -112,8 +112,8 @@ fn validate_delete_entry_key_anchor(validate_data: ValidateData) -> ExternResult
     };
 
     match prev_element.header() {
-        Header::Delete(delete_header) => {
-            match resolve_dependency::<KeyRegistration>(delete_header.deletes_address.clone().into())? {
+        Header::Delete(prev_delete_header) => {
+            match resolve_dependency::<KeyRegistration>(prev_delete_header.deletes_address.clone().into())? {
                 Ok(ResolvedDependency(key_registration_element, key_registration)) => match key_registration_element.header() {
                     Header::Update(_) => match key_registration {
                         KeyRegistration::Delete(key_revocation) => {

@@ -80,7 +80,7 @@ fn validate_create_entry_keyset_root(validate_data: ValidateData) -> ExternResul
             Ok(ValidateCallbackResult::Valid)
         },
         Header::Update(_) => Error::UpdateAttempted.into(),
-        Header::Delete(_) => Error::UpdateAttempted.into(),
+        Header::Delete(_) => Error::DeleteAttempted.into(),
         _ => Error::WrongHeader.into(),
     }
 }
