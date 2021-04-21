@@ -6,7 +6,7 @@ pub mod generator;
 pub mod key_anchor;
 pub mod key_registration;
 pub mod keyset_root;
-pub mod meta;
+pub mod key_meta;
 pub mod validate;
 pub mod error;
 pub mod init;

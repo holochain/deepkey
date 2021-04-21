@@ -1,5 +1,5 @@
 use hdk::prelude::*;
-use crate::meta::entry::KeyMeta;
+use hdk::prelude::holo_hash::DnaHash;
 
 /// Same as entry_def_index! but constant.
 /// Has test coverage in case entry_defs! ever changes.
@@ -13,8 +13,9 @@ struct AppName {
 
 #[hdk_entry(id = "dna_binding", visibility = "private")]
 pub struct DnaBinding {
-    key: KeyMeta,
-    dna_hash: hdk::prelude::holo_hash::DnaHash,
+    // A KeyMeta element
+    key_meta: HeaderHash,
+    dna_hash: DnaHash,
     app_name: AppName,
 }
 

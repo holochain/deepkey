@@ -452,3 +452,72 @@ n/a
   - output is a `HeaderHash`
   - creates a `Generator`
 
+## Private metadata
+
+In addition to shared/public key sets and registrations, each agent can keep private data for personal records about registered keys.
+
+`KeyMeta` elements record the derivation path and index used to generate a previously registered key.
+
+`DnaBinding` elements track how registered keys are being used by happs.
+
+### Meta API
+
+A `KeyMeta` is:
+
+- `new_key` referencing a `KeyRegistration` by its `HeaderHash`
+- `derivation_path` as 32 bytes encoding a derivation path for generating the registered key
+- `derivation_index` as a u32 representing the index for generating the registered key from the `derivation_path`
+- `key_type` as an enum of `AppUI`, `AppSig`, `AppEncryption`, `TLS`
+
+#### Create
+
+@todo
+
+#### Read
+
+@todo
+
+#### Update
+
+@todo
+
+#### Delete
+
+@todo
+
+#### Zome calls
+
+@todo
+
+### DnaBinding API
+
+A `DnaBinding` is:
+
+- A `key_meta` as `HeaderHash` referencing a `KeyMeta`
+- A `dna_hash` of the DNA the key is bound to
+- An `app_name` as strings of `bundle_name` and `cell_nick`
+
+#### Create
+
+- A `DnaBinding` must deserialize cleanly from the Element
+
+#### Read
+
+@todo
+
+#### Update
+
+n/a
+
+#### Delete
+
+n/a
+
+#### Zome calls
+
+- `new_dna_binding`
+  - input is `DnaBinding`
+  - output is `HeaderHash` of the created `DnaBinding`
+  - creates a `DnaBinding`
+- `install_an_app`
+  - @todo

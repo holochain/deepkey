@@ -174,7 +174,7 @@ fn validate_update_entry_key_change_rule(validate_data: ValidateData) -> ExternR
     // On update we need to validate the proposed change rule under the rules of the previous rule.
     match validate_data.element.header() {
         Header::Update(update_header) => {
-            let (previous_change_rule_element, previous_change_rule) = match resolve_dependency::<ChangeRule>(update_header.original_header_address.into())? {
+            let (previous_change_rule_element, previous_change_rule) = match resolve_dependency::<ChangeRule>(update_header.original_header_address.clone().into())? {
                 Ok(ResolvedDependency(previous_change_rule_element, change_rule)) => (previous_change_rule_element, change_rule),
                 Err(validate_callback_result) => return Ok(validate_callback_result),
             };
@@ -819,25 +819,6 @@ pub mod tests {
 
         assert_eq!(
             super::_validate_update_authorization(&validate_data, &previous_change_rule, &proposed_change_rule),
-            Ok(ValidateCallbackResult::Valid),
-        );
-    }
-
-    #[test]
-    fn test_validate_update_spec() {
-        let mut change_rule = fixt!(ChangeRule);
-
-        assert_eq!(
-            super::_validate_update_spec(&change_rule, &change_rule),
-            Error::IdenticalUpdate.into(),
-        );
-
-        let mut different_change_rule = change_rule.clone();
-        change_rule.spec_change.new_spec.sigs_required = 5;
-        different_change_rule.spec_change.new_spec.sigs_required = 10;
-
-        assert_eq!(
-            super::_validate_update_spec(&change_rule, &different_change_rule),
             Ok(ValidateCallbackResult::Valid),
         );
     }
