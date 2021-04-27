@@ -45,3 +45,5 @@
 //     root_acceptance: Acceptance,
 //     device_acceptance: Acceptance,
 // }
+
+pub const DEVICE_INVITE_LINK_TAG_BYTES: [u8; 1] = [0];
