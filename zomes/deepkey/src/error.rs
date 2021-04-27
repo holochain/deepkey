@@ -9,6 +9,27 @@ pub enum Error {
     #[error("Wrong header for an Element")]
     WrongHeader,
 
+    #[error("Keyset sequence is wrong")]
+    KeysetSeq,
+
+    #[error("KeyRegistration sequence is wrong")]
+    KeyRegistrationSeq,
+
+    #[error("KeysetRoot not followed by ChangeRule")]
+    KeysetRootThenChangeRule,
+
+    #[error("More than one JoiningProof found")]
+    MultipleJoinProof,
+
+    #[error("Attempted to update a JoiningProof")]
+    UpdateJoiningProof,
+
+    #[error("Attempted to delete a JoiningProof")]
+    DeleteJoiningProof,
+
+    #[error("JoiningProof created in the wrong position")]
+    JoiningProofPosition,
+
     #[error("Wasm error {0}")]
     Wasm(WasmError)
 }
@@ -19,7 +40,25 @@ impl From<Error> for ValidateCallbackResult {
     }
 }
 
+impl From<Error> for InitCallbackResult {
+    fn from(e: Error) -> Self {
+        InitCallbackResult::Fail(e.to_string())
+    }
+}
+
+impl From<Error> for WasmError {
+    fn from(e: Error) -> Self {
+        Self::Guest(e.to_string())
+    }
+}
+
 impl From<Error> for ExternResult<ValidateCallbackResult> {
+    fn from(e: Error) -> Self {
+        Ok(e.into())
+    }
+}
+
+impl From<Error> for ExternResult<InitCallbackResult> {
     fn from(e: Error) -> Self {
         Ok(e.into())
     }

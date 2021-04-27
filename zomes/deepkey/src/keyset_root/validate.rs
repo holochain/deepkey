@@ -65,22 +65,23 @@ fn validate_create_entry_keyset_root(validate_data: ValidateData) -> ExternResul
         Err(e) => return Ok(ValidateCallbackResult::Invalid(e.to_string())),
     };
 
-    if let Header::Create(create_header) = validate_data.element.header().clone() {
-        match _validate_create_header(&create_header) {
-            Ok(ValidateCallbackResult::Valid) => {},
-            validate_callback_result => return validate_callback_result,
-        }
+    match validate_data.element.header() {
+        Header::Create(create_header) => {
+            match _validate_create_header(&create_header) {
+                Ok(ValidateCallbackResult::Valid) => {},
+                validate_callback_result => return validate_callback_result,
+            }
 
-        match _validate_create_authorization(&create_header, &proposed_keyset_root) {
-            Ok(ValidateCallbackResult::Valid) => {},
-            validate_callback_result => return validate_callback_result,
-        }
+            match _validate_create_authorization(&create_header, &proposed_keyset_root) {
+                Ok(ValidateCallbackResult::Valid) => {},
+                validate_callback_result => return validate_callback_result,
+            }
 
-        Ok(ValidateCallbackResult::Valid)
-    }
-    // Holochain sent the wrong header!
-    else {
-        unreachable!();
+            Ok(ValidateCallbackResult::Valid)
+        },
+        Header::Update(_) => Error::UpdateAttempted.into(),
+        Header::Delete(_) => Error::DeleteAttempted.into(),
+        _ => Error::WrongHeader.into(),
     }
 }
 
@@ -114,7 +115,7 @@ pub mod test {
     }
 
     #[test]
-    fn test_valdiate_delete() {
+    fn test_validate_delete() {
         assert_eq!(
             super::validate_delete_entry_keyset_root(fixt!(ValidateData)),
             Error::DeleteAttempted.into(),

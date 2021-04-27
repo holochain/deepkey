@@ -3,6 +3,10 @@ use hdk::prelude::*;
 #[cfg(test)]
 use ::fixt::prelude::*;
 
+/// Same as entry_def_index! but constant.
+/// Has test coverage in case entry_defs! ever changes.
+pub const KEYSET_ROOT_INDEX: EntryDefIndex = EntryDefIndex(3);
+
 /// KeysetRoot must be the 4th entry on `FirstDeepkeyAgent`'s chain.
 pub const KEYSET_ROOT_CHAIN_INDEX: u32 = 3;
 
@@ -48,3 +52,18 @@ fixturator!(
     KeysetRoot;
     constructor fn new(AgentPubKey, AgentPubKey, Signature);
 );
+
+#[cfg(test)]
+pub mod tests {
+    use hdk::prelude::*;
+    use super::KEYSET_ROOT_INDEX;
+    use super::KeysetRoot;
+
+    #[test]
+    fn keyset_root_index_test() {
+        assert_eq!(
+            KEYSET_ROOT_INDEX,
+            entry_def_index!(KeysetRoot).unwrap()
+        )
+    }
+}

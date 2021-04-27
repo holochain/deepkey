@@ -17,6 +17,8 @@ pub const CHANGE_RULE_INDEX: EntryDefIndex = EntryDefIndex(0);
 pub struct AuthoritySpec {
     /// set to 1 for a single signer scenario
     pub sigs_required: u8,
+    /// These signers probably do NOT exist on the DHT.
+    /// E.g. a revocation key used to create the first change rule.
     pub authorized_signers: Vec<AgentPubKey>,
 }
 
@@ -76,11 +78,12 @@ impl AuthorizedSpecChange {
     }
 }
 
-#[hdk_entry(id = "change_rule")]
+#[hdk_entry(id = "change_rule", required_validation_type = "full")]
 // The author needs to be linked from the KeysetRoot
 #[derive(Clone)]
 pub struct ChangeRule {
     pub keyset_root: HeaderHash,
+    pub keyset_leaf: HeaderHash,
     pub spec_change: AuthorizedSpecChange,
 }
 
@@ -100,12 +103,16 @@ impl TryFrom<&Element> for ChangeRule {
 #[cfg(test)]
 fixturator!(
     ChangeRule;
-    constructor fn new(HeaderHash, AuthorizedSpecChange);
+    constructor fn new(HeaderHash, HeaderHash, AuthorizedSpecChange);
 );
 
 impl ChangeRule {
-    pub fn new(keyset_root: HeaderHash, spec_change: AuthorizedSpecChange) -> Self {
-        Self { keyset_root, spec_change }
+    pub fn new(keyset_root: HeaderHash, keyset_leaf: HeaderHash, spec_change: AuthorizedSpecChange) -> Self {
+        Self { keyset_root, keyset_leaf, spec_change }
+    }
+
+    pub fn as_keyset_leaf_ref(&self) -> &HeaderHash {
+        &self.keyset_leaf
     }
 
     pub fn as_keyset_root_ref(&self) -> &HeaderHash {

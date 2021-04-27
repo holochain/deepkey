@@ -33,6 +33,15 @@ pub enum Error {
     #[error("The new ChangeRule referenced an authorizor position that doesn't exist")]
     AuthorizedPositionOutOfBounds,
 
+    #[error("The new ChangeRule references a KeysetLeaf that is incompatible with its KeysetRoot")]
+    BadKeysetLeaf,
+
+    #[error("The new ChangeRule references a stale keyset leaf")]
+    StaleKeysetLeaf,
+
+    #[error("The new ChangeRule has no validation package")]
+    MissingValidationPackage,
+
     #[error("The new ChangeRule has an invalid signature")]
     BadUpdateSignature,
 
@@ -42,8 +51,14 @@ pub enum Error {
     #[error("The new ChangeRule requires zero signatures")]
     NotEnoughSignatures,
 
-    #[error("The new ChangeRule has the same spec as the previous one")]
-    IdenticalUpdate,
+    #[error("The new ChangeRule update does not reference the root ChangeRule")]
+    BranchingUpdates,
+
+    #[error("The ChangeRule created does not immediately follow its KeysetRoot")]
+    CreateNotAfterKeysetRoot,
+
+    #[error("The ChangeRule element has the wrong header")]
+    WrongHeader,
 
     #[error("Wasm error {0}")]
     Wasm(WasmError)

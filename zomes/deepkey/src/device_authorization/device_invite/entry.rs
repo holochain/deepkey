@@ -2,10 +2,15 @@ use hdk::prelude::*;
 #[cfg(test)]
 use ::fixt::prelude::*;
 
-#[hdk_entry(id = "device_invite")]
+/// Same as entry_def_index! but constant.
+/// Has test coverage in case entry_defs! ever changes.
+pub const DEVICE_INVITE_INDEX: EntryDefIndex = EntryDefIndex(1);
+
+#[hdk_entry(id = "device_invite", required_validation_type = "full")]
 #[derive(Clone)]
 pub struct DeviceInvite {
     pub keyset_root_authority: HeaderHash,
+    // Either the KeysetRoot or the DeviceInviteAcceptance
     pub parent: HeaderHash,
     pub device_agent: AgentPubKey,
 }
@@ -51,5 +56,20 @@ impl DeviceInvite {
 
     pub fn as_device_agent_ref(&self) -> &AgentPubKey {
         &self.device_agent
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use hdk::prelude::*;
+    use super::DEVICE_INVITE_INDEX;
+    use super::DeviceInvite;
+
+    #[test]
+    fn device_invite_index_test() {
+        assert_eq!(
+            DEVICE_INVITE_INDEX,
+            entry_def_index!(DeviceInvite).unwrap()
+        )
     }
 }

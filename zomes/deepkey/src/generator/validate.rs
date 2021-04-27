@@ -22,8 +22,8 @@ fn validate_create_entry_generator(validate_data: ValidateData) -> ExternResult<
         Err(e) => return Ok(ValidateCallbackResult::Invalid(e.to_string())),
     };
 
-    let change_rule: ChangeRule = match resolve_dependency(proposed_generator.as_change_rule_ref().clone().into())? {
-        Ok(ResolvedDependency(_, change_rule)) => change_rule,
+    let (_, change_rule) = match resolve_dependency::<ChangeRule>(proposed_generator.as_change_rule_ref().clone().into())? {
+        Ok(ResolvedDependency(change_rule_element, change_rule)) => (change_rule_element, change_rule),
         Err(validate_callback_result) => return Ok(validate_callback_result),
     };
 

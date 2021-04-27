@@ -1,16 +1,16 @@
 use hdk::prelude::*;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum Error {
-    #[error("Generator ChangeRule has wrong author")]
-    ChangeRuleAuthor,
+    #[error("Element missing its DnaBinding")]
+    EntryMissing,
 
-    #[error("Attempted to update a Generator")]
-    UpdateAttempted,
-
-    #[error("Attempted to delete a Generator")]
+    #[error("Attempted to delete a DnaBinding")]
     DeleteAttempted,
+
+    #[error("Attempted to update a DnaBinding")]
+    UpdateAttempted,
 
     #[error("Wasm error {0}")]
     Wasm(WasmError)
@@ -25,5 +25,11 @@ impl From<Error> for ValidateCallbackResult {
 impl From<Error> for ExternResult<ValidateCallbackResult> {
     fn from(e: Error) -> Self {
         Ok(e.into())
+    }
+}
+
+impl From<WasmError> for Error {
+    fn from(e: WasmError) -> Error {
+        Error::Wasm(e)
     }
 }

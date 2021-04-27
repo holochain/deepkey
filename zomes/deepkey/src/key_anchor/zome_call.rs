@@ -1,5 +1,5 @@
 use hdk::prelude::*;
-use crate::key::entry::Key;
+use crate::key_anchor::entry::KeyAnchor;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum KeyState {
@@ -9,19 +9,13 @@ pub enum KeyState {
     NotFound,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct KeyStateInput {
-    key: Key,
-    // @todo the timestamp needs to do something.
-    timestamp: Timestamp,
-}
-
 #[hdk_extern]
 // Pass in now for the timestamp if you want if currently valid, maybe a little bit in the past for safety.
 // This is not about the device or keyset root, this is about the registered and revoked keys in the system
 // so this is a key::PubKey
-fn key_state(input: KeyStateInput) -> ExternResult<KeyState> {
-    Ok(match get_details(hash_entry(Key::from(input.key))?, GetOptions::latest())? {
+// @todo make timestamp work
+fn key_state((key, _timestamp): (KeyAnchor, Timestamp)) -> ExternResult<KeyState> {
+    Ok(match get_details(hash_entry(key)?, GetOptions::latest())? {
         Some(details) => {
             match details {
                 Details::Entry(entry_details) => {
@@ -45,7 +39,7 @@ fn key_state(input: KeyStateInput) -> ExternResult<KeyState> {
                     }
                 },
                 // Holochain returned element details for an entry get!
-                _ => unreachable!(),
+                _ => KeyState::NotFound,
             }
         },
         // Nothing found.

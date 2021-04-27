@@ -17,6 +17,40 @@ fn _validate_self(create_header: &Create, device_invite: &DeviceInvite) -> Exter
     }
 }
 
+fn _validate_parent_current(validate_data: &ValidateData, device_invite: &DeviceInvite) -> ExternResult<ValidateCallbackResult> {
+    let parent_element: Element = match get(device_invite.as_parent_ref().clone(), GetOptions::content())? {
+        Some(element) => element,
+        None => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![device_invite.as_parent_ref().clone().into()])),
+    };
+    match &validate_data.validation_package {
+        Some(ValidationPackage(elements)) => {
+            let device_invite_acceptance_type = entry_type!(DeviceInviteAcceptance)?;
+            let device_invite_acceptances: Vec<&Element> = elements.iter()
+                .filter(|element| element.header().entry_type() == Some(&device_invite_acceptance_type))
+                .filter(|element| element.header().header_seq() >= parent_element.header().header_seq())
+                .collect();
+
+            if parent_element.header().entry_type() == Some(&device_invite_acceptance_type) {
+                // The parent should be found and nothing else.
+                if device_invite_acceptances.len() != 1 {
+                    return Error::StaleKeysetLeaf.into();
+                }
+                if *device_invite_acceptances[0] != parent_element {
+                    return Error::StaleKeysetLeaf.into();
+                }
+            } else {
+                // The parent is the KSR so nothing should be found.
+                if device_invite_acceptances.len() != 0 {
+                    return Error::StaleKeysetLeaf.into();
+                }
+            };
+        },
+        None => return Error::MissingValidationPackage.into(),
+    }
+
+    Ok(ValidateCallbackResult::Valid)
+}
+
 /// If the parent _is_ the KSRA then it gets special treatment.
 /// All we care about is that the invitor is the FDA, in which case they can invite any device.
 fn _validate_create_parent_ksr(create_header: &Create, parent: &KeysetRoot, _: &DeviceInvite) -> ExternResult<ValidateCallbackResult> {
@@ -55,33 +89,39 @@ fn validate_create_entry_device_invite(validate_data: ValidateData) -> ExternRes
         Err(validate_callback_result) => return Ok(validate_callback_result),
     };
 
-    if let Header::Create(create_header) = validate_data.element.header().clone() {
-        match _validate_self(&create_header, &device_invite) {
-            Ok(ValidateCallbackResult::Valid) => { },
-            validate_callback_result => return validate_callback_result,
-        }
+    match validate_data.element.header().clone() {
+        Header::Create(create_header) => {
+            match _validate_self(&create_header, &device_invite) {
+                Ok(ValidateCallbackResult::Valid) => { },
+                validate_callback_result => return validate_callback_result,
+            }
 
-        // Note that we do _NOT_ check that the `device_agent` resolves because it may not exist yet.
-        // It is valid for a device to join the DHT with a reference to an invite as a joining proof.
-        // The `DeviceInviteAcceptance` entry will validate the referential integrity of the `DeviceInvite`.
+            match _validate_parent_current(&validate_data, &device_invite) {
+                Ok(ValidateCallbackResult::Valid) => { },
+                validate_callback_result => return validate_callback_result,
+            }
 
-        if device_invite.as_keyset_root_authority_ref() == device_invite.as_parent_ref() {
-            _validate_create_parent_ksr(&create_header, &keyset_root_authority, &device_invite)
-        } else {
-            let parent: DeviceInviteAcceptance = match resolve_dependency(device_invite.as_parent_ref().to_owned().into())? {
-                Ok(ResolvedDependency(_, device_invite_acceptance)) => device_invite_acceptance,
-                Err(validate_callback_result) => return Ok(validate_callback_result),
-            };
-            let parent_invite: DeviceInvite = match resolve_dependency(parent.as_invite_ref().to_owned().into())? {
-                Ok(ResolvedDependency(_, device_invite)) => device_invite,
-                Err(validate_callback_result) => return Ok(validate_callback_result),
-            };
-            _validate_create_parent_device_invite_acceptance(&create_header, &parent_invite, &device_invite)
-        }
-    }
-    // Holochain sent the wrong header to the create callback!
-    else {
-        unreachable!();
+            // Note that we do _NOT_ check that the `device_agent` resolves because it may not exist yet.
+            // It is valid for a device to join the DHT with a reference to an invite as a joining proof.
+            // The `DeviceInviteAcceptance` entry will validate the referential integrity of the `DeviceInvite`.
+
+            if device_invite.as_keyset_root_authority_ref() == device_invite.as_parent_ref() {
+                _validate_create_parent_ksr(&create_header, &keyset_root_authority, &device_invite)
+            } else {
+                let parent: DeviceInviteAcceptance = match resolve_dependency(device_invite.as_parent_ref().to_owned().into())? {
+                    Ok(ResolvedDependency(_, device_invite_acceptance)) => device_invite_acceptance,
+                    Err(validate_callback_result) => return Ok(validate_callback_result),
+                };
+                let parent_invite: DeviceInvite = match resolve_dependency(parent.as_invite_ref().to_owned().into())? {
+                    Ok(ResolvedDependency(_, device_invite)) => device_invite,
+                    Err(validate_callback_result) => return Ok(validate_callback_result),
+                };
+                _validate_create_parent_device_invite_acceptance(&create_header, &parent_invite, &device_invite)
+            }
+        },
+        Header::Update(_) => Error::UpdateAttempted.into(),
+        Header::Delete(_) => Error::DeleteAttempted.into(),
+        _ => Error::WrongHeader.into(),
     }
 }
 
@@ -200,6 +240,7 @@ pub mod tests {
         create_header.author = keyset_root_authority.as_first_deepkey_agent_ref().clone();
 
         *validate_data.element.as_header_mut() = Header::Create(create_header);
+        validate_data.validation_package = Some(ValidationPackage(vec![fixt!(Element)]));
 
         assert_eq!(
             super::validate_create_entry_device_invite(validate_data.clone()),
@@ -240,8 +281,10 @@ pub mod tests {
                     )
                 )
             )
-            .times(1)
+            .times(2)
             .return_const(Ok(Some(keyset_root_authority_element.clone())));
+
+        mock_hdk.expect_zome_info().times(1).return_const(Ok(fixt!(ZomeInfo)));
 
         set_hdk(mock_hdk);
 
@@ -261,6 +304,7 @@ pub mod tests {
         let parent = fixt!(DeviceInviteAcceptance);
         let device_invite = fixt!(DeviceInvite);
         let mut parent_invite = fixt!(DeviceInvite);
+        let zome_info = fixt!(ZomeInfo);
 
         parent_invite.keyset_root_authority = device_invite.keyset_root_authority.clone();
         create_header.author = parent_invite.device_agent.clone();
@@ -272,6 +316,8 @@ pub mod tests {
         *parent_invite_element.as_entry_mut() = ElementEntry::Present(parent_invite.clone().try_into().unwrap());
 
         *validate_data.element.as_header_mut() = Header::Create(create_header);
+
+        validate_data.validation_package = Some(ValidationPackage(vec![parent_invite_element.clone()]));
 
         assert_eq!(
             super::validate_create_entry_device_invite(validate_data.clone()),
@@ -357,7 +403,7 @@ pub mod tests {
                     )
                 )
             )
-            .times(1)
+            .times(2)
             .return_const(Ok(Some(parent_element.clone())));
 
         mock_hdk.expect_get()
@@ -371,6 +417,10 @@ pub mod tests {
             )
             .times(1)
             .return_const(Ok(None));
+
+        mock_hdk.expect_zome_info()
+            .times(1)
+            .return_const(Ok(zome_info.clone()));
 
         set_hdk(mock_hdk);
 
@@ -402,7 +452,7 @@ pub mod tests {
                     )
                 )
             )
-            .times(1)
+            .times(2)
             .return_const(Ok(Some(parent_element.clone())));
 
         mock_hdk.expect_get()
@@ -417,12 +467,13 @@ pub mod tests {
             .times(1)
             .return_const(Ok(Some(parent_invite_element.clone())));
 
+        mock_hdk.expect_zome_info().times(1).return_const(Ok(zome_info));
+
         set_hdk(mock_hdk);
 
         assert_eq!(
             super::validate_create_entry_device_invite(validate_data.clone()),
             Ok(ValidateCallbackResult::Valid),
         );
-
     }
 }
