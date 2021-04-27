@@ -502,46 +502,6 @@ pub mod tests {
             ),
             super::validate_update_entry_key_change_rule(validate_data.clone()),
         );
-
-        // New signers need to exist.
-        let mut mock_hdk = hdk::prelude::MockHdkT::new();
-
-        mock_hdk.expect_get()
-            .with(mockall::predicate::eq(
-                GetInput::new(
-                    change_rule.as_keyset_root_ref().clone().into(),
-                    GetOptions::content()
-                )
-            ))
-            .times(1)
-            .return_const(Ok(Some(keyset_root_element)));
-
-        mock_hdk.expect_get()
-            .with(mockall::predicate::eq(
-                GetInput::new(
-                    update_header.original_header_address.clone().into(),
-                    GetOptions::content(),
-                )
-            ))
-            .times(1)
-            .return_const(Ok(Some(previous_element)));
-
-        mock_hdk.expect_get()
-            .with(mockall::predicate::eq(
-                GetInput::new(
-                    change_rule.spec_change.new_spec.authorized_signers[0].clone().into(),
-                    GetOptions::content(),
-                )
-            ))
-            .times(1)
-            .return_const(Ok(None));
-
-        hdk::prelude::set_hdk(mock_hdk);
-
-        assert_eq!(
-            Ok(ValidateCallbackResult::UnresolvedDependencies(vec![change_rule.spec_change.new_spec.authorized_signers[0].clone().into()])),
-            super::validate_update_entry_key_change_rule(validate_data),
-        );
     }
 
     #[test]
@@ -629,11 +589,19 @@ pub mod tests {
         );
 
         create_header.author = keyset_root.as_first_deepkey_agent_ref().clone();
+        *validate_data.element.as_header_mut() = Header::Create(create_header.clone());
+
+        assert_eq!(
+            super::_validate_create_keyset_root(&validate_data, &change_rule, &keyset_root),
+            Error::CreateNotAfterKeysetRoot.into(),
+        );
+
+        create_header.prev_header = change_rule.as_keyset_root_ref().clone();
         *validate_data.element.as_header_mut() = Header::Create(create_header);
 
         assert_eq!(
-            Ok(ValidateCallbackResult::Valid),
             super::_validate_create_keyset_root(&validate_data, &change_rule, &keyset_root),
+            Ok(ValidateCallbackResult::Valid),
         );
     }
 

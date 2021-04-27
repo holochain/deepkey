@@ -115,7 +115,7 @@ pub mod test {
     }
 
     #[test]
-    fn test_valdiate_delete() {
+    fn test_validate_delete() {
         assert_eq!(
             super::validate_delete_entry_keyset_root(fixt!(ValidateData)),
             Error::DeleteAttempted.into(),
