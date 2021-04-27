@@ -30,16 +30,20 @@ fn _validate_parent_current(validate_data: &ValidateData, device_invite: &Device
                 .filter(|element| element.header().header_seq() >= parent_element.header().header_seq())
                 .collect();
 
-            let expected_length = if parent_element.header().entry_type() == Some(&device_invite_acceptance_type) {
+            if parent_element.header().entry_type() == Some(&device_invite_acceptance_type) {
                 // The parent should be found and nothing else.
-                1
+                if device_invite_acceptances.len() != 1 {
+                    return Error::StaleKeysetLeaf.into();
+                }
+                if *device_invite_acceptances[0] != parent_element {
+                    return Error::StaleKeysetLeaf.into();
+                }
             } else {
                 // The parent is the KSR so nothing should be found.
-                0
+                if device_invite_acceptances.len() != 0 {
+                    return Error::StaleKeysetLeaf.into();
+                }
             };
-            if device_invite_acceptances.len() != expected_length {
-                return Error::StaleKeysetLeaf.into();
-            }
         },
         None => return Error::MissingValidationPackage.into(),
     }
@@ -292,175 +296,184 @@ pub mod tests {
 
     #[test]
     fn test_validate_create_entry_device_invite_acceptance_parent() {
-        // let mut validate_data = fixt!(ValidateData);
-        // let keyset_root = fixt!(KeysetRoot);
-        // let mut keyset_root_authority_element = fixt!(Element);
-        // *keyset_root_authority_element.as_entry_mut() = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
-        // let mut create_header = fixt!(Create);
-        // let parent = fixt!(DeviceInviteAcceptance);
-        // let device_invite = fixt!(DeviceInvite);
-        // let mut parent_invite = fixt!(DeviceInvite);
+        let mut validate_data = fixt!(ValidateData);
+        let keyset_root = fixt!(KeysetRoot);
+        let mut keyset_root_authority_element = fixt!(Element);
+        *keyset_root_authority_element.as_entry_mut() = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
+        let mut create_header = fixt!(Create);
+        let parent = fixt!(DeviceInviteAcceptance);
+        let device_invite = fixt!(DeviceInvite);
+        let mut parent_invite = fixt!(DeviceInvite);
+        let zome_info = fixt!(ZomeInfo);
 
-        // parent_invite.keyset_root_authority = device_invite.keyset_root_authority.clone();
-        // create_header.author = parent_invite.device_agent.clone();
+        parent_invite.keyset_root_authority = device_invite.keyset_root_authority.clone();
+        create_header.author = parent_invite.device_agent.clone();
 
-        // let mut parent_element = fixt!(Element);
-        // *parent_element.as_entry_mut() = ElementEntry::Present(parent.clone().try_into().unwrap());
+        let mut parent_element = fixt!(Element);
+        *parent_element.as_entry_mut() = ElementEntry::Present(parent.clone().try_into().unwrap());
 
-        // let mut parent_invite_element = fixt!(Element);
-        // *parent_invite_element.as_entry_mut() = ElementEntry::Present(parent_invite.clone().try_into().unwrap());
+        let mut parent_invite_element = fixt!(Element);
+        *parent_invite_element.as_entry_mut() = ElementEntry::Present(parent_invite.clone().try_into().unwrap());
 
-        // *validate_data.element.as_header_mut() = Header::Create(create_header);
+        *validate_data.element.as_header_mut() = Header::Create(create_header);
 
-        // assert_eq!(
-        //     super::validate_create_entry_device_invite(validate_data.clone()),
-        //     crate::error::Error::EntryMissing.into(),
-        // );
+        validate_data.validation_package = Some(ValidationPackage(vec![parent_invite_element.clone()]));
 
-        // *validate_data.element.as_entry_mut() = ElementEntry::Present(device_invite.clone().try_into().unwrap());
+        assert_eq!(
+            super::validate_create_entry_device_invite(validate_data.clone()),
+            crate::error::Error::EntryMissing.into(),
+        );
 
-        // let mut mock_hdk = MockHdkT::new();
+        *validate_data.element.as_entry_mut() = ElementEntry::Present(device_invite.clone().try_into().unwrap());
 
-        // mock_hdk.expect_get()
-        //     .with(
-        //         mockall::predicate::eq(
-        //             GetInput::new(
-        //                 device_invite.keyset_root_authority.clone().into(),
-        //                 GetOptions::content(),
-        //             )
-        //         )
-        //     )
-        //     .times(1)
-        //     .return_const(Ok(None));
+        let mut mock_hdk = MockHdkT::new();
 
-        // set_hdk(mock_hdk);
+        mock_hdk.expect_get()
+            .with(
+                mockall::predicate::eq(
+                    GetInput::new(
+                        device_invite.keyset_root_authority.clone().into(),
+                        GetOptions::content(),
+                    )
+                )
+            )
+            .times(1)
+            .return_const(Ok(None));
 
-        // assert_eq!(
-        //     super::validate_create_entry_device_invite(validate_data.clone()),
-        //     Ok(ValidateCallbackResult::UnresolvedDependencies(vec![device_invite.as_keyset_root_authority_ref().clone().into()])),
-        // );
+        set_hdk(mock_hdk);
 
-        // let mut mock_hdk = MockHdkT::new();
+        assert_eq!(
+            super::validate_create_entry_device_invite(validate_data.clone()),
+            Ok(ValidateCallbackResult::UnresolvedDependencies(vec![device_invite.as_keyset_root_authority_ref().clone().into()])),
+        );
 
-        // mock_hdk.expect_get()
-        //     .with(
-        //         mockall::predicate::eq(
-        //             GetInput::new(
-        //                 device_invite.as_keyset_root_authority_ref().clone().into(),
-        //                 GetOptions::content(),
-        //             )
-        //         )
-        //     )
-        //     .times(1)
-        //     .return_const(Ok(Some(keyset_root_authority_element.clone())));
+        let mut mock_hdk = MockHdkT::new();
 
-        // mock_hdk.expect_get()
-        //     .with(
-        //         mockall::predicate::eq(
-        //             GetInput::new(
-        //                 device_invite.as_parent_ref().clone().into(),
-        //                 GetOptions::content(),
-        //             )
-        //         )
-        //     )
-        //     .times(1)
-        //     .return_const(Ok(None));
+        mock_hdk.expect_get()
+            .with(
+                mockall::predicate::eq(
+                    GetInput::new(
+                        device_invite.as_keyset_root_authority_ref().clone().into(),
+                        GetOptions::content(),
+                    )
+                )
+            )
+            .times(1)
+            .return_const(Ok(Some(keyset_root_authority_element.clone())));
 
-        // set_hdk(mock_hdk);
+        mock_hdk.expect_get()
+            .with(
+                mockall::predicate::eq(
+                    GetInput::new(
+                        device_invite.as_parent_ref().clone().into(),
+                        GetOptions::content(),
+                    )
+                )
+            )
+            .times(1)
+            .return_const(Ok(None));
 
-        // assert_eq!(
-        //     super::validate_create_entry_device_invite(validate_data.clone()),
-        //     Ok(ValidateCallbackResult::UnresolvedDependencies(vec![device_invite.as_parent_ref().clone().into()])),
-        // );
+        set_hdk(mock_hdk);
 
-        // let mut mock_hdk = MockHdkT::new();
+        assert_eq!(
+            super::validate_create_entry_device_invite(validate_data.clone()),
+            Ok(ValidateCallbackResult::UnresolvedDependencies(vec![device_invite.as_parent_ref().clone().into()])),
+        );
 
-        // mock_hdk.expect_get()
-        //     .with(
-        //         mockall::predicate::eq(
-        //             GetInput::new(
-        //                 device_invite.as_keyset_root_authority_ref().clone().into(),
-        //                 GetOptions::content(),
-        //             )
-        //         )
-        //     )
-        //     .times(1)
-        //     .return_const(Ok(Some(keyset_root_authority_element.clone())));
+        let mut mock_hdk = MockHdkT::new();
 
-        // mock_hdk.expect_get()
-        //     .with(
-        //         mockall::predicate::eq(
-        //             GetInput::new(
-        //                 device_invite.as_parent_ref().clone().into(),
-        //                 GetOptions::content(),
-        //             )
-        //         )
-        //     )
-        //     .times(1)
-        //     .return_const(Ok(Some(parent_element.clone())));
+        mock_hdk.expect_get()
+            .with(
+                mockall::predicate::eq(
+                    GetInput::new(
+                        device_invite.as_keyset_root_authority_ref().clone().into(),
+                        GetOptions::content(),
+                    )
+                )
+            )
+            .times(1)
+            .return_const(Ok(Some(keyset_root_authority_element.clone())));
 
-        // mock_hdk.expect_get()
-        //     .with(
-        //         mockall::predicate::eq(
-        //             GetInput::new(
-        //                 parent.as_invite_ref().clone().into(),
-        //                 GetOptions::content(),
-        //             )
-        //         )
-        //     )
-        //     .times(1)
-        //     .return_const(Ok(None));
+        mock_hdk.expect_get()
+            .with(
+                mockall::predicate::eq(
+                    GetInput::new(
+                        device_invite.as_parent_ref().clone().into(),
+                        GetOptions::content(),
+                    )
+                )
+            )
+            .times(2)
+            .return_const(Ok(Some(parent_element.clone())));
 
-        // set_hdk(mock_hdk);
+        mock_hdk.expect_get()
+            .with(
+                mockall::predicate::eq(
+                    GetInput::new(
+                        parent.as_invite_ref().clone().into(),
+                        GetOptions::content(),
+                    )
+                )
+            )
+            .times(1)
+            .return_const(Ok(None));
 
-        // assert_eq!(
-        //     super::validate_create_entry_device_invite(validate_data.clone()),
-        //     Ok(ValidateCallbackResult::UnresolvedDependencies(vec![parent.as_invite_ref().clone().into()])),
-        // );
+        mock_hdk.expect_zome_info()
+            .times(1)
+            .return_const(Ok(zome_info.clone()));
 
-        // let mut mock_hdk = MockHdkT::new();
+        set_hdk(mock_hdk);
 
-        // mock_hdk.expect_get()
-        //     .with(
-        //         mockall::predicate::eq(
-        //             GetInput::new(
-        //                 device_invite.as_keyset_root_authority_ref().clone().into(),
-        //                 GetOptions::content(),
-        //             )
-        //         )
-        //     )
-        //     .times(1)
-        //     .return_const(Ok(Some(keyset_root_authority_element.clone())));
+        assert_eq!(
+            super::validate_create_entry_device_invite(validate_data.clone()),
+            Ok(ValidateCallbackResult::UnresolvedDependencies(vec![parent.as_invite_ref().clone().into()])),
+        );
 
-        // mock_hdk.expect_get()
-        //     .with(
-        //         mockall::predicate::eq(
-        //             GetInput::new(
-        //                 device_invite.as_parent_ref().clone().into(),
-        //                 GetOptions::content(),
-        //             )
-        //         )
-        //     )
-        //     .times(1)
-        //     .return_const(Ok(Some(parent_element.clone())));
+        let mut mock_hdk = MockHdkT::new();
 
-        // mock_hdk.expect_get()
-        //     .with(
-        //         mockall::predicate::eq(
-        //             GetInput::new(
-        //                 parent.as_invite_ref().clone().into(),
-        //                 GetOptions::content(),
-        //             )
-        //         )
-        //     )
-        //     .times(1)
-        //     .return_const(Ok(Some(parent_invite_element.clone())));
+        mock_hdk.expect_get()
+            .with(
+                mockall::predicate::eq(
+                    GetInput::new(
+                        device_invite.as_keyset_root_authority_ref().clone().into(),
+                        GetOptions::content(),
+                    )
+                )
+            )
+            .times(1)
+            .return_const(Ok(Some(keyset_root_authority_element.clone())));
 
-        // set_hdk(mock_hdk);
+        mock_hdk.expect_get()
+            .with(
+                mockall::predicate::eq(
+                    GetInput::new(
+                        device_invite.as_parent_ref().clone().into(),
+                        GetOptions::content(),
+                    )
+                )
+            )
+            .times(2)
+            .return_const(Ok(Some(parent_element.clone())));
 
-        // assert_eq!(
-        //     super::validate_create_entry_device_invite(validate_data.clone()),
-        //     Ok(ValidateCallbackResult::Valid),
-        // );
+        mock_hdk.expect_get()
+            .with(
+                mockall::predicate::eq(
+                    GetInput::new(
+                        parent.as_invite_ref().clone().into(),
+                        GetOptions::content(),
+                    )
+                )
+            )
+            .times(1)
+            .return_const(Ok(Some(parent_invite_element.clone())));
+
+        mock_hdk.expect_zome_info().times(1).return_const(Ok(zome_info));
+
+        set_hdk(mock_hdk);
+
+        assert_eq!(
+            super::validate_create_entry_device_invite(validate_data.clone()),
+            Ok(ValidateCallbackResult::Valid),
+        );
     }
 }
