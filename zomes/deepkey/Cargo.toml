@@ -16,15 +16,18 @@ crate-type = [ "cdylib", "rlib" ]
 path = "src/lib.rs"
 
 [dependencies]
-hdk = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
+#hdk = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
+hdk = "0.0.109"
 # use whatever serde hdk gives us
 serde = "*"
 thiserror = "1"
 mockall = "0.9"
 
 [dev-dependencies]
-fixt = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
-holochain_types = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
+#fixt = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
+fixt = "0.0"
+holochain_types = "0.0"
+#holochain_types = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
 rand = "0.7"
 strum = "0.18.0"
 strum_macros = "0.18.0"

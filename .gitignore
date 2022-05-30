@@ -1,0 +1,11 @@
+DeepKey.happ
+packs/*.dna
+zomes/*.wasm
+node_modules
+tests/node_modules
+tests/test.dna
+tests/dnas/*/*.dna
+tests/test.gz
+.cargo
+target
+deepkey_types/target
