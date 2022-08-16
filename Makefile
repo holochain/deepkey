@@ -7,7 +7,16 @@ HAPP_BUNDLE		= DeepKey.happ
 DNA_DEEPKEY		= packs/deepkey.dna
 
 TARGET			= release
-DNA_DEEPKEY_WASM	= zomes/deepkey.wasm
+DNA_DEEPKEY_WASM	= ./target/wasm32-unknown-unknown/release/deepkey.wasm \
+			  ./target/wasm32-unknown-unknown/release/deepkey_integrity.wasm
+
+# External targets; Uses a nix-shell environment to obtain Holochain runtimes, run tests, etc.
+.PHONY: all FORCE
+all: nix-test
+
+# nix-test, nix-install, ...
+nix-%:
+	nix-shell --pure --run "make $*"
 
 #
 # Project
@@ -29,11 +38,14 @@ clean:
 
 .PHONY: rebuild build
 rebuild:			clean build
-build:				$(HAPP_BUNDLE)
+build:				happ
 
+happ:				$(HAPP_BUNDLE)
 
 $(HAPP_BUNDLE):			$(DNA_DEEPKEY) packs/happ.yaml
 	hc app pack -o $@ ./packs/
+
+dna:				$(DNA_DEEPKEY)
 
 $(DNA_DEEPKEY):			$(DNA_DEEPKEY_WASM)
 
@@ -41,12 +53,9 @@ packs/%.dna:
 	@echo "Packaging '$*': $@"
 	@hc dna pack -o $@ packs/$*
 
-zomes/%.wasm:			zomes/target/wasm32-unknown-unknown/release/%.wasm
-	cp $< $@
 
-zomes/target/wasm32-unknown-unknown/release/%.wasm:	Makefile zomes/%/src/*.rs zomes/%/Cargo.toml # deepkey_types/src/*.rs deepkey_types/Cargo.toml
+target/wasm32-unknown-unknown/release/%.wasm:	Makefile zomes/%/src/*.rs zomes/%/Cargo.toml # deepkey_types/src/*.rs deepkey_types/Cargo.toml
 	@echo "Building  '$*' WASM: $@"; \
-	cd zomes; \
 	RUST_BACKTRACE=1 CARGO_TARGET_DIR=target cargo build --release \
 	    --target wasm32-unknown-unknown \
 	    --package $*

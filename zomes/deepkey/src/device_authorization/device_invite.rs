@@ -1,12 +1,9 @@
-pub mod entry;
-pub mod validate;
-pub mod error;
 pub mod zome_call;
 
-use hdk::prelude::*;
+use deepkey_integrity::hdk::prelude::*;
 use error::Error;
-use crate::keyset_root::entry::KEYSET_ROOT_CHAIN_INDEX;
-use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
+use deepkey_integrity::keyset_root::entry::KEYSET_ROOT_CHAIN_INDEX;
+use deepkey_integrity::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
 
 pub fn local_keyset_parent() -> ExternResult<(HeaderHash, HeaderHash)> {
     let device_invite_acceptance_query = ChainQueryFilter::new().entry_type(entry_type!(DeviceInviteAcceptance)?);

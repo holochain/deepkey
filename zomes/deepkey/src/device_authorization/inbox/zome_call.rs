@@ -1,4 +1,4 @@
-use hdk::prelude::*;
+use deepkey_integrity::hdk::prelude::*;
 
 #[hdk_extern]
 fn invite_agents_and_notify(invitees: Vec<AgentPubKey>) -> ExternResult<()> {

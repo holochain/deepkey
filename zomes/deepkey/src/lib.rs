@@ -1,3 +1,5 @@
+pub mod deepkey_integrity;
+    
 pub mod change_rule;
 pub mod device_authorization;
 pub mod dna_binding;

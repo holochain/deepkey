@@ -1,0 +1,36 @@
+[package]
+name = "deepkey_integrity"
+description = "DeepKey hApp DNA Integrity Zome"
+version = "0.0.2"
+authors = [ "Holochain Core Dev Team <devcore@holochain.org>" ]
+license = "CAL-1.0"
+homepage = "https://github.com/holochain/deepkey"
+documentation = "https://github.com/holochain/deepkey"
+keywords = [ "holochain", "holo", "deepkey" ]
+categories = [ "cryptography", "holochain" ]
+edition = "2018"
+
+[lib]
+name = "deepkey_integrity"
+crate-type = [ "cdylib", "rlib" ]
+path = "src/lib.rs"
+
+[dependencies]
+#hdk = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
+#hdk = "0.0.132"
+hdk = { git = "https://github.com/pjkundert/holochain", branch = "must-get-agent-activity-host-fn"}
+hdi = { git = "https://github.com/pjkundert/holochain", branch = "must-get-agent-activity-host-fn"}
+# use whatever serde hdk gives us
+serde = "*"
+thiserror = "1"
+mockall = "0.9"
+
+[dev-dependencies]
+fixt = "0.0.14"
+holochain_types = "0.0.49"
+rand = "0.7"
+strum = "0.18.0"
+strum_macros = "0.18.0"
+
+[features]
+mock = ["hdk/mock", "hdk/test_utils"]

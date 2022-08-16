@@ -1,6 +1,6 @@
-use hdk::prelude::*;
-use crate::keyset_root::entry::KeysetRoot;
-use crate::change_rule::entry::ChangeRule;
+use deepkey_integrity::hdk::prelude::*;
+use deepkey_integrity::keyset_root::entry::KeysetRoot;
+use deepkey_integrity::change_rule::entry::ChangeRule;
 
 #[hdk_extern]
 fn create_keyset_root((new_keyset_root, new_change_rule): (KeysetRoot, ChangeRule)) -> ExternResult<(HeaderHash, HeaderHash)> {

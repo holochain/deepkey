@@ -1,7 +1,7 @@
 [package]
 name = "deepkey"
-description = "DeepKey hApp"
-version = "0.0.1"
+description = "DeepKey hApp DNA Coordinator Zome"
+version = "0.0.2"
 authors = [ "Holochain Core Dev Team <devcore@holochain.org>" ]
 license = "CAL-1.0"
 homepage = "https://github.com/holochain/deepkey"
@@ -16,21 +16,8 @@ crate-type = [ "cdylib", "rlib" ]
 path = "src/lib.rs"
 
 [dependencies]
-#hdk = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
-hdk = "0.0.109"
+# Inherit all Holochain dependencies, local types from integrity Zome
+deepkey_integrity = {path = "../deepkey_integrity"}
 # use whatever serde hdk gives us
 serde = "*"
 thiserror = "1"
-mockall = "0.9"
-
-[dev-dependencies]
-#fixt = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
-fixt = "0.0"
-holochain_types = "0.0"
-#holochain_types = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
-rand = "0.7"
-strum = "0.18.0"
-strum_macros = "0.18.0"
-
-[features]
-mock = ["hdk/mock", "hdk/test_utils"]

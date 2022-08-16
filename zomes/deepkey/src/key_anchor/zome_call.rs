@@ -1,5 +1,5 @@
-use hdk::prelude::*;
-use crate::key_anchor::entry::KeyAnchor;
+use deepkey_integrity::hdk::prelude::*;
+use deepkey_integrity::key_anchor::entry::KeyAnchor;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum KeyState {

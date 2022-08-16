@@ -1,8 +1,8 @@
-use hdk::prelude::*;
-use crate::key_registration::entry::KeyRegistration;
-use crate::key_registration::error::Error;
-use crate::key_anchor::entry::KeyAnchor;
-use crate::key_registration::entry::KeyRevocation;
+use deepkey_integrity::hdk::prelude::*;
+use deepkey_integrity::key_registration::entry::KeyRegistration;
+use deepkey_integrity::key_registration::error::Error;
+use deepkey_integrity::key_anchor::entry::KeyAnchor;
+use deepkey_integrity::key_registration::entry::KeyRevocation;
 
 fn revoked_anchor_element(key_revocation: &KeyRevocation) -> ExternResult<Element> {
     let old_key_registration_element = match get(key_revocation.as_prior_key_registration_ref().clone(), GetOptions::content())? {

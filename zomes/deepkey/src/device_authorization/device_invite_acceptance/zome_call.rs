@@ -1,8 +1,8 @@
-use hdk::prelude::*;
-use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
-use crate::device_authorization::device_invite::entry::DeviceInvite;
-use crate::device_authorization::inbox::DEVICE_INVITE_LINK_TAG_BYTES;
-use crate::device_authorization::device_invite::local_keyset_parent;
+use deepkey_integrity::hdk::prelude::*;
+use deepkey_integrity::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
+use deepkey_integrity::device_authorization::device_invite::entry::DeviceInvite;
+use deepkey_integrity::device_authorization::inbox::DEVICE_INVITE_LINK_TAG_BYTES;
+use deepkey_integrity::device_authorization::device_invite::local_keyset_parent;
 
 #[hdk_extern]
 fn accept_invite(device_invite: DeviceInvite) -> ExternResult<Option<HeaderHash>> {
