@@ -4,6 +4,7 @@ use crate::key_meta::error::Error;
 use crate::validate::resolve_dependency;
 use crate::key_registration::entry::KeyRegistration;
 use crate::validate::ResolvedDependency;
+use crate::validate_classic::*;
 
 #[hdk_extern]
 fn validate_create_entry_key_meta(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {

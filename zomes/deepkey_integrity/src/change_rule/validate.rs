@@ -7,6 +7,8 @@ use crate::validate::resolve_dependency;
 use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
 use crate::entry::UnitEntryTypes;
 
+use crate::validate_classic::*;
+
 fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResult> {
     let leaf_header_element: Record = match get(change_rule.as_keyset_leaf_ref().clone(), GetOptions::content())? {
         Some(element) => element,

@@ -7,6 +7,7 @@ use crate::key_registration::entry::KeyRevocation;
 use crate::key_registration::entry::KeyGeneration;
 use crate::change_rule::entry::ChangeRule;
 use crate::key_registration::error::Error;
+use crate::validate_classic::*;
 
 fn _validate_key_self_signing(validate_data: &ValidateData, key_generation: &KeyGeneration) -> ExternResult<ValidateCallbackResult> {
     if verify_signature_raw(

@@ -1,6 +1,7 @@
 use hdk::prelude::*;
 use crate::dna_binding::entry::DnaBinding;
 use crate::dna_binding::error::Error;
+use crate::validate_classic::*;
 
 #[hdk_extern]
 fn validate_create_entry_dna_binding(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {

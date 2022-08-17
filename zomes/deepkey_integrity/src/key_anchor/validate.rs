@@ -6,6 +6,7 @@ use crate::key_registration::entry::KeyRevocation;
 use crate::validate::resolve_dependency;
 use crate::validate::ResolvedDependency;
 use crate::key_registration::entry::KeyGeneration;
+use crate::validate_classic::*;
 
 /// The revoked key anchor must match the revoked generation of that key.
 fn _validate_key_revocation(revoked_key_anchor: &KeyAnchor, key_revocation: &KeyRevocation) -> ExternResult<ValidateCallbackResult> {

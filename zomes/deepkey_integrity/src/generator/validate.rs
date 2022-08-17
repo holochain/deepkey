@@ -4,6 +4,7 @@ use crate::validate::resolve_dependency;
 use crate::change_rule::entry::ChangeRule;
 use crate::generator::entry::Generator;
 use crate::generator::error::Error;
+use crate::validate_classic::*;
 
 fn _validate_create_entry_generator_authorize(change_rule: &ChangeRule, generator: &Generator) -> ExternResult<ValidateCallbackResult> {
     match change_rule.authorize(

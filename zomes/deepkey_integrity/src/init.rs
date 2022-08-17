@@ -2,6 +2,7 @@ use hdk::prelude::*;
 use crate::error::Error;
 use crate::keyset_root::entry::KeysetRoot;
 use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
+use crate::validate_classic::*;
 
 // The joining proof is added to the chain before init.
 const JOINING_PROOF_CHAIN_INDEX: u32 = 2;

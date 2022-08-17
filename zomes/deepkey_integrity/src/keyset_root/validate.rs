@@ -2,6 +2,7 @@ use hdk::prelude::*;
 use crate::keyset_root::entry::KeysetRoot;
 use crate::keyset_root::entry::KEYSET_ROOT_CHAIN_INDEX;
 use crate::keyset_root::error::Error;
+use crate::validate_classic::*;
 
 impl KeysetRoot {
     pub fn verify_signature(&self) -> ExternResult<bool> {

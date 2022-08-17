@@ -6,6 +6,7 @@ use crate::keyset_root::entry::KeysetRoot;
 use crate::device_authorization::device_invite::entry::DeviceInvite;
 use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
 use crate::entry::UnitEntryTypes;
+use crate::validate_classic::*;
 
 fn _validate_self(create_header: &Create, device_invite: &DeviceInvite) -> ExternResult<ValidateCallbackResult> {
     // Cannot self-invite.
