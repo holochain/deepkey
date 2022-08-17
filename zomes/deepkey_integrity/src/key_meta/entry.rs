@@ -19,7 +19,7 @@ fixed_array_serialization!(DerivationPath, DERIVATION_PATH_LEN);
 #[hdk_entry_helper]
 pub struct KeyMeta {
     // references a KeyRegistration
-    new_key: HeaderHash,
+    new_key: ActionHash,
     derivation_path: DerivationPath,
     derivation_index: u32,
     key_type: KeyType,
@@ -27,14 +27,14 @@ pub struct KeyMeta {
 /*
  * TODO: How do we limit to Create only?
  * 
-impl TryFrom<&Element> for KeyMeta {
+impl TryFrom<&Record> for KeyMeta {
     type Error = crate::error::Error;
-    fn try_from(element: &Element) -> Result<Self, Self::Error> {
+    fn try_from(element: &Record) -> Result<Self, Self::Error> {
         match element.header() {
             // Only creates are allowed for a KeyMeta.
-            Header::Create(_) => {
+            Action::Create(_) => {
                 Ok(match element.entry() {
-                    ElementEntry::Present(serialized) => match Self::try_from(serialized) {
+                    RecordEntry::Present(serialized) => match Self::try_from(serialized) {
                         Ok(deserialized) => deserialized,
                         Err(e) => return Err(crate::error::Error::Wasm(e)),
                     }
@@ -48,7 +48,7 @@ impl TryFrom<&Element> for KeyMeta {
 }
  */
 impl KeyMeta {
-    pub fn as_new_key_ref(&self) -> &HeaderHash {
+    pub fn as_new_key_ref(&self) -> &ActionHash {
         &self.new_key
     }
 

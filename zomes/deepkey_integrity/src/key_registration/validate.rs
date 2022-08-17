@@ -50,7 +50,7 @@ fn _validate_key_generation(validate_data: &ValidateData, key_generation: &KeyGe
 
 fn _validate_key_revocation(validate_data: &ValidateData, prior_key_change_rule: &ChangeRule, key_revocation: &KeyRevocation) -> ExternResult<ValidateCallbackResult> {
     match validate_data.element.header() {
-        Header::Update(update) => if &update.original_header_address != key_revocation.as_prior_key_registration_ref() {
+        Action::Update(update) => if &update.original_header_address != key_revocation.as_prior_key_registration_ref() {
             return Error::BadHeaderRef.into()
         },
         _ => return Error::BadOp.into(),
@@ -136,7 +136,7 @@ fn validate_update_entry_key_registration(validate_data: ValidateData) -> Extern
 ///  - an attacker can always NOT include this, so it's intentionally left open for anyone to be able to "heal" a CRUD tree that has not been properly tombstoned
 fn validate_delete_entry_key_registration(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     match validate_data.element.header() {
-        Header::Delete(delete_header) => {
+        Action::Delete(delete_header) => {
             match resolve_dependency::<KeyRegistration>(delete_header.deletes_address.clone().into())? {
                 Ok(ResolvedDependency(_, prior_key_registration)) => match prior_key_registration {
                     KeyRegistration::Delete(_) => Ok(ValidateCallbackResult::Valid),
@@ -159,7 +159,7 @@ pub mod test {
     use crate::key_registration::validate::KeyRegistration;
     use crate::key_registration::entry::KeyGenerationFixturator;
     use crate::key_registration::entry::KeyRevocationFixturator;
-    use holochain_types::prelude::ElementFixturator;
+    use holochain_types::prelude::RecordFixturator;
     use crate::generator::entry::GeneratorFixturator;
     use crate::key_registration::error::Error;
     use crate::change_rule::entry::ChangeRuleFixturator;
@@ -173,21 +173,21 @@ pub mod test {
         let key_registration_delete = KeyRegistration::Delete(fixt!(KeyRevocation));
         let create_header = fixt!(Create);
 
-        *validate_data.element.as_header_mut() = Header::Create(create_header.clone());
+        *validate_data.element.as_header_mut() = Action::Create(create_header.clone());
 
         assert_eq!(
             super::validate_create_entry_key_registration(validate_data.clone()),
             crate::error::Error::EntryMissing.into(),
         );
 
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_update.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut() = RecordEntry::Present(key_registration_update.clone().try_into().unwrap());
 
         assert_eq!(
             super::validate_create_entry_key_registration(validate_data.clone()),
             crate::key_registration::error::Error::BadOp.into(),
         );
 
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_delete.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut() = RecordEntry::Present(key_registration_delete.clone().try_into().unwrap());
 
         assert_eq!(
             super::validate_create_entry_key_registration(validate_data.clone()),
@@ -209,15 +209,15 @@ pub mod test {
         let key_registration_delete = KeyRegistration::Delete(key_revocation.clone());
 
         // Garbage entry.
-        *validate_data.element.as_header_mut() = Header::Update(fixt!(Update));
-        *validate_data.element.as_entry_mut() = ElementEntry::NotApplicable;
+        *validate_data.element.as_header_mut() = Action::Update(fixt!(Update));
+        *validate_data.element.as_entry_mut() = RecordEntry::NotApplicable;
         assert_eq!(
             super::validate_update_entry_key_registration(validate_data.clone()),
             crate::error::Error::EntryMissing.into(),
         );
 
         // Cannot send a KeyRegistration::Create to an update.
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_create.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut() = RecordEntry::Present(key_registration_create.clone().try_into().unwrap());
 
         assert_eq!(
             super::validate_update_entry_key_registration(validate_data.clone()),
@@ -226,23 +226,23 @@ pub mod test {
 
         // Update and delete should work exactly the same apart from the additional generation check for Update.
         if rng.gen::<bool>() {
-            *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_update.clone().try_into().unwrap());
+            *validate_data.element.as_entry_mut() = RecordEntry::Present(key_registration_update.clone().try_into().unwrap());
         }
         else {
-            *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_delete.clone().try_into().unwrap());
+            *validate_data.element.as_entry_mut() = RecordEntry::Present(key_registration_delete.clone().try_into().unwrap());
         }
 
-        let mut prior_key_registration_element = fixt!(Element);
+        let mut prior_key_registration_element = fixt!(Record);
         let prior_generator = fixt!(Generator);
-        let mut prior_generator_element = fixt!(Element);
-        *prior_generator_element.as_entry_mut() = ElementEntry::Present(prior_generator.clone().try_into().unwrap());
+        let mut prior_generator_element = fixt!(Record);
+        *prior_generator_element.as_entry_mut() = RecordEntry::Present(prior_generator.clone().try_into().unwrap());
         let key_generation = fixt!(KeyGeneration);
         let prior_key_registration_delete = KeyRegistration::Delete(fixt!(KeyRevocation));
         let prior_key_registration_create = KeyRegistration::Create(key_generation.clone());
         let prior_key_registration_update = KeyRegistration::Update(fixt!(KeyRevocation), key_generation.clone());
 
         // Can't "delete" a delete.
-        *prior_key_registration_element.as_entry_mut() = ElementEntry::Present(prior_key_registration_delete.clone().try_into().unwrap());
+        *prior_key_registration_element.as_entry_mut() = RecordEntry::Present(prior_key_registration_delete.clone().try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -282,10 +282,10 @@ pub mod test {
 
         // Can "delete" a create or update exactly the same.
         if rng.gen::<bool>() {
-            *prior_key_registration_element.as_entry_mut() = ElementEntry::Present(prior_key_registration_create.clone().try_into().unwrap());
+            *prior_key_registration_element.as_entry_mut() = RecordEntry::Present(prior_key_registration_create.clone().try_into().unwrap());
         }
         else {
-            *prior_key_registration_element.as_entry_mut() = ElementEntry::Present(prior_key_registration_update.clone().try_into().unwrap());
+            *prior_key_registration_element.as_entry_mut() = RecordEntry::Present(prior_key_registration_update.clone().try_into().unwrap());
         }
 
         let mut mock_hdk = MockHdkT::new();
@@ -362,24 +362,24 @@ pub mod test {
         let key_registration_update = KeyRegistration::Update(fixt!(KeyRevocation), fixt!(KeyGeneration));
         let key_registration_delete = KeyRegistration::Delete(fixt!(KeyRevocation));
 
-        *validate_data.element.as_header_mut() = Header::Create(create_header);
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_create.clone().try_into().unwrap());
+        *validate_data.element.as_header_mut() = Action::Create(create_header);
+        *validate_data.element.as_entry_mut() = RecordEntry::Present(key_registration_create.clone().try_into().unwrap());
 
         assert_eq!(
             super::validate_delete_entry_key_registration(validate_data.clone()),
             crate::error::Error::WrongHeader.into(),
         );
 
-        *validate_data.element.as_header_mut() = Header::Update(update_header);
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_update.clone().try_into().unwrap());
+        *validate_data.element.as_header_mut() = Action::Update(update_header);
+        *validate_data.element.as_entry_mut() = RecordEntry::Present(key_registration_update.clone().try_into().unwrap());
 
         assert_eq!(
             super::validate_delete_entry_key_registration(validate_data.clone()),
             crate::error::Error::WrongHeader.into(),
         );
 
-        *validate_data.element.as_header_mut() = Header::Delete(delete_header.clone());
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(key_registration_delete.clone().try_into().unwrap());
+        *validate_data.element.as_header_mut() = Action::Delete(delete_header.clone());
+        *validate_data.element.as_entry_mut() = RecordEntry::Present(key_registration_delete.clone().try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -399,10 +399,10 @@ pub mod test {
             Ok(ValidateCallbackResult::UnresolvedDependencies(vec![delete_header.deletes_address.clone().into()])),
         );
 
-        let mut return_element = fixt!(Element);
+        let mut return_element = fixt!(Record);
 
-        *return_element.as_header_mut() = Header::Delete(fixt!(Delete));
-        *return_element.as_entry_mut() = ElementEntry::NotApplicable;
+        *return_element.as_header_mut() = Action::Delete(fixt!(Delete));
+        *return_element.as_entry_mut() = RecordEntry::NotApplicable;
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -422,7 +422,7 @@ pub mod test {
             crate::error::Error::EntryMissing.into(),
         );
 
-        *return_element.as_entry_mut() = ElementEntry::Present(key_registration_create.try_into().unwrap());
+        *return_element.as_entry_mut() = RecordEntry::Present(key_registration_create.try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -442,7 +442,7 @@ pub mod test {
             Error::BadOp.into(),
         );
 
-        *return_element.as_entry_mut() = ElementEntry::Present(key_registration_update.try_into().unwrap());
+        *return_element.as_entry_mut() = RecordEntry::Present(key_registration_update.try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -462,7 +462,7 @@ pub mod test {
             Error::BadOp.into(),
         );
 
-        *return_element.as_entry_mut() = ElementEntry::Present(key_registration_delete.try_into().unwrap());
+        *return_element.as_entry_mut() = RecordEntry::Present(key_registration_delete.try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -488,7 +488,7 @@ pub mod test {
         let validate_data = fixt!(ValidateData);
         let key_generation = fixt!(KeyGeneration);
 
-        let mut generator_element = fixt!(Element);
+        let mut generator_element = fixt!(Record);
         let generator = fixt!(Generator);
 
         let mut mock_hdk = MockHdkT::new();
@@ -514,7 +514,7 @@ pub mod test {
             ),
         );
 
-        *generator_element.as_entry_mut() = ElementEntry::Present(generator.clone().try_into().unwrap());
+        *generator_element.as_entry_mut() = RecordEntry::Present(generator.clone().try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -538,7 +538,7 @@ pub mod test {
         let mut generator_element_header = fixt!(Create);
         generator_element_header.author = validate_data.element.header().author().clone();
 
-        *generator_element.as_header_mut() = Header::Create(generator_element_header);
+        *generator_element.as_header_mut() = Action::Create(generator_element_header);
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -673,26 +673,26 @@ pub mod test {
         let mut update_header = fixt!(Update);
         let delete_header = fixt!(Delete);
 
-        *validate_data.element.as_header_mut() = Header::Create(create_header.clone());
+        *validate_data.element.as_header_mut() = Action::Create(create_header.clone());
         assert_eq!(
             super::_validate_key_revocation(&validate_data, &prior_key_change_rule, &key_revocation),
             Error::BadOp.into(),
         );
 
-        *validate_data.element.as_header_mut() = Header::Delete(delete_header.clone());
+        *validate_data.element.as_header_mut() = Action::Delete(delete_header.clone());
         assert_eq!(
             super::_validate_key_revocation(&validate_data, &prior_key_change_rule, &key_revocation),
             Error::BadOp.into(),
         );
 
-        *validate_data.element.as_header_mut() = Header::Update(update_header.clone());
+        *validate_data.element.as_header_mut() = Action::Update(update_header.clone());
         assert_eq!(
             super::_validate_key_revocation(&validate_data, &prior_key_change_rule, &key_revocation),
             Error::BadHeaderRef.into(),
         );
 
         update_header.original_header_address = key_revocation.as_prior_key_registration_ref().clone();
-        *validate_data.element.as_header_mut() = Header::Update(update_header.clone());
+        *validate_data.element.as_header_mut() = Action::Update(update_header.clone());
 
         let mut mock_hdk = MockHdkT::new();
 

@@ -8,7 +8,7 @@ use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAc
 use crate::entry::UnitEntryTypes;
 
 fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResult> {
-    let leaf_header_element: Element = match get(change_rule.as_keyset_leaf_ref().clone(), GetOptions::content())? {
+    let leaf_header_element: Record = match get(change_rule.as_keyset_leaf_ref().clone(), GetOptions::content())? {
         Some(element) => element,
         None => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![change_rule.as_keyset_leaf_ref().clone().into()])),
     };
@@ -32,8 +32,8 @@ fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule)
     // @todo - way to do this without full chain validation package?
     match &validate_data.validation_package {
         Some(ValidationPackage(elements)) => {
-            let device_invite_acceptance_type = UnitEntryType::DeviceInviteAcceptance; //entry_type!(DeviceInviteAcceptance)?;
-            let device_invite_acceptances: Vec<&Element> = elements.iter()
+            let device_invite_acceptance_type = UnitEntryTypes::DeviceInviteAcceptance; //entry_type!(DeviceInviteAcceptance)?;
+            let device_invite_acceptances: Vec<&Record> = elements.iter()
                 .filter(|element| element.header().entry_type() == Some(&device_invite_acceptance_type))
                 .filter(|element| element.header().header_seq() >= leaf_header_element.header().header_seq())
                 .collect();
@@ -149,12 +149,12 @@ fn _validate_update_authorization(_: &ValidateData, previous_change_rule: &Chang
 }
 
 // We want a flat CRUD tree so that get_details on the first change rule returns all the subsequent change rules.
-fn _validate_flat_update_tree(previous_change_rule_element: &Element)  -> ExternResult<ValidateCallbackResult> {
+fn _validate_flat_update_tree(previous_change_rule_element: &Record)  -> ExternResult<ValidateCallbackResult> {
     // The previous change rule MUST be the root of the CRUD tree.
     // i.e. the updates MUST always point to the original Create header (not an Update).
     // The create validation ensures that it always immediately follows the KeysetRoot
     match previous_change_rule_element.header() {
-        Header::Create(_) => Ok(ValidateCallbackResult::Valid),
+        Action::Create(_) => Ok(ValidateCallbackResult::Valid),
         _ => Error::BranchingUpdates.into(),
     }
 }
@@ -174,7 +174,7 @@ fn validate_update_entry_key_change_rule(validate_data: ValidateData) -> ExternR
 
     // On update we need to validate the proposed change rule under the rules of the previous rule.
     match validate_data.element.header() {
-        Header::Update(update_header) => {
+        Action::Update(update_header) => {
             let (previous_change_rule_element, previous_change_rule) = match resolve_dependency::<ChangeRule>(update_header.original_header_address.clone().into())? {
                 Ok(ResolvedDependency(previous_change_rule_element, change_rule)) => (previous_change_rule_element, change_rule),
                 Err(validate_callback_result) => return Ok(validate_callback_result),
@@ -207,7 +207,7 @@ fn validate_update_entry_key_change_rule(validate_data: ValidateData) -> ExternR
 
             Ok(ValidateCallbackResult::Valid)
         },
-        Header::Delete(_) => Error::DeleteAttempted.into(),
+        Action::Delete(_) => Error::DeleteAttempted.into(),
         _ => Error::WrongHeader.into(),
     }
 }
@@ -236,11 +236,11 @@ pub mod tests {
         let mut validate_header = fixt!(Update);
         validate_header.header_seq = 50;
 
-        *validate_data.element.as_header_mut() = Header::Update(validate_header);
+        *validate_data.element.as_header_mut() = Action::Update(validate_header);
 
         let change_rule = fixt!(ChangeRule);
         let mut device_invite_acceptance = fixt!(DeviceInviteAcceptance);
-        let mut device_invite_acceptance_element = fixt!(Element);
+        let mut device_invite_acceptance_element = fixt!(Record);
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -275,8 +275,8 @@ pub mod tests {
 
         set_hdk(mock_hdk);
 
-        *device_invite_acceptance_element.as_header_mut() = Header::Update(fixt!(Update));
-        *device_invite_acceptance_element.as_entry_mut() = ElementEntry::Present(device_invite_acceptance.clone().try_into().unwrap());
+        *device_invite_acceptance_element.as_header_mut() = Action::Update(fixt!(Update));
+        *device_invite_acceptance_element.as_entry_mut() = RecordEntry::Present(device_invite_acceptance.clone().try_into().unwrap());
 
         assert_eq!(
             super::_validate_keyset_leaf(&validate_data, &change_rule),
@@ -292,7 +292,7 @@ pub mod tests {
         device_invite_element_header.entry_type = entry_type!(DeviceInviteAcceptance).unwrap();
 
         device_invite_element_header.header_seq = 25;
-        *device_invite_acceptance_element.as_header_mut() = Header::Create(device_invite_element_header.clone());
+        *device_invite_acceptance_element.as_header_mut() = Action::Create(device_invite_element_header.clone());
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -314,7 +314,7 @@ pub mod tests {
         );
 
         device_invite_acceptance.keyset_root_authority = change_rule.as_keyset_root_ref().clone();
-        *device_invite_acceptance_element.as_entry_mut() = ElementEntry::Present(device_invite_acceptance.clone().try_into().unwrap());
+        *device_invite_acceptance_element.as_entry_mut() = RecordEntry::Present(device_invite_acceptance.clone().try_into().unwrap());
 
         validate_data.validation_package = None;
 
@@ -341,9 +341,9 @@ pub mod tests {
         let mut newer_device_invite_acceptance_element = device_invite_acceptance_element.clone();
         let mut newer_device_invite_acceptance_header = device_invite_element_header.clone();
         newer_device_invite_acceptance_header.header_seq = 30;
-        *newer_device_invite_acceptance_element.as_header_mut() = Header::Create(newer_device_invite_acceptance_header);
+        *newer_device_invite_acceptance_element.as_header_mut() = Action::Create(newer_device_invite_acceptance_header);
         validate_data.validation_package = Some(ValidationPackage(
-            vec![fixt!(Element), device_invite_acceptance_element.clone(), fixt!(Element), newer_device_invite_acceptance_element]
+            vec![fixt!(Record), device_invite_acceptance_element.clone(), fixt!(Record), newer_device_invite_acceptance_element]
         ));
 
         let mut mock_hdk = MockHdkT::new();
@@ -370,7 +370,7 @@ pub mod tests {
         // nothing newer
 
         validate_data.validation_package = Some(ValidationPackage(
-            vec![fixt!(Element), device_invite_acceptance_element.clone(), fixt!(Element)]
+            vec![fixt!(Record), device_invite_acceptance_element.clone(), fixt!(Record)]
         ));
 
         let mut mock_hdk = MockHdkT::new();
@@ -399,7 +399,7 @@ pub mod tests {
         let mut older_device_invite_acceptance_element = device_invite_acceptance_element.clone();
         let mut older_device_invite_acceptance_header = device_invite_element_header.clone();
         older_device_invite_acceptance_header.header_seq = 10;
-        *older_device_invite_acceptance_element.as_header_mut() = Header::Create(older_device_invite_acceptance_header);
+        *older_device_invite_acceptance_element.as_header_mut() = Action::Create(older_device_invite_acceptance_header);
         validate_data.validation_package = Some(ValidationPackage(
             vec![older_device_invite_acceptance_element.clone(), device_invite_acceptance_element.clone()]
         ));
@@ -431,7 +431,7 @@ pub mod tests {
         // Random garbage won't have a valid ChangeRule on it.
         assert_eq!(
             super::validate_update_entry_key_change_rule(fixt!(ValidateData)),
-            Ok(ValidateCallbackResult::Invalid("Element missing its ChangeRule".to_string())),
+            Ok(ValidateCallbackResult::Invalid("Record missing its ChangeRule".to_string())),
         );
 
         let mut validate_data = fixt!(ValidateData);
@@ -440,17 +440,17 @@ pub mod tests {
         change_rule.spec_change.new_spec.authorized_signers.push(fixt!(AgentPubKey));
 
         let update_header = fixt!(Update);
-        *validate_data.element.as_header_mut() = Header::Update(update_header.clone());
+        *validate_data.element.as_header_mut() = Action::Update(update_header.clone());
 
-        let mut keyset_root_element = fixt!(Element);
+        let mut keyset_root_element = fixt!(Record);
         let keyset_root = fixt!(KeysetRoot);
-        *keyset_root_element.as_entry_mut() = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
+        *keyset_root_element.as_entry_mut() = RecordEntry::Present(keyset_root.clone().try_into().unwrap());
 
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(change_rule.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut() = RecordEntry::Present(change_rule.clone().try_into().unwrap());
 
         let previous_change_rule = fixt!(ChangeRule);
-        let mut previous_element = fixt!(Element);
-        *previous_element.as_entry_mut() = ElementEntry::Present(previous_change_rule.clone().try_into().unwrap());
+        let mut previous_element = fixt!(Record);
+        *previous_element.as_entry_mut() = RecordEntry::Present(previous_change_rule.clone().try_into().unwrap());
 
         let mut mock_hdk = hdk::prelude::MockHdkT::new();
 
@@ -517,14 +517,14 @@ pub mod tests {
     fn test_validate_create() {
         // Random garbage won't have a valid ChangeRule on it.
         assert_eq!(
-            Ok(ValidateCallbackResult::Invalid("Element missing its ChangeRule".to_string())),
+            Ok(ValidateCallbackResult::Invalid("Record missing its ChangeRule".to_string())),
             super::validate_create_entry_key_change_rule(fixt!(ValidateData)),
         );
 
         let mut validate_data = fixt!(ValidateData);
         let change_rule = fixt!(ChangeRule);
 
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(change_rule.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut() = RecordEntry::Present(change_rule.clone().try_into().unwrap());
 
         let mut mock_hdk = hdk::prelude::MockHdkT::new();
 
@@ -581,7 +581,7 @@ pub mod tests {
         let keyset_root = fixt!(KeysetRoot);
         let mut create_header = fixt!(Create);
 
-        *validate_data.element.as_header_mut() = Header::Create(create_header.clone());
+        *validate_data.element.as_header_mut() = Action::Create(create_header.clone());
 
         // The FDA cannot be valid unless the validation element and keyset root FDA are the same.
         assert_eq!(
@@ -590,7 +590,7 @@ pub mod tests {
         );
 
         create_header.author = keyset_root.as_first_deepkey_agent_ref().clone();
-        *validate_data.element.as_header_mut() = Header::Create(create_header.clone());
+        *validate_data.element.as_header_mut() = Action::Create(create_header.clone());
 
         assert_eq!(
             super::_validate_create_keyset_root(&validate_data, &change_rule, &keyset_root),
@@ -598,7 +598,7 @@ pub mod tests {
         );
 
         create_header.prev_header = change_rule.as_keyset_root_ref().clone();
-        *validate_data.element.as_header_mut() = Header::Create(create_header);
+        *validate_data.element.as_header_mut() = Action::Create(create_header);
 
         assert_eq!(
             super::_validate_create_keyset_root(&validate_data, &change_rule, &keyset_root),

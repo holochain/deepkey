@@ -3,10 +3,10 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("Element with invalid header")]
+    #[error("Record with invalid action")]
     WrongHeader,
 
-    #[error("Element missing its KeysetRoot")]
+    #[error("Record missing its KeysetRoot")]
     EntryMissing,
 
     #[error("Attempted to delete a KeysetRoot")]
@@ -21,7 +21,7 @@ pub enum Error {
     #[error("Bad FDA signature in KeysetRoot")]
     FdaSignature,
 
-    #[error("Element author does not match FDA for KeysetRoot")]
+    #[error("Record author does not match FDA for KeysetRoot")]
     FdaAuthor,
 
     #[error("Wasm error {0}")]

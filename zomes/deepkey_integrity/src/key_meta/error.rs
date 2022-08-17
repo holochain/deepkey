@@ -3,7 +3,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum Error {
-    #[error("Element missing its KeyMeta")]
+    #[error("Record missing its KeyMeta")]
     EntryMissing,
 
     #[error("Attempted to delete a KeyMeta")]

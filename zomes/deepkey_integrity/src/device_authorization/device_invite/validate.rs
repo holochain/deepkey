@@ -19,7 +19,7 @@ fn _validate_self(create_header: &Create, device_invite: &DeviceInvite) -> Exter
 }
 
 fn _validate_parent_current(validate_data: &ValidateData, device_invite: &DeviceInvite) -> ExternResult<ValidateCallbackResult> {
-    let parent_element: Element = match get(device_invite.as_parent_ref().clone(), GetOptions::content())? {
+    let parent_element: Record = match get(device_invite.as_parent_ref().clone(), GetOptions::content())? {
         Some(element) => element,
         None => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![device_invite.as_parent_ref().clone().into()])),
     };
@@ -72,7 +72,7 @@ fn _validate_parent_current(validate_data: &ValidateData, device_invite: &Device
             // 
             // So, we should be able to substitute a named Enum attribute for the results of the entry_type! macro:
             let device_invite_acceptance_type = UnitEntryTypes::DeviceInviteAcceptance; //entry_type!(DeviceInviteAcceptance)?;
-            let device_invite_acceptances: Vec<&Element> = elements.iter()
+            let device_invite_acceptances: Vec<&Record> = elements.iter()
                 .filter(|element| element.header().entry_type() == Some(&device_invite_acceptance_type))
                 .filter(|element| element.header().header_seq() >= parent_element.header().header_seq())
                 .collect();
@@ -137,7 +137,7 @@ fn validate_create_entry_device_invite(validate_data: ValidateData) -> ExternRes
     };
 
     match validate_data.element.header().clone() {
-        Header::Create(create_header) => {
+        Action::Create(create_header) => {
             match _validate_self(&create_header, &device_invite) {
                 Ok(ValidateCallbackResult::Valid) => { },
                 validate_callback_result => return validate_callback_result,
@@ -166,8 +166,8 @@ fn validate_create_entry_device_invite(validate_data: ValidateData) -> ExternRes
                 _validate_create_parent_device_invite_acceptance(&create_header, &parent_invite, &device_invite)
             }
         },
-        Header::Update(_) => Error::UpdateAttempted.into(),
-        Header::Delete(_) => Error::DeleteAttempted.into(),
+        Action::Update(_) => Error::UpdateAttempted.into(),
+        Action::Delete(_) => Error::DeleteAttempted.into(),
         _ => Error::WrongHeader.into(),
     }
 }
@@ -279,22 +279,22 @@ pub mod tests {
         let mut validate_data = fixt!(ValidateData);
         let mut create_header = fixt!(Create);
         let keyset_root_authority = fixt!(KeysetRoot);
-        let mut keyset_root_authority_element = fixt!(Element);
-        *keyset_root_authority_element.as_entry_mut() = ElementEntry::Present(keyset_root_authority.clone().try_into().unwrap());
+        let mut keyset_root_authority_element = fixt!(Record);
+        *keyset_root_authority_element.as_entry_mut() = RecordEntry::Present(keyset_root_authority.clone().try_into().unwrap());
         let mut device_invite = fixt!(DeviceInvite);
 
         device_invite.keyset_root_authority = device_invite.parent.clone();
         create_header.author = keyset_root_authority.as_first_deepkey_agent_ref().clone();
 
-        *validate_data.element.as_header_mut() = Header::Create(create_header);
-        validate_data.validation_package = Some(ValidationPackage(vec![fixt!(Element)]));
+        *validate_data.element.as_header_mut() = Action::Create(create_header);
+        validate_data.validation_package = Some(ValidationPackage(vec![fixt!(Record)]));
 
         assert_eq!(
             super::validate_create_entry_device_invite(validate_data.clone()),
             crate::error::Error::EntryMissing.into(),
         );
 
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(device_invite.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut() = RecordEntry::Present(device_invite.clone().try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -345,8 +345,8 @@ pub mod tests {
     fn test_validate_create_entry_device_invite_acceptance_parent() {
         let mut validate_data = fixt!(ValidateData);
         let keyset_root = fixt!(KeysetRoot);
-        let mut keyset_root_authority_element = fixt!(Element);
-        *keyset_root_authority_element.as_entry_mut() = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
+        let mut keyset_root_authority_element = fixt!(Record);
+        *keyset_root_authority_element.as_entry_mut() = RecordEntry::Present(keyset_root.clone().try_into().unwrap());
         let mut create_header = fixt!(Create);
         let parent = fixt!(DeviceInviteAcceptance);
         let device_invite = fixt!(DeviceInvite);
@@ -356,13 +356,13 @@ pub mod tests {
         parent_invite.keyset_root_authority = device_invite.keyset_root_authority.clone();
         create_header.author = parent_invite.device_agent.clone();
 
-        let mut parent_element = fixt!(Element);
-        *parent_element.as_entry_mut() = ElementEntry::Present(parent.clone().try_into().unwrap());
+        let mut parent_element = fixt!(Record);
+        *parent_element.as_entry_mut() = RecordEntry::Present(parent.clone().try_into().unwrap());
 
-        let mut parent_invite_element = fixt!(Element);
-        *parent_invite_element.as_entry_mut() = ElementEntry::Present(parent_invite.clone().try_into().unwrap());
+        let mut parent_invite_element = fixt!(Record);
+        *parent_invite_element.as_entry_mut() = RecordEntry::Present(parent_invite.clone().try_into().unwrap());
 
-        *validate_data.element.as_header_mut() = Header::Create(create_header);
+        *validate_data.element.as_header_mut() = Action::Create(create_header);
 
         validate_data.validation_package = Some(ValidationPackage(vec![parent_invite_element.clone()]));
 
@@ -371,7 +371,7 @@ pub mod tests {
             crate::error::Error::EntryMissing.into(),
         );
 
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(device_invite.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut() = RecordEntry::Present(device_invite.clone().try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 

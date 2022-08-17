@@ -37,7 +37,7 @@ fn validate_create_entry_device_invite_acceptance(validate_data: ValidateData) -
     };
 
     match validate_data.element.header() {
-        Header::Create(create_header) => {
+        Action::Create(create_header) => {
             match _validate_create_authorization(&create_header, &device_invite) {
                 Ok(ValidateCallbackResult::Valid) => { },
                 validate_callback_result => return validate_callback_result,
@@ -45,20 +45,20 @@ fn validate_create_entry_device_invite_acceptance(validate_data: ValidateData) -
 
             _validate_create_ksr(&device_invite, &device_invite_acceptance)
         },
-        Header::Update(_) => Error::UpdateAttempted.into(),
-        Header::Delete(_) => Error::DeleteAttempted.into(),
+        Action::Update(_) => Error::UpdateAttempted.into(),
+        Action::Delete(_) => Error::DeleteAttempted.into(),
         _ => Error::WrongHeader.into(),
     }
 }
 */
-pub fn confirm_create_entry_device_invite_acceptance(device_invite_acceptance: DeviceInviteAcceptance, header: Header) -> ExternResult<ValidateCallbackResult> {
+pub fn confirm_create_entry_device_invite_acceptance(device_invite_acceptance: DeviceInviteAcceptance, header: Action) -> ExternResult<ValidateCallbackResult> {
     let device_invite = match resolve_dependency(device_invite_acceptance.as_invite_ref().to_owned().into())? {
         Ok(ResolvedDependency(_, device_invite)) => device_invite,
         Err(validate_callback_result) => return Ok(validate_callback_result),
     };
 
     match header {
-        Header::Create(create_header) => {
+        Action::Create(create_header) => {
             match _validate_create_authorization(&create_header, &device_invite) {
                 Ok(ValidateCallbackResult::Valid) => { },
                 validate_callback_result => return validate_callback_result,
@@ -66,8 +66,8 @@ pub fn confirm_create_entry_device_invite_acceptance(device_invite_acceptance: D
 
             _validate_create_ksr(&device_invite, &device_invite_acceptance)
         },
-        Header::Update(_) => Error::UpdateAttempted.into(),
-        Header::Delete(_) => Error::DeleteAttempted.into(),
+        Action::Update(_) => Error::UpdateAttempted.into(),
+        Action::Delete(_) => Error::DeleteAttempted.into(),
         _ => Error::WrongHeader.into(),
     }
 }
@@ -77,7 +77,7 @@ fn validate_update_entry_device_invite_acceptance(_: ValidateData) -> ExternResu
     Error::UpdateAttempted.into()
 }
 */
-pub fn confirm_update_entry_device_invite_acceptance(_device_invite_acceptance: DeviceInviteAcceptance, _header: Header) -> ExternResult<ValidateCallbackResult> {
+pub fn confirm_update_entry_device_invite_acceptance(_device_invite_acceptance: DeviceInviteAcceptance, _header: Action) -> ExternResult<ValidateCallbackResult> {
     Error::UpdateAttempted.into()
 }
 /*
@@ -86,7 +86,7 @@ fn validate_delete_entry_device_invite_acceptance(_: ValidateData) -> ExternResu
     Error::DeleteAttempted.into()
 }
 */
-pub fn confirm_delete_entry_device_invite_acceptance(_device_invite_acceptance: DeviceInviteAcceptance, _original_header: Header, _delete_header: Header) -> ExternResult<ValidateCallbackResult> {
+pub fn confirm_delete_entry_device_invite_acceptance(_device_invite_acceptance: DeviceInviteAcceptance, _original_header: Action, _delete_header: Action) -> ExternResult<ValidateCallbackResult> {
     Error::DeleteAttempted.into()
 }
 
@@ -161,20 +161,20 @@ pub mod tests {
 
         let device_invite = fixt!(DeviceInvite);
         let device_invite_create_header = fixt!(Create);
-        let mut device_invite_element = fixt!(Element);
-        *device_invite_element.as_header_mut() = Header::Create(device_invite_create_header);
-        *device_invite_element.as_entry_mut() = ElementEntry::Present(device_invite.clone().try_into().unwrap());
+        let mut device_invite_element = fixt!(Record);
+        *device_invite_element.as_header_mut() = Action::Create(device_invite_create_header);
+        *device_invite_element.as_entry_mut() = RecordEntry::Present(device_invite.clone().try_into().unwrap());
 
         create_header.author = device_invite.as_device_agent_ref().clone();
         device_invite_acceptance.keyset_root_authority = device_invite.as_keyset_root_authority_ref().clone();
-        *validate_data.element.as_header_mut() = Header::Create(create_header);
+        *validate_data.element.as_header_mut() = Action::Create(create_header);
 
         assert_eq!(
             super::validate_create_entry_device_invite_acceptance(validate_data.clone()),
             crate::error::Error::EntryMissing.into(),
         );
 
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(device_invite_acceptance.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut() = RecordEntry::Present(device_invite_acceptance.clone().try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 

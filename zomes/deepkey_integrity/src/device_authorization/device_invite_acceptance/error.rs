@@ -3,7 +3,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("Wrong header for a DeviceInviteAcceptance Element")]
+    #[error("Wrong header for a DeviceInviteAcceptance Record")]
     WrongHeader,
 
     #[error("Wrong author for a DeviceInviteAcceptance as per its DeviceInvite")]
@@ -18,7 +18,7 @@ pub enum Error {
     #[error("Attempted to delete a DeviceInviteAcceptance")]
     DeleteAttempted,
 
-    #[error("Element is missing DeviceInviteAcceptance entry")]
+    #[error("Record is missing DeviceInviteAcceptance entry")]
     EntryMissing,
 
     #[error("Cannot find invite to accept")]

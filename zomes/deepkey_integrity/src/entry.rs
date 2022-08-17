@@ -1,9 +1,11 @@
 use hdk::prelude::*;
 
+use crate::init::JoiningProof;
 use crate::change_rule::entry::ChangeRule;
 use crate::device_authorization::device_invite::entry::DeviceInvite;
 use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
 use crate::keyset_root::entry::KeysetRoot;
+use crate::key_meta::entry::KeyMeta;
 use crate::dna_binding::entry::DnaBinding;
 use crate::generator::entry::Generator;
 use crate::key_registration::entry::KeyRegistration;

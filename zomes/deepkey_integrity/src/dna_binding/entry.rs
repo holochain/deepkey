@@ -15,21 +15,21 @@ struct AppName {
 #[hdk_entry_helper]
 pub struct DnaBinding {
     // A KeyMeta element
-    key_meta: HeaderHash,
+    key_meta: ActionHash,
     dna_hash: DnaHash,
     app_name: AppName,
 }
 /*
  * TODO: How do we limit to Create only?
  * 
-impl TryFrom<&Element> for DnaBinding {
+impl TryFrom<&Record> for DnaBinding {
     type Error = crate::error::Error;
-    fn try_from(element: &Element) -> Result<Self, Self::Error> {
+    fn try_from(element: &Record) -> Result<Self, Self::Error> {
         match element.header() {
             // Only creates are allowed for a DnaBinding.
-            Header::Create(_) => {
+            Action::Create(_) => {
                 Ok(match element.entry() {
-                    ElementEntry::Present(serialized) => match Self::try_from(serialized) {
+                    RecordEntry::Present(serialized) => match Self::try_from(serialized) {
                         Ok(deserialized) => deserialized,
                         Err(e) => return Err(crate::error::Error::Wasm(e)),
                     }

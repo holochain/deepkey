@@ -3,7 +3,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum Error {
-    #[error("Element missing its ChangeRule")]
+    #[error("Record missing its ChangeRule")]
     EntryMissing,
 
     #[error("Attempted to delete a ChangeRule")]

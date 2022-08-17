@@ -83,16 +83,16 @@ impl AuthorizedSpecChange {
 // The author needs to be linked from the KeysetRoot
 #[derive(Clone)]
 pub struct ChangeRule {
-    pub keyset_root: HeaderHash,
-    pub keyset_leaf: HeaderHash,
+    pub keyset_root: ActionHash,
+    pub keyset_leaf: ActionHash,
     pub spec_change: AuthorizedSpecChange,
 }
 
-impl TryFrom<&Element> for ChangeRule {
+impl TryFrom<&Record> for ChangeRule {
     type Error = Error;
-    fn try_from(element: &Element) -> Result<Self, Self::Error> {
+    fn try_from(element: &Record) -> Result<Self, Self::Error> {
         Ok(match element.entry() {
-            ElementEntry::Present(serialized_change_rule) => match ChangeRule::try_from(serialized_change_rule) {
+            RecordEntry::Present(serialized_change_rule) => match ChangeRule::try_from(serialized_change_rule) {
                 Ok(change_rule) => change_rule,
                 Err(e) => return Err(Error::Wasm(e)),
             }
@@ -104,19 +104,19 @@ impl TryFrom<&Element> for ChangeRule {
 #[cfg(test)]
 fixturator!(
     ChangeRule;
-    constructor fn new(HeaderHash, HeaderHash, AuthorizedSpecChange);
+    constructor fn new(ActionHash, ActionHash, AuthorizedSpecChange);
 );
 
 impl ChangeRule {
-    pub fn new(keyset_root: HeaderHash, keyset_leaf: HeaderHash, spec_change: AuthorizedSpecChange) -> Self {
+    pub fn new(keyset_root: ActionHash, keyset_leaf: ActionHash, spec_change: AuthorizedSpecChange) -> Self {
         Self { keyset_root, keyset_leaf, spec_change }
     }
 
-    pub fn as_keyset_leaf_ref(&self) -> &HeaderHash {
+    pub fn as_keyset_leaf_ref(&self) -> &ActionHash {
         &self.keyset_leaf
     }
 
-    pub fn as_keyset_root_ref(&self) -> &HeaderHash {
+    pub fn as_keyset_root_ref(&self) -> &ActionHash {
         &self.keyset_root
     }
 

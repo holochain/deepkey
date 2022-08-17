@@ -34,7 +34,7 @@ impl From<Error> for ExternResult<ValidateCallbackResult> {
     }
 }
 
-impl From<Error> for ExternResult<HeaderHash> {
+impl From<Error> for ExternResult<ActionHash> {
     fn from(e: Error) -> Self {
         Err(e.into())
     }

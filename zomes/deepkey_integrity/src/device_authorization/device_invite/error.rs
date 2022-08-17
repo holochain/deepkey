@@ -3,7 +3,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("Wrong header for a DeviceInvite Element")]
+    #[error("Wrong header for a DeviceInvite Record")]
     WrongHeader,
 
     #[error("Wrong KeysetRoot for a DeviceInvite")]
@@ -18,7 +18,7 @@ pub enum Error {
     #[error("Attempted to delete a DeviceInvite")]
     DeleteAttempted,
 
-    #[error("Element is missing DeviceInvite entry")]
+    #[error("Record is missing DeviceInvite entry")]
     EntryMissing,
 
     #[error("DeviceInvite author is not the FDA of the parent KeysetRoot")]

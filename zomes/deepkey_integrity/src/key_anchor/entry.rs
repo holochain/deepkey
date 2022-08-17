@@ -32,14 +32,14 @@ impl AsRef<[u8]> for KeyAnchor {
 
 fixed_array_serialization!(KeyAnchor, KEY_ANCHOR_BYTES);
 /*
-impl TryFrom<&Element> for KeyAnchor {
+impl TryFrom<&Record> for KeyAnchor {
     type Error = crate::error::Error;
-    fn try_from(element: &Element) -> Result<Self, Self::Error> {
+    fn try_from(element: &Record) -> Result<Self, Self::Error> {
         match element.header() {
             // All CRUD are allowed for a KeyAnchor.
-            Header::Create(_) | Header::Update(_) | Header::Delete(_) => {
+            Action::Create(_) | Action::Update(_) | Action::Delete(_) => {
                 Ok(match element.entry() {
-                    ElementEntry::Present(serialized) => match Self::try_from(serialized) {
+                    RecordEntry::Present(serialized) => match Self::try_from(serialized) {
                         Ok(deserialized) => deserialized,
                         Err(e) => return Err(crate::error::Error::Wasm(e)),
                     }

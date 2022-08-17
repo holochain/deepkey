@@ -39,22 +39,22 @@ fixturator!(
 #[hdk_entry_helper]
 #[derive(Clone)]
 pub struct Generator {
-    change_rule: HeaderHash,
+    change_rule: ActionHash,
     change: Change,
 }
 
 #[cfg(test)]
 fixturator!(
     Generator;
-    constructor fn new(HeaderHash, Change);
+    constructor fn new(ActionHash, Change);
 );
 
 impl Generator {
-    pub fn new(change_rule: HeaderHash, change: Change) -> Self {
+    pub fn new(change_rule: ActionHash, change: Change) -> Self {
         Self { change_rule, change }
     }
 
-    pub fn as_change_rule_ref(&self) -> &HeaderHash {
+    pub fn as_change_rule_ref(&self) -> &ActionHash {
         &self.change_rule
     }
 
@@ -65,14 +65,14 @@ impl Generator {
 /*
  * TODO: How do we limit to Create only?
  * 
-impl TryFrom<&Element> for Generator {
+impl TryFrom<&Record> for Generator {
     type Error = crate::error::Error;
-    fn try_from(element: &Element) -> Result<Self, Self::Error> {
+    fn try_from(element: &Record) -> Result<Self, Self::Error> {
         match element.header() {
             // Only creates are allowed for a Generator.
-            Header::Create(_) => {
+            Action::Create(_) => {
                 Ok(match element.entry() {
-                    ElementEntry::Present(serialized) => match Self::try_from(serialized) {
+                    RecordEntry::Present(serialized) => match Self::try_from(serialized) {
                         Ok(deserialized) => deserialized,
                         Err(e) => return Err(crate::error::Error::Wasm(e)),
                     }

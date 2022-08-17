@@ -36,7 +36,8 @@ enum KeysetProof {
     DeviceInviteAcceptance(DeviceInviteAcceptance),
 }
 
-#[hdk_entry(id = "joining_proof")]
+//#[hdk_entry(id = "joining_proof")]
+#[hdk_entry_helper]
 pub struct JoiningProof {
     keyset_proof: KeysetProof,
     membrane_proof: MembraneProof,
@@ -44,14 +45,14 @@ pub struct JoiningProof {
 /* 
  * TODO: How do we allow all CRUD?
  * 
-impl TryFrom<&Element> for JoiningProof {
+impl TryFrom<&Record> for JoiningProof {
     type Error = crate::error::Error;
-    fn try_from(element: &Element) -> Result<Self, Self::Error> {
+    fn try_from(element: &Record) -> Result<Self, Self::Error> {
         match element.header() {
             // Only
-            Header::Create(_) | Header::Update(_) | Header::Delete(_) => {
+            Action::Create(_) | Action::Update(_) | Action::Delete(_) => {
                 Ok(match element.entry() {
-                    ElementEntry::Present(serialized) => match Self::try_from(serialized) {
+                    RecordEntry::Present(serialized) => match Self::try_from(serialized) {
                         Ok(deserialized) => deserialized,
                         Err(e) => return Err(crate::error::Error::Wasm(e)),
                     }
@@ -68,7 +69,7 @@ impl TryFrom<&Element> for JoiningProof {
 fn init(_: ()) -> ExternResult<InitCallbackResult> {
     let q = ChainQueryFilter::new()
         .sequence_range(JOINING_PROOF_CHAIN_INDEX..JOINING_PROOF_CHAIN_INDEX+1);
-    let maybe_proof: Vec<Element> = query(q)?;
+    let maybe_proof: Vec<Record> = query(q)?;
 
     let joining_proof = if maybe_proof.len() == 1 {
         JoiningProof::try_from(&maybe_proof[0])?

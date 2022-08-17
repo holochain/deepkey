@@ -4,7 +4,7 @@ use deepkey_integrity::key_registration::error::Error;
 use deepkey_integrity::key_anchor::entry::KeyAnchor;
 use deepkey_integrity::key_registration::entry::KeyRevocation;
 
-fn revoked_anchor_element(key_revocation: &KeyRevocation) -> ExternResult<Element> {
+fn revoked_anchor_element(key_revocation: &KeyRevocation) -> ExternResult<Record> {
     let old_key_registration_element = match get(key_revocation.as_prior_key_registration_ref().clone(), GetOptions::content())? {
         Some(old_key_registration_element) => old_key_registration_element,
         None => return Err(Error::UpdatedKeyRegistrationLookup.into()),

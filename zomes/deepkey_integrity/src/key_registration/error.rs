@@ -9,7 +9,7 @@ pub enum Error {
     #[error("Wrong KeyRegistration variant for this validation op")]
     BadOp,
 
-    #[error("KeyRegistration referenced wrong prior HeaderHash as per Element Header")]
+    #[error("KeyRegistration referenced wrong prior ActionHash as per Record Action")]
     BadHeaderRef,
 
     #[error("Bad signature for key generation on KeyRegistration")]
@@ -52,7 +52,7 @@ impl From<Error> for ExternResult<ValidateCallbackResult> {
     }
 }
 
-impl From<Error> for ExternResult<HeaderHash> {
+impl From<Error> for ExternResult<ActionHash> {
     fn from(e: Error) -> Self {
         Err(e.into())
     }

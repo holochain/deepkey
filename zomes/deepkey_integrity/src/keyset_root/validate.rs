@@ -15,14 +15,14 @@ impl KeysetRoot {
 /*
  * TODO: How do we limit to Create only?
  * 
-impl TryFrom<&Element> for KeysetRoot {
+impl TryFrom<&Record> for KeysetRoot {
     type Error = Error;
-    fn try_from(element: &Element) -> Result<Self, Self::Error> {
+    fn try_from(element: &Record) -> Result<Self, Self::Error> {
         match element.header() {
             // Only creates are allowed for a KeysetRoot.
-            Header::Create(_) => {
+            Action::Create(_) => {
                 Ok(match element.entry() {
-                    ElementEntry::Present(serialized_keyset_root) => match KeysetRoot::try_from(serialized_keyset_root) {
+                    RecordEntry::Present(serialized_keyset_root) => match KeysetRoot::try_from(serialized_keyset_root) {
                         Ok(keyset_root) => keyset_root,
                         Err(e) => return Err(Error::Wasm(e)),
                     },
@@ -68,7 +68,7 @@ fn validate_create_entry_keyset_root(validate_data: ValidateData) -> ExternResul
     };
 
     match validate_data.element.header() {
-        Header::Create(create_header) => {
+        Action::Create(create_header) => {
             match _validate_create_header(&create_header) {
                 Ok(ValidateCallbackResult::Valid) => {},
                 validate_callback_result => return validate_callback_result,
@@ -81,8 +81,8 @@ fn validate_create_entry_keyset_root(validate_data: ValidateData) -> ExternResul
 
             Ok(ValidateCallbackResult::Valid)
         },
-        Header::Update(_) => Error::UpdateAttempted.into(),
-        Header::Delete(_) => Error::DeleteAttempted.into(),
+        Action::Update(_) => Error::UpdateAttempted.into(),
+        Action::Delete(_) => Error::DeleteAttempted.into(),
         _ => Error::WrongHeader.into(),
     }
 }
@@ -202,17 +202,17 @@ pub mod test {
         let mut create_header = fixt!(Create);
         create_header.header_seq = KEYSET_ROOT_CHAIN_INDEX;
         keyset_root.first_deepkey_agent = create_header.author.clone();
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
-        *validate_data.element.as_header_mut() = Header::Create(create_header);
+        *validate_data.element.as_entry_mut() = RecordEntry::Present(keyset_root.clone().try_into().unwrap());
+        *validate_data.element.as_header_mut() = Action::Create(create_header);
 
-        *validate_data.element.as_entry_mut() = ElementEntry::NotStored;
+        *validate_data.element.as_entry_mut() = RecordEntry::NotStored;
 
         assert_eq!(
             super::validate_create_entry_keyset_root(validate_data.clone()),
-            Ok(ValidateCallbackResult::Invalid("Element missing its KeysetRoot".to_string())),
+            Ok(ValidateCallbackResult::Invalid("Record missing its KeysetRoot".to_string())),
         );
 
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(keyset_root.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut() = RecordEntry::Present(keyset_root.clone().try_into().unwrap());
 
         let mut mock_hdk = hdk::prelude::MockHdkT::new();
 

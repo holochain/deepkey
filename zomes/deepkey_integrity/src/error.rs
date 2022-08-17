@@ -3,10 +3,10 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("Element missing its Entry")]
+    #[error("Record missing its Entry")]
     EntryMissing,
 
-    #[error("Wrong header for an Element")]
+    #[error("Wrong header for a Record")]
     WrongHeader,
 
     #[error("Keyset sequence is wrong")]

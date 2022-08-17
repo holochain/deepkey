@@ -58,14 +58,14 @@ pub mod test {
         let mut validate_data = fixt!(ValidateData);
         let generator = fixt!(Generator);
         let create_header = fixt!(Create);
-        *validate_data.element.as_header_mut() = Header::Create(create_header.clone());
+        *validate_data.element.as_header_mut() = Action::Create(create_header.clone());
 
         assert_eq!(
             super::validate_create_entry_generator(validate_data.clone()),
             crate::error::Error::EntryMissing.into(),
         );
 
-        *validate_data.element.as_entry_mut() = ElementEntry::Present(generator.clone().try_into().unwrap());
+        *validate_data.element.as_entry_mut() = RecordEntry::Present(generator.clone().try_into().unwrap());
 
         let mut mock_hdk = MockHdkT::new();
 

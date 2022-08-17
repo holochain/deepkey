@@ -20,6 +20,7 @@ use crate::change_rule::entry::ChangeRule;
 use crate::change_rule::validate::*;
 use crate::device_authorization::device_invite_acceptance::{ entry::DeviceInviteAcceptance, validate::* };
 use crate::error::*;
+use crate::entry::UnitEntryTypes;
 
 /// 
 /// Centralized validation.  Breaks out the DHT Ops allowed on various DeepKey Entries
@@ -40,19 +41,19 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
     let info = zome_info()?;
     match op {
         // Validation for elements based on header type
-        Op::StoreElement { element } => {
+        Op::StoreRecord { element } => {
             match element.header() {
-                Header::Dna(_) => todo!(),
-                Header::AgentValidationPkg(_) => todo!(),
-                Header::InitZomesComplete(_) => todo!(),
-                Header::CreateLink(create) => todo!() /* match create.link_type.into() {
+                Action::Dna(_) => todo!(),
+                Action::AgentValidationPkg(_) => todo!(),
+                Action::InitZomesComplete(_) => todo!(),
+                Action::CreateLink(create) => todo!() /* match create.link_type.into() {
                     LinkTypes::Fish => todo!(),
                     _ => {}
                 } */ ,
-                Header::DeleteLink(_) => todo!(),
-                Header::OpenChain(_) => todo!(),
-                Header::CloseChain(_) => todo!(),
-                Header::Create(create) => match create.entry_type {
+                Action::DeleteLink(_) => todo!(),
+                Action::OpenChain(_) => todo!(),
+                Action::CloseChain(_) => todo!(),
+                Action::Create(create) => match create.entry_type {
                     EntryType::AgentPubKey => todo!(),
                     EntryType::App(app_entry_type) => {
                         match info.entry_defs.get(app_entry_type.id.index()).map(|entry_def| entry_def.id.to_string()) {
@@ -76,7 +77,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     EntryType::CapClaim => todo!(),
                     EntryType::CapGrant => todo!(),
                 },
-                Header::Update(update) => match update.entry_type {
+                Action::Update(update) => match update.entry_type {
                     EntryType::App(app_entry_type) => {
                         match info.entry_defs.get(app_entry_type.id.index()).map(|entry_def| entry_def.id.to_string()) {
                             "change_rule" => {
@@ -97,22 +98,22 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         }
                     }
                 },
-                Header::Delete(delete) =>  match update.entry_type {
+                Action::Delete(delete) =>  match update.entry_type {
                     EntryType::App(app_entry_type) => {
                         match info.entry_defs.get(app_entry_type.id.index()).map(|entry_def| entry_def.id.to_string()) {
                             "change_rule" => {
                                 let device_invite_acceptance_maybe: Result<DeviceInviteAcceptance> = create_entry.try_into();
-                                let prev_header: HeaderHash = Header::Delete(delete).prev_header();
+                                let prev_header: ActionHash = Action::Delete(delete).prev_header();
                                 match device_invite_acceptance_maybe {
-                                    Ok(device_invite_acceptance) => confirm_delete_entry_device_invite_acceptance(device_invite_acceptance, prev_header, Header::Delete(delete)),
+                                    Ok(device_invite_acceptance) => confirm_delete_entry_device_invite_acceptance(device_invite_acceptance, prev_header, Action::Delete(delete)),
                                     Err(err) => Error::EntryMissing.into()
                                 }
                             }
                             "device_invite_acceptance" => {
                                 let change_rule_maybe: Result<ChangeRule> = create_entry.try_into();
-                                let prev_header: HeaderHash = Header::Delete(delete).prev_header();
+                                let prev_header: ActionHash = Action::Delete(delete).prev_header();
                                 match change_rule_maybe {
-                                    Ok(change_rule) => confirm_delete_entry_key_change_rule(change_rule, prev_header, Header::Delete(delete)),
+                                    Ok(change_rule) => confirm_delete_entry_key_change_rule(change_rule, prev_header, Action::Delete(delete)),
                                     Err(err) => Error::EntryMissing.into()
                                 }
                             }
@@ -127,13 +128,13 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
         Op::StoreEntry { entry, header, .. } => {
             /*
             // An Entry::App(_) and HoloHash<EntryCreationHeader>, representing either a Create or
-            // Update.  Lets break out the Header, and call confirm_create_entry or
+            // Update.  Lets break out the Action, and call confirm_create_entry or
             // confirm_update_entry
             let header: HoloHashed<EntryCreationHeader> = header.into();
             let header: EntryCreationHeader = *header.as_content();
             match header.into() {
-                Header::Create(create_header) => confirm_create_entry(entry, Header::Create(create_header)),
-                Header::Update(update_header) => confirm_update_entry(entry, Header::Update(update_header)),
+                Action::Create(create_header) => confirm_create_entry(entry, Action::Create(create_header)),
+                Action::Update(update_header) => confirm_update_entry(entry, Action::Update(update_header)),
             }
             */
             match header.hashed.content.entry_type() {
@@ -143,8 +144,8 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     let device_invite_acceptance_maybe: Result<DeviceInviteAcceptance> = create_entry.try_into();
                     match device_invite_acceptance_maybe {
                         Ok(device_invite_acceptance) => match header.hashed.content {
-                            Header::Create(_) => confirm_create_entry_device_invite_acceptance(device_invite_acceptance, header.hashed.content),
-                            Header::Update(_) => confirm_update_entry_device_invite_acceptance(device_invite_acceptance, header.hashed.content),
+                            Action::Create(_) => confirm_create_entry_device_invite_acceptance(device_invite_acceptance, header.hashed.content),
+                            Action::Update(_) => confirm_update_entry_device_invite_acceptance(device_invite_acceptance, header.hashed.content),
                         },
                         Err(err) => Error::EntryMissing.into()
                     }
@@ -154,8 +155,8 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     let change_rule_maybe: Result<ChangeRule> = create_entry.try_into();
                     match change_rule_maybe {
                         Ok(change_rule) => match header.hashed.content {
-                            Header::Create(_) => confirm_create_entry_key_change_rule(change_rule, header),
-                            Header::Update(_) => confirm_create_entry_key_change_rule(change_rule, header),
+                            Action::Create(_) => confirm_create_entry_key_change_rule(change_rule, header),
+                            Action::Update(_) => confirm_create_entry_key_change_rule(change_rule, header),
                         },
                         Err(err) => Error::EntryMissing.into()
                     }
@@ -176,15 +177,15 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
         Op::RegisterDeleteLink { create_link: _, .. } => Ok(ValidateCallbackResult::Valid),
         Op::RegisterUpdate { .. } => Ok(ValidateCallbackResult::Valid),
         Op::RegisterDelete { delete, original_entry, original_header } => {
-            let delete_header: HoloHashed<Header> = delete.into(); // A SignedHashed<Header::Delete>>
-            let delete_header: Header = *delete_header.as_content();
-            let original_header: HoloHashed<Header> = original_header.into();
+            let delete_header: HoloHashed<Action> = delete.into(); // A SignedHashed<Action::Delete>>
+            let delete_header: Action = *delete_header.as_content();
+            let original_header: HoloHashed<Action> = original_header.into();
             confirm_delete_entry(original_entry, original_header.as_hash(), delete_header)
         }
     }
 }
 
-pub fn confirm_create_entry(create_entry: Entry, create_header: Header) -> ExternResult<ValidateCallbackResult> {
+pub fn confirm_create_entry(create_entry: Entry, create_header: Action) -> ExternResult<ValidateCallbackResult> {
     match create_entry {
         Entry::App(_) => {
             let change_rule_maybe: Result<ChangeRule> = create_entry.try_into();
@@ -210,7 +211,7 @@ pub fn confirm_create_entry(create_entry: Entry, create_header: Header) -> Exter
     }
 }
 
-pub fn confirm_update_entry(update_entry: Entry, update_header: Header) -> ExternResult<ValidateCallbackResult> {
+pub fn confirm_update_entry(update_entry: Entry, update_header: Action) -> ExternResult<ValidateCallbackResult> {
     match update_entry {
         Entry::App(_) => {
             let change_rule_maybe: Result<ChangeRule> = update_entry.try_into();
@@ -229,7 +230,7 @@ pub fn confirm_update_entry(update_entry: Entry, update_header: Header) -> Exter
     }
 }
 
-pub fn confirm_delete_entry(original_entry: Entry, original_header: Header, delete_header: Header) -> ExternResult<ValidateCallbackResult> {
+pub fn confirm_delete_entry(original_entry: Entry, original_header: Action, delete_header: Action) -> ExternResult<ValidateCallbackResult> {
     match original_entry {
         Entry::App(_) => {
             let change_rule_maybe: Result<ChangeRule> = original_entry.try_into();
@@ -237,9 +238,9 @@ pub fn confirm_delete_entry(original_entry: Entry, original_header: Header, dele
                 Ok(change_rule) => return confirm_delete_entry_key_change_rule(change_rule, original_header, delete_header),
                 _ => { },
             }
-            let device_init_acceptance_maybe: Result<ChangeRule> = original_entry.try_into();
-            match device_init_acceptance_maybe {
-                Ok(device_init_acceptance) => return confirm_delete_entry_device_init_acceptance(device_init_acceptance, original_header, delete_header),
+            let device_invite_acceptance_maybe: Result<DeviceInviteAcceptance> = original_entry.try_into();
+            match device_invite_acceptance_maybe {
+                Ok(device_invite_acceptance) => return confirm_delete_entry_device_invite_acceptance(device_invite_acceptance, original_header, delete_header),
                 _ => { },
             }
             Error::EntryMissing.into() // TODO: We must handle every known Entry Type in DNA

@@ -3,7 +3,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum Error {
-    #[error("Element missing its DnaBinding")]
+    #[error("Record missing its DnaBinding")]
     EntryMissing,
 
     #[error("Attempted to delete a DnaBinding")]

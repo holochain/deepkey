@@ -7,7 +7,7 @@ use crate::key_anchor::entry::KeyAnchor;
 use crate::key_registration::entry::KeyRegistration;
 use crate::change_rule::entry::ChangeRule;
 
-pub struct ResolvedDependency<D>(pub Element, pub D);
+pub struct ResolvedDependency<D>(pub Record, pub D);
 
 pub fn resolve_dependency<'a, O>(hash: AnyDhtHash) -> ExternResult<Result<ResolvedDependency<O>, ValidateCallbackResult>>
     where
@@ -30,7 +30,7 @@ pub fn resolve_dependency<'a, O>(hash: AnyDhtHash) -> ExternResult<Result<Resolv
  * TODO: Convert to use must_get_agent_activity output instead of ValidateData
  *
 
-fn _validate_seq_keyset(validate_data: &ValidateData, prev_element: &Element) -> ExternResult<ValidateCallbackResult> {
+fn _validate_seq_keyset(validate_data: &ValidateData, prev_element: &Record) -> ExternResult<ValidateCallbackResult> {
     // The KeysetRoot index MUST be either a KeysetRoot or a DeviceInviteAcceptance.
     if
         ( validate_data.element.header().header_seq() == KEYSET_ROOT_CHAIN_INDEX )
@@ -46,12 +46,12 @@ fn _validate_seq_keyset(validate_data: &ValidateData, prev_element: &Element) ->
     }
 }
 
-fn _validate_seq_key_registration(validate_data: &ValidateData, prev_element: &Element) -> ExternResult<ValidateCallbackResult> {
+fn _validate_seq_key_registration(validate_data: &ValidateData, prev_element: &Record) -> ExternResult<ValidateCallbackResult> {
     if prev_element.header().entry_type() == Some(&entry_type!(KeyRegistration)?) {
         match prev_element.header() {
             // The thing immediately after a KeyRegistration Create must be a KeyAnchor Create.
-            Header::Create(_) => match validate_data.element.header() {
-                Header::Create(create_header) => if create_header.entry_type == entry_type!(KeyAnchor)? {
+            Action::Create(_) => match validate_data.element.header() {
+                Action::Create(create_header) => if create_header.entry_type == entry_type!(KeyAnchor)? {
                     Ok(ValidateCallbackResult::Valid)
                 } else {
                     Error::KeyRegistrationSeq.into()
@@ -59,13 +59,13 @@ fn _validate_seq_key_registration(validate_data: &ValidateData, prev_element: &E
                 _ => Error::KeyRegistrationSeq.into(),
             },
             // The thing immediately after a KeyRegistration Update must be a KeyAnchor Update or a KeyRegistration Delete.
-            Header::Update(_) => match validate_data.element.header() {
-                Header::Update(update_header) => if update_header.entry_type == entry_type!(KeyAnchor)? {
+            Action::Update(_) => match validate_data.element.header() {
+                Action::Update(update_header) => if update_header.entry_type == entry_type!(KeyAnchor)? {
                     Ok(ValidateCallbackResult::Valid)
                 } else {
                     Error::KeyRegistrationSeq.into()
                 },
-                Header::Delete(delete_header) => {
+                Action::Delete(delete_header) => {
                     match get(delete_header.deletes_address.clone(), GetOptions::content())? {
                         Some(deleted_element) => if deleted_element.header().entry_type() == Some(&entry_type!(KeyRegistration)?) {
                             Ok(ValidateCallbackResult::Valid)
@@ -79,8 +79,8 @@ fn _validate_seq_key_registration(validate_data: &ValidateData, prev_element: &E
                 _ => Error::KeyRegistrationSeq.into(),
             },
             // The thing immediately after a KeyRegistration Delete must be a KeyAnchor Delete.
-            Header::Delete(_) => match validate_data.element.header() {
-                Header::Delete(delete_header) => {
+            Action::Delete(_) => match validate_data.element.header() {
+                Action::Delete(delete_header) => {
                     match get(delete_header.deletes_address.clone(), GetOptions::content())? {
                         Some(deleted_element) => if deleted_element.header().entry_type() == Some(&entry_type!(KeyAnchor)?) {
                             Ok(ValidateCallbackResult::Valid)

@@ -10,22 +10,22 @@ pub const DEVICE_INVITE_INDEX: EntryDefIndex = EntryDefIndex(1);
 #[hdk_entry_helper]
 #[derive(Clone)]
 pub struct DeviceInvite {
-    pub keyset_root_authority: HeaderHash,
+    pub keyset_root_authority: ActionHash,
     // Either the KeysetRoot or the DeviceInviteAcceptance
-    pub parent: HeaderHash,
+    pub parent: ActionHash,
     pub device_agent: AgentPubKey,
 }
 /*
  * TODO: How do we limit to Create only?
  * 
-impl TryFrom<&Element> for DeviceInvite {
+impl TryFrom<&Record> for DeviceInvite {
     type Error = crate::error::Error;
-    fn try_from(element: &Element) -> Result<Self, Self::Error> {
+    fn try_from(element: &Record) -> Result<Self, Self::Error> {
         match element.header() {
             // Only creates are allowed for a DeviceInvite.
-            Header::Create(_) => {
+            Action::Create(_) => {
                 Ok(match element.entry() {
-                    ElementEntry::Present(serialized) => match Self::try_from(serialized) {
+                    RecordEntry::Present(serialized) => match Self::try_from(serialized) {
                         Ok(deserialized) => deserialized,
                         Err(e) => return Err(crate::error::Error::Wasm(e)),
                     }
@@ -41,19 +41,19 @@ impl TryFrom<&Element> for DeviceInvite {
 #[cfg(test)]
 fixturator!(
     DeviceInvite;
-    constructor fn new(HeaderHash, HeaderHash, AgentPubKey);
+    constructor fn new(ActionHash, ActionHash, AgentPubKey);
 );
 
 impl DeviceInvite {
-    pub fn new(keyset_root_authority: HeaderHash, parent: HeaderHash, device_agent: AgentPubKey) -> Self {
+    pub fn new(keyset_root_authority: ActionHash, parent: ActionHash, device_agent: AgentPubKey) -> Self {
         Self { keyset_root_authority, parent, device_agent }
     }
 
-    pub fn as_keyset_root_authority_ref(&self) -> &HeaderHash {
+    pub fn as_keyset_root_authority_ref(&self) -> &ActionHash {
         &self.keyset_root_authority
     }
 
-    pub fn as_parent_ref(&self) -> &HeaderHash {
+    pub fn as_parent_ref(&self) -> &ActionHash {
         &self.parent
     }
 
