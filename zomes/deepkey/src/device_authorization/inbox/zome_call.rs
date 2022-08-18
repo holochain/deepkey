@@ -1,4 +1,5 @@
 use deepkey_integrity::hdk::prelude::*;
+use deepkey_integrity::entry::LinkTypes;
 
 #[hdk_extern]
 fn invite_agents_and_notify(invitees: Vec<AgentPubKey>) -> ExternResult<()> {
@@ -11,7 +12,8 @@ fn invite_agents_and_notify(invitees: Vec<AgentPubKey>) -> ExternResult<()> {
                     acceptance.invite,
                     GetOptions::latest(),
                 )?
-            )
+            ),
+            LinkTypes::AgentInviteNotify,
         )
     }
 }

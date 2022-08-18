@@ -4,7 +4,7 @@ use crate::key_registration::entry::KeyGeneration;
 pub const KEY_ANCHOR_BYTES: usize = 32;
 
 #[hdk_entry_helper]
-#[derive(Clone, Copy, Debug, SerializedBytes)]
+#[derive(Clone, Copy)] // Debug, SerializedBytes implemented by hdk_entry_helper
 pub struct KeyAnchor([u8; KEY_ANCHOR_BYTES]);
 
 /* Old method of defining entry defs -- now in src/entry.rs, in #[hdk_entry_defs] macro
@@ -30,7 +30,7 @@ impl AsRef<[u8]> for KeyAnchor {
     }
 }
 
-fixed_array_serialization!(KeyAnchor, KEY_ANCHOR_BYTES);
+//fixed_array_serialization!(KeyAnchor, KEY_ANCHOR_BYTES);
 /*
 impl TryFrom<&Record> for KeyAnchor {
     type Error = crate::error::Error;

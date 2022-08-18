@@ -3,6 +3,7 @@ use deepkey_integrity::device_authorization::device_invite::entry::DeviceInvite;
 use deepkey_integrity::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
 use deepkey_integrity::device_authorization::inbox::DEVICE_INVITE_LINK_TAG_BYTES;
 use deepkey_integrity::device_authorization::device_invite::local_keyset_parent;
+use deepkey_integrity::entry::LinkTypes;
 
 #[hdk_extern]
 fn invite_agents(invitees: Vec<AgentPubKey>) -> ExternResult<Vec<DeviceInviteAcceptance>> {
@@ -18,6 +19,7 @@ fn invite_agents(invitees: Vec<AgentPubKey>) -> ExternResult<Vec<DeviceInviteAcc
         create_link(
             invitee.clone().into(),
             hash_entry(invite)?,
+            LinkTypes::AgentInvite,
             LinkTag(DEVICE_INVITE_LINK_TAG_BYTES.iter().chain(invite_header.get_raw_39().iter()).cloned().collect::<Vec<u8>>()),
         )?;
         acceptances.push(DeviceInviteAcceptance::new(

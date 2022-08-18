@@ -5,9 +5,9 @@ use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAc
 use crate::device_authorization::device_invite::entry::DeviceInvite;
 use crate::device_authorization::device_invite_acceptance::error::Error;
 
-fn _validate_create_authorization(create_header: &Create, device_invite: &DeviceInvite) -> ExternResult<ValidateCallbackResult> {
+fn _validate_create_author(author: &AgentPubKey, device_invite: &DeviceInvite) -> ExternResult<ValidateCallbackResult> {
     // Only the intended recipient of a device invite can accept it.
-    if &create_header.author != device_invite.as_device_agent_ref() {
+    if author != device_invite.as_device_agent_ref() {
         Error::WrongAuthor.into()
     }
     else {
@@ -23,7 +23,10 @@ fn _validate_create_ksr(device_invite: &DeviceInvite, device_invite_acceptance: 
         Ok(ValidateCallbackResult::Valid)
     }
 }
+
 /*
+ * Under classic valiation, we received the element Action (Header); Only a Create should be seen.
+ * 
 #[hdk_extern]
 fn validate_create_entry_device_invite_acceptance(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     let device_invite_acceptance = match DeviceInviteAcceptance::try_from(&validate_data.element) {
@@ -38,7 +41,7 @@ fn validate_create_entry_device_invite_acceptance(validate_data: ValidateData) -
 
     match validate_data.element.header() {
         Action::Create(create_header) => {
-            match _validate_create_authorization(&create_header, &device_invite) {
+            match _validate_create_author(&create_header.author, &device_invite) {
                 Ok(ValidateCallbackResult::Valid) => { },
                 validate_callback_result => return validate_callback_result,
             }
@@ -50,26 +53,24 @@ fn validate_create_entry_device_invite_acceptance(validate_data: ValidateData) -
         _ => Error::WrongHeader.into(),
     }
 }
-*/
-pub fn confirm_create_entry_device_invite_acceptance(device_invite_acceptance: DeviceInviteAcceptance, header: Action) -> ExternResult<ValidateCallbackResult> {
+ *
+ */
+
+/// 
+/// Confirm that a Create DeviceInviteAcceptance is valid.  Requires the author be known
+/// 
+pub fn confirm_create_entry_device_invite_acceptance(device_invite_acceptance: DeviceInviteAcceptance, author: AgentPubKey) -> ExternResult<ValidateCallbackResult> {
     let device_invite = match resolve_dependency(device_invite_acceptance.as_invite_ref().to_owned().into())? {
         Ok(ResolvedDependency(_, device_invite)) => device_invite,
         Err(validate_callback_result) => return Ok(validate_callback_result),
     };
 
-    match header {
-        Action::Create(create_header) => {
-            match _validate_create_authorization(&create_header, &device_invite) {
-                Ok(ValidateCallbackResult::Valid) => { },
-                validate_callback_result => return validate_callback_result,
-            }
-
-            _validate_create_ksr(&device_invite, &device_invite_acceptance)
-        },
-        Action::Update(_) => Error::UpdateAttempted.into(),
-        Action::Delete(_) => Error::DeleteAttempted.into(),
-        _ => Error::WrongHeader.into(),
+    match _validate_create_author(&author, &device_invite) {
+        Ok(ValidateCallbackResult::Valid) => (()),
+        validate_callback_result => return validate_callback_result,
     }
+
+    _validate_create_ksr(&device_invite, &device_invite_acceptance)
 }
 /*
 #[hdk_extern]

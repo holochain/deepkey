@@ -1,21 +1,19 @@
 use hdk::prelude::*;
 use crate::error::Error;
-use crate::keyset_root::entry::KEYSET_ROOT_CHAIN_INDEX;
-use crate::keyset_root::entry::KeysetRoot;
-use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
-use crate::key_anchor::entry::KeyAnchor;
-use crate::key_registration::entry::KeyRegistration;
-use crate::change_rule::entry::ChangeRule;
+//use crate::keyset_root::entry::KEYSET_ROOT_CHAIN_INDEX;
+//use crate::keyset_root::entry::KeysetRoot;
+//use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
+//use crate::key_anchor::entry::KeyAnchor;
+//use crate::key_registration::entry::KeyRegistration;
+//use crate::change_rule::entry::ChangeRule;
 
 pub struct ResolvedDependency<D>(pub Record, pub D);
 
 pub fn resolve_dependency<'a, O>(hash: AnyDhtHash) -> ExternResult<Result<ResolvedDependency<O>, ValidateCallbackResult>>
     where
-        O: TryFrom<SerializedBytes, Error = SerializedBytesError>        {
-    let element = match get(hash.clone(), GetOptions::content())? {
-        Some(element) => element,
-        None => return Ok(Err(ValidateCallbackResult::UnresolvedDependencies(vec![hash]))),
-    };
+    O: TryFrom<SerializedBytes, Error = SerializedBytesError>
+{
+    let element: Record = must_get_valid_record(hash.clone(), GetOptions::content())?;
 
     let output: O = match element.entry().to_app_option() {
         Ok(Some(output)) => output,

@@ -10,6 +10,12 @@ use crate::dna_binding::entry::DnaBinding;
 use crate::generator::entry::Generator;
 use crate::key_registration::entry::KeyRegistration;
 
+#[hdk_link_types]
+pub enum LinkTypes {
+    AgentInvite,
+    AgentInviteNotify,
+}
+
 #[hdk_entry_defs]
 #[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
@@ -33,7 +39,6 @@ pub enum EntryTypes {
     KeyRegistration(KeyRegistration),
 }
 
-    
 /*
 entry_types!([
     ChangeRule::entry_def(),

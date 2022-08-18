@@ -88,18 +88,19 @@ pub struct ChangeRule {
     pub spec_change: AuthorizedSpecChange,
 }
 
-impl TryFrom<&Record> for ChangeRule {
-    type Error = Error;
-    fn try_from(element: &Record) -> Result<Self, Self::Error> {
-        Ok(match element.entry() {
-            RecordEntry::Present(serialized_change_rule) => match ChangeRule::try_from(serialized_change_rule) {
-                Ok(change_rule) => change_rule,
-                Err(e) => return Err(Error::Wasm(e)),
-            }
-            __ => return Err(Error::EntryMissing),
-        })
-    }
-}
+// Now included in hdk_entry_helper
+// impl TryFrom<&Record> for ChangeRule {
+//     type Error = Error;
+//     fn try_from(element: &Record) -> Result<Self, Self::Error> {
+//         Ok(match element.entry() {
+//             RecordEntry::Present(serialized_change_rule) => match ChangeRule::try_from(serialized_change_rule) {
+//                 Ok(change_rule) => change_rule,
+//                 Err(e) => return Err(Error::Wasm(e)),
+//             }
+//             __ => return Err(Error::EntryMissing),
+//         })
+//     }
+// }
 
 #[cfg(test)]
 fixturator!(
