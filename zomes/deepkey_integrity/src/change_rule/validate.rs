@@ -12,7 +12,8 @@ use crate::validate_classic::*;
 fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResult> {
     let leaf_header_element: Record = match get(change_rule.as_keyset_leaf_ref().clone(), GetOptions::content())? {
         Some(element) => element,
-        None => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![change_rule.as_keyset_leaf_ref().clone().into()])),
+        None => return Ok(ValidateCallbackResult::UnresolvedDependencies(
+            UnresolvedDependencies::Hashes(vec![change_rule.as_keyset_leaf_ref().clone().into()]))),
     };
 
     // The leaf MUST be a device acceptance if not the root itself.
@@ -32,12 +33,22 @@ fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule)
     }
 
     // @todo - way to do this without full chain validation package?
+    let info = zome_info()?;
+    let zome_id = info.id;
+    // TODO: I can't figure out how to get an EntryType::App(AppEntryType{ ... }) from any of this
+    // Zome's Entry Types, to compare against an action().entry_type().  It seems very
+    // ... difficult.
+    let dia_index: EntryDefIndex = UnitEntryTypes::DeviceInviteAcceptance.try_into().unwrap();
+    let device_invite_acceptance_type = EntryType::App(AppEntryType::new(
+        dia_index, zome_id, EntryVisibility::Public,
+    ));
+    
     match &validate_data.validation_package {
         Some(ValidationPackage(elements)) => {
-            let device_invite_acceptance_type = UnitEntryTypes::DeviceInviteAcceptance; //entry_type!(DeviceInviteAcceptance)?;
+            //let device_invite_acceptance_type = UnitEntryTypes::DeviceInviteAcceptance; //entry_type!(DeviceInviteAcceptance)?;
             let device_invite_acceptances: Vec<&Record> = elements.iter()
-                .filter(|element| element.header().entry_type() == Some(&device_invite_acceptance_type))
-                .filter(|element| element.header().header_seq() >= leaf_header_element.header().header_seq())
+                .filter(|element| element.action().entry_type() == Some(&device_invite_acceptance_type))
+                .filter(|element| element.action().action_seq() >= leaf_header_element.action().action_seq())
                 .collect();
             if device_invite_acceptances.len() != 1 {
                 return Error::StaleKeysetLeaf.into();
@@ -64,12 +75,12 @@ fn _validate_spec(change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResu
 
 fn _validate_create_keyset_root(validate_data: &ValidateData, change_rule: &ChangeRule, keyset_root: &KeysetRoot) -> ExternResult<ValidateCallbackResult> {
     // The KSR needs to reference the author as the FDA.
-    if keyset_root.as_first_deepkey_agent_ref() != validate_data.element.header().author() {
+    if keyset_root.as_first_deepkey_agent_ref() != validate_data.element.action().author() {
         return Error::AuthorNotFda.into()
     }
 
     // Create must be immediately after KeysetRoot.
-    if validate_data.element.header().prev_header() != Some(change_rule.as_keyset_root_ref()) {
+    if validate_data.element.action().prev_action() != Some(change_rule.as_keyset_root_ref()) {
         return Error::CreateNotAfterKeysetRoot.into()
     }
 
@@ -144,9 +155,10 @@ fn _validate_update_keyset_root(_: &ValidateData, previous_change_rule: &ChangeR
 }
 
 fn _validate_update_authorization(_: &ValidateData, previous_change_rule: &ChangeRule, proposed_change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResult> {
-    match previous_change_rule.authorize(&proposed_change_rule.spec_change.authorization_of_new_spec, &holochain_serialized_bytes::encode(&proposed_change_rule.spec_change.new_spec)?) {
+    match previous_change_rule.authorize(&proposed_change_rule.spec_change.authorization_of_new_spec,
+                                         &holochain_serialized_bytes::encode(&proposed_change_rule.spec_change.new_spec)?) {
         Ok(_) => Ok(ValidateCallbackResult::Valid),
-        Err(e) => e.into(),
+        Err(e) => Ok(e.into()), // converts change_rule::error::Error to Invalid callback result w/ string description
     }
 }
 
@@ -155,7 +167,7 @@ fn _validate_flat_update_tree(previous_change_rule_element: &Record)  -> ExternR
     // The previous change rule MUST be the root of the CRUD tree.
     // i.e. the updates MUST always point to the original Create header (not an Update).
     // The create validation ensures that it always immediately follows the KeysetRoot
-    match previous_change_rule_element.header() {
+    match previous_change_rule_element.action() {
         Action::Create(_) => Ok(ValidateCallbackResult::Valid),
         _ => Error::BranchingUpdates.into(),
     }
@@ -175,7 +187,7 @@ fn validate_update_entry_key_change_rule(validate_data: ValidateData) -> ExternR
     }
 
     // On update we need to validate the proposed change rule under the rules of the previous rule.
-    match validate_data.element.header() {
+    match validate_data.element.action() {
         Action::Update(update_header) => {
             let (previous_change_rule_element, previous_change_rule) = match resolve_dependency::<ChangeRule>(update_header.original_header_address.clone().into())? {
                 Ok(ResolvedDependency(previous_change_rule_element, change_rule)) => (previous_change_rule_element, change_rule),
