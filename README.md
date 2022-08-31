@@ -1,280 +1,390 @@
 # Deepkey
 
-Deepkey is a happ to track public keys associated with devices and other happs.
-
-Similar to centralised services like Keybase, we want users to be able to add and remove devices to their "account".
-
-We don't really have accounts, because deepkey is a happ, but we do have the concept of a "keyset".
+Deepkey is a happ to provide a decentralized public key infrastructure (DPKI) for keys associated with Holochain conductors and applications. Similar to centralised services like Keybase, we want users to be able to manage their "keyset" by adding and removing devices and public/private keypairs. 
 
 The keys for happs installed on each device are also tracked under the keyset for the device.
 
-Deepkey supports real-world messiness such as lost/stolen devices, multisignature key revocation and immutable/mutable keys registrations.
+Because humans are notoriously bad at managing cryptographic keys, we believe a project like Holochain must provide key management tools to help people deal with real-world messiness such as lost/stolen keys or devices. How many billions of dollars have been lost due to the lack of a key management infrastructure.
 
-Deepkey is the foundational app for all other happs.
+Deepkey provides the ability to:
+- Register keys under the authority of a keyset.
+- Replace keys with new ones.
+- Revoke keys / declare them dead.
+- Associate multiple devices under unified keyset management.
+- Check the validity of a key.
+- Store private instructions to rebuild app keys from a master seed to reestablish authority after data loss.
+- Deepkey provides the ability to do social management of keys through m of n signatures (the initial default is a 1 of 1 signature using a revocation key).
 
-It is the first happ every conductor must install, and all other happs rely on it to query the status of keys.
+Deepkey is a foundational app for all other Holochain app keys. Therefore, it is the first happ every conductor must install, and all other happs rely on it to query the status of keys.
 
-The 32 byte representation of any pubkey can be used to query its status in a single DHT query.
+The most common call to Deepkey is `key_state((Key, Timestamp))` to query the validity of a key at a particular time.
 
 ## Joining the DHT
 
-The deepkey `JoiningProof` is two proofs.
+The Deepkey `JoiningProof` involves two proofs. One is the membrane proof which is true for all happs, and the other is the keyset proof described in the next section.
 
-### Key set proof
+### Membrane Proof
 
-The `keyset_proof` is the proof that the device can exist in some key set (see below).
+The purpose of a `membrane_proof` is to make it hard to flood the network with fake accounts.
 
-The validation and CRUD logic for the key set is implemented.
+*TODO: The membrane logic is not currently implemented.*
 
-It must be either a valid `KeysetRoot` or a reference to a valid `DeviceInvite` as a `DeviceInviteAcceptance`.
+Future membrane logic possibilities include:
 
-If the keyset proof is a new `KeysetRoot` then it must be immediately followed by a valid `ChangeRule` to define how public key management works within the key set (see below).
+- `ProofOfWork`: Agent must prove that they've performed some computational work to prevent low-effort spam bots.
+- `ProofOfStake`: Agent must put up value that can be taken in case of bad behaviour.
+- `ProofOfAuthority`: Agent must have a signature from a pre-defined authority to join.
 
-### Membrane proof
+There are a few external details to resolve before we require membrane proofs:
 
-The `membrane_proof` is the proof that makes it harder to flood the network with garbage.
+- Ability to have different versions of Deepkey apps to choose from, and configure their own joining proof.
+- Ability for hosts to call external functions before joining the network, e.g. to generate a proof of work before completing installation of the app.
+- More thought is needed about the types of membrane proofs we might like for the default behavior of Deepkey.
 
-The membrane logic is NOT implemented.
+### Keyset Proof
 
-Future ideas include:
+The `keyset_proof` is the proof that the device has authority to participate in some keyset. The keyset defines the rules which determine the methods for revoking or replacing its keys.
 
-- `ProofOfWork`: Agent must hit some difficulty to prevent low effort spam bots
-- `ProofOfStake`: Agent must put up value that can be slashed in case of bad behaviour
-- `ProofOfAuthority`: Agent must have a signature from known authorities to join
+The first entry the app makes in each user's source chain must be either:
+1. a valid `KeysetRoot` if it is creating a new keyset space, or 
+2. a reference to a valid `DeviceInvite`, in the form of a `DeviceInviteAcceptance`, if you're joining an existing keyset space. 
 
-There are a few external details to resolve before the membrane proofs would make sense:
+(This will be at least the fifth entry in the chain, after the three genesis entries and the `init_complete`.)
 
-- Ability to have different deepkeys for happs to choose and configure proof
-- Ability for hosts to call extern functions before joining the network to e.g. generate a proof of work consistent with the verification
-- More thought about the types of membrane proofs we might like for deepkey
+If the keyset proof is a new `KeysetRoot` then it must be immediately followed by a valid `ChangeRule` to define how key management works within this keyset. On the other hand, if you join an existing keyset through a `DeviceInvite`, the `ChangeRule` of that keyset is what governs keys made on this chain.
 
 ## Keyset
 
-A key set is the _set_ of _keys_ controlled by a _single entity_ (ostensibly a human).
+A keyset is the set of keys governed by a ruleset, presumably under the control of one person.
 
-The keys in a keyset are the `AgentPubKey` of the source chain authors in deepkey.
 
-Each source chain in deepkey is modelled as a real-world device, e.g. a laptop, mobile, etc.
+When you install a new app in Holochain, by default a new keypair is generated to to control the source chain of that app. The public key of that keypair serves as the address of your agent in that app's DHT. The private key signs all of your network communications and all actions on your chain. Deepkey registers, manages, and reports on the validity of each `AgentPubKey` installed on your conductor.
 
-It could also be a more abstract entity such as a fleet of IoT devices.
+### Keyset Root
 
-When a new device joins the network it must either start a new keyset or prove it has been invited to an existing keyset.
+A `KeysetRoot` (KSR) is self-declared onto the network using a single-purpose throwaway keypair.
 
-It does this by committing either a `KeysetRoot` or `DeviceInviteAcceptance` as the fourth entry on the chain.
+The structure of a `KeysetRoot` is:
 
-### Key set root
+- The `first_deepkey_agent` (FDA), the author of the `KeysetRoot`.
+- The `root_pub_key`, the public part of an throwaway keypair which is only used to generate this KSR. (Using the `sign_ephemeral` HDK function.)
+-  A `Signature`: the authority of the FDA is established using the private part of the throwaway keypair to sign sign the FDA's pubkey.
 
-The `KeysetRoot` (KSR) is:
+Note that if a device is to issue a KSR it must do so as its very first action in Deepkey. 
 
-- The `first_deepkey_agent` or "FDA" which is the `AgentPubKey` of the agent that is authoring the `KeysetRoot`
-- The `root_pub_key` is the `AgentPubKey` of a keypair that is immediately discarded with `sign_ephemeral` from the HDK
-- The `Signature` of the `first_deepkey_agent` by the ephemeral private key of the `root_pub_key`
-
-This self-signs a new entity into the network.
-
-Note that if a device is to issue a KSR it must do so as its very first action in deepkey. A device can accept an invite to join a different key set (see below).
-
-__A device can NEVER create a second KSR without starting a new source chain.__
-
-In general there is nothing stopping sybils/spammers from self-signing themselves into Deepkey. That needs to be mitigated by a combination of:
-
-- the joining proof and membrane
-- keeping the app as lightweight as possible in general
-- rate limits to mitigate spam: https://hackmd.io/5HfCCyLgScCPqVI-s8uSjA
+**A device can NEVER create another KSR without starting a new source chain.**
 
 #### KeysetRoot API
 
-##### Create
+**Create**: The validation that happens when you create a new `KeysetRoot`
 
-- A `KeysetRoot` struct must deserialize cleanly from the element being validated
-- must be created at index 3 (4th position) in the author's chain
-- the author must be the FDA
-- the signature of the FDA from the root/ephermal pubkey must be valid
+- A `KeysetRoot` struct must deserialize cleanly from the record being validated.
+- Must be created at index 4 (5th position) in the author's chain.
+- The author must be the FDA.
+- The signature of the FDA from the root/ephemeral pubkey must be valid.
 
-##### Read
+**Read**: There is currently no read functions or lookups exposed as zome calls, but this may change in the future as people may want to use `KeysetRoot` as a unifying identity.
 
-- no direct read functions or lookups exposed in zome calls
-- a new invite issued by any device will include its KSR header hash
+**Update**: Not allowed.
 
-##### Update
+**Delete**: Not allowed.
 
-n/a
-
-##### Delete
-
-n/a
-
-##### Zome calls
+**Zome Calls**:
 
 - `create_keyset_root`
-  - input is a `(KeysetRoot, ChangeRule)` tuple
-  - creates both the `KeysetRoot` and `ChangeRule` sequentially
-  - output is a `(HeaderHash, HeaderHash)` tuple of the created elements
+  - Input is a `(KeysetRoot, ChangeRule)` tuple.
+  - Creates both the `KeysetRoot` and `ChangeRule` records sequentially.
+  - Output is a `(ActionHash, ActionHash)` tuple of the created records.
 
-### Key set tree/leaves
+### Keyset Tree/Leaves
 
-Under each `KeysetRoot` is an arbitrary tree of `DeviceInvite` and `DeviceInviteAcceptance` pairs as entries.
+Under each `KeysetRoot` is an arbitrary tree of `DeviceInvite` and `DeviceInviteAcceptance` pairs as entries. A `DeviceInviteAcceptance` brings a device under the management of the `KeysetRoot` that it references. This has the effect of saying, "the same entity that created the keyset also controls this device."
 
-A valid `DeviceInviteAcceptance` brings a device under the specific `KeysetRoot` that it references.
+**Each device can only be managed by a single keyset at one time.**
 
-This has the effect of saying "The same entity that created the keyset also owns/controls this device".
+Accepting an invite moves ownership to a new entity, and removes the device along with its keys from the previous keyset. This is why both the invitor and invitee need to commit corresponding entries to their chains. The invitation contain cryptographic signatures of the process of transferring ownership.
 
-__Each device can only be under a single key set at one time.__
+The structure of a `DeviceInvite` (written to the invitor's chain) is:
 
-Accepting an invite has the effect of moving ownership to a new entity and removing ownership from the previous entity. This is why both the invitor and invitee need to commit entries to their chain, the headers contain cryptographic signatures of the process of transferring ownership.
+- KSR: An `ActionHash` referring to the invitor's KSR.
+- Parent: An `ActionHash` referring to the invitor's direct parent in the keyset tree, which is either its KSR or its current `DeviceInviteAcceptance`. This is used to establish the chain of authority from the original KSR.
+- Invitee: The `AgentPubKey` being invited.
 
-A `DeviceInvite` is:
+The structure of a `DeviceInviteAcceptance` (written to the invitee's chain) is:
 
-- A `HeaderHash` reference to its KSR
-- A `HeaderHash` reference to its direct parent in the tree
-  - Either the KSR or a `DeviceInviteAcceptance`
-- The `AgentPubKey` being invited
-
-A `DeviceInviteAcceptance` is:
-
-- The `HeaderHash` of the KSR
-- The `HeaderHash` of the `DeviceInvite`
+- The `ActionHash` of the KSR.
+- The `ActionHash` of the `DeviceInvite`.
 
 #### Device Invite API
 
-##### Create
+**Create**: The validation that happens when you create a new `DeviceInvite`:
 
-- A `DeviceInvite` must deserialize cleanly from the validating element
-- The KSR must be fetched and deserialized into a `KeysetRoot`
-- An author cannot invite themselves
-- The parent element must be fetched
-- There must be no `DeviceInviteAcceptance` headers in the full chain validation package between the parent header and the current element
-- If the parent and KSR are the same `HeaderHash` then:
-  - The author must be the FDA of the KSR
-- Else:
-  - The parent must fetch and deserialize to a `DeviceInviteAcceptance`
-  - The deserialized parent's invite must fetch and deserialize to a `DeviceInvite`
-  - The deserialized `DeviceInvite` must have the same KSR as the new `DeviceInvite`
-  - The deserialized `DeviceInvite` invitee must be the author of the new `DeviceInvite`
+- A `DeviceInvite` must deserialize cleanly from the validating record.
+- The KSR must be fetched and deserialized into a `KeysetRoot`.
+- An author cannot invite themselves.
+- The parent record must be fetched.
+- There must be no `DeviceInviteAcceptance` actions in the invitor's chain between the parent action and the current record.
+- If the parent and KSR are the same `ActionHash` then:
+  - The author must be the FDA of the KSR.
+- Else (parent and KSR are not the same):
+  - The parent must fetch and deserialize to a `DeviceInviteAcceptance`.
+  - The invite in that acceptance must fetch and deserialize to a `DeviceInvite`.
+  - That deserialized `DeviceInvite` must have the same KSR as the new `DeviceInvite` currently being validated.
+  - Also in that `DeviceInvite`, the invitee must be the author of the new `DeviceInvite`.
 
-__We do NOT check the invitee exists on the DHT yet because they likely don't, that's why we're inviting them.__
+We do not check whether the invitee exists on the DHT yet because they likely don't, that's why we're inviting them. If the `DeviceInviteAcceptance` is valid, and the `DeviceInvite` is valid, we trust that the parent's `DeviceInviteAcceptance` was properly validated, which ensures chain of authority to the KSR.
 
-##### Read
+**Read**: No direct read or lookup functions exposed in zome calls. The keyset tree structure is used internally for validation of key registration/revocation logic.
 
-- no direct read or lookup functions exposed in zome calls
-- key sets are mostly used internally for key registration/revocation logic
+**Update**: Not allowed.
 
-##### Update
+**Delete**: Not allowed.
 
-n/a
-
-##### Delete
-
-n/a
-
-##### Zome calls
+**Zome Calls**:
 
 - `invite_agent`
-  - input is the `AgentPubKey` to invite
-    - this agent does not exist on the DHT yet if they are planning to use the invite as their joining proof
-  - output is the exact `DeviceInviteAcceptance` the invitee must commit to their chain
-  - invites are always under the current key set
+  - Input is the `AgentPubKey` to invite.
+    - This agent does not exist on the DHT yet if they are planning to use the invite as their joining proof.
+  - Output is the exact `DeviceInviteAcceptance` the invitee must commit to their chain.
+  - Invites are always under the current keyset.
 
 #### Device Invite Acceptance API
 
-##### Create
+**Create**:
 
-- A `DeviceInviteAcceptance` must deserialize cleanly from the validating element
-- A `DeviceInvite` must be fetched and deserialize from the `invite` header hash on the `DeviceInviteAcceptance`
+- A `DeviceInviteAcceptance` must deserialize cleanly from the validating record
+- A `DeviceInvite` must be fetched and deserialize from the `invite` action hash on the `DeviceInviteAcceptance`
 - The author of the `DeviceInviteAcceptance` must be the referenced `AgentPubKey` on the `DeviceInvite`
 - The `KeysetRoot` must be the same on both the `DeviceInvite` and the `DeviceInviteAcceptance`
 
-##### Read
+**Read**: No exposed zome calls for read or lookup. For validation, the most recent `DeviceInviteAcceptance` is used to determine the current keyset.
 
-- no direct read or lookup functions exposed in zome calls
-- internally the most recent `DeviceInviteAcceptance` on the author's chain is always used to determine the current key set
+**Update**: Not allowed.
 
-##### Update
+**Delete**: Not allowed.
 
-n/a
 
-##### Delete
-
-n/a
-
-##### Zome calls
+##### Zome Calls
 
 - `accept_invite`
   - input is a `DeviceInviteAcceptance`
-  - output is the `HeaderHash` of the entry created
+  - output is the `ActionHash` of the entry created
   - creates the entry as-is from input
 
-## Key registration
 
-Agents can register public keys on their source chain in deepkey.
 
-In the general sense of all possible deepkey implementations, the public keys can be any type of public key, e.g. for blockchains or other systems.
+### ChangeRule API
 
-In the "main" deepkey, or at least the one that needs to be installed into a conductor so that other happs can register their keys in a shared space, only holochain `AgentPubKey` public keys are supported for registration.
+A `ChangeRule` defines the rules within a keyset for changing keys. It is used to validate replacement or revocation of any key. It can be configured to support social signing through m of n signatures of trusted agents, but by default it is configured as a 1 of 1 signature by a revocation key.
 
-The `KeyRegistration` entry is the main entry point into managing public keys.
+The structures involved in a `ChangeRule` are:
 
-There are other entry types that track and control how key registrations can work.
+`AuthoritySpec` describes the authority/ies involved in replacing or revoking a key. Number of signatures required, and the public keys that are allowed to sign for the authorization.
 
-The `KeyAnchor` entry is the literal bytes of the registered key so that the status of a key can be looked up in a single `get` call, without needing to first lookup the corresponding `KeyRegistration`.
 
-The `ChangeRule` defines multisig rules.
+```rust
+pub struct AuthoritySpec {
+    /// set to 1 for a single signer scenario
+    pub sigs_required: u8,
+    /// These signers probably do NOT exist on the DHT.
+    /// E.g. a revocation key used to create the first change rule.
+    pub authorized_signers: Vec<AgentPubKey>,
+}
+```
+`AuthorizedSpecChange` exists to make a change to the authorization rules. It includes the new `AuthoritySpec`, and a set of authorizing signatures, valid according to the existing spec that this spec change replaces.
+```rust
+pub struct AuthorizedSpecChange {
+    pub new_spec: AuthoritySpec,
+    /// Signature of the content of the authority_spec field,
+    /// signed by throwaway RootKey on Create,
+    /// or according to previous authoritative AuthSpec upon Update.
+    pub authorization_of_new_spec: Vec<Authorization>, // required sigs
+}
+```
+`Authorization` is a tuple containing a u8 index into `authorized_signers`, and a valid signature from that key.
+```rust
+pub type Authorization = (u8, Signature); 
+```
+A `ChangeRule` ties the new authorization spec to a KSR. It includes a proof of authority in the form of the `keyset_leaf`.
+```rust
+pub struct ChangeRule {
+    pub keyset_root: ActionHash, // reference to a `KeysetRoot`
+    pub keyset_leaf: ActionHash, // reference to either the `KeysetRoot` or a `DeviceInviteAcceptance` that proves the authority to change the rules for this Keyset
+    pub spec_change: AuthorizedSpecChange, // defining the new multisig rules
+}
+```
 
-A `Generator` that has been signed off by the multisig of a `ChangeRule` to authorize the author of the `Generator` to register new keys.
+A `ChangeRule` can only be *created* immediately following a `KeysetRoot` entry on a source chain. `ChangeRule` records can be *updated* on the chain of any device currently under the authority of the same `KeysetRoot`.
 
-Key revocations must always be fully authorized by a `ChangeRule` multisig.
+Note that the spec change signature validation does NOT require that all the signers exist as agents in Deepkey. This means hardware wallets, FIDO-compliant keys, smart cards, etc. could be used to provide signatures into your multisig.
+
+The *create* for a `ChangeRule` is expected to be signed by a "1 of 1" revocation key that is not the key of a Deepkey agent.
+
+**Create**: The validation that happens when you create a new `ChangeRule`
+
+- A `ChangeRule` must deserialize cleanly from the record being validated.
+- A `KeysetRoot` must fetch and deserialize cleanly from the keyset root on the `ChangeRule`.
+- The keyset leaf must be in the author's chain.
+- There must NOT be any newer `DeviceInviteAcceptance` records in the validation package.
+- The `KeysetRoot` FDA must be the author of the `ChangeRule`.
+- The `ChangeRule` `prev_action` must be the `KeysetRoot` record.
+- The `ChangeRule` authorization of the new spec must have exactly one authorization signature.
+- The `ChangeRule` authorization signature must be valid as being from the `KeysetRoot` root (throwaway) pubkey.
+- The `ChangeRule` `spec_change` specifies an 1 of 1 signing rule.
+- In the `ChangeRule` spec, `sigs_required` = 1.
+
+**Read**: There are no exposed zome function for looking up `ChangeRule`s. 
+
+**Update**: The validation that happens when you update a `ChangeRule`
+
+- A `ChangeRule` must deserialize cleanly from the record being validated.
+- A `KeysetRoot` must fetch and deserialize cleanly from the keyset root on the `ChangeRule`
+- The previous `ChangeRule` must fetch and deserialize cleanly from the `original_action_address` of the update record.
+- The previous `ChangeRule` record must be the original create record. (Every new `ChangeRule` updates the original `ChangeRule` record; that update action is referenced from the original `ChangeRule`, the fifth entry on the source chain.)
+- The keyset leaf must be in the the author's chain.
+- There must NOT be any newer `DeviceInviteAcceptance` records in the validation package.
+- The `KeysetRoot` of the proposed `ChangeRule` must be the same as in the previous `ChangeRule`
+- **The proposed `ChangeRule` authorization must authorize the new spec according to the rules of the previous `ChangeRule`**
+- The `ChangeRule` `spec_change` specifies an m of n signing rule where n >= m.
+- In the `ChangeRule` spec, `sigs_required` >= 1.
+
+**Delete**: Not allowed.
+
+#### Zome Calls
+
+- `new_change_rule`:
+  - The inputs are the `ActionHash` of the old change rule, and the new `ChangeRule`.
+  - Updates the original `ChangeRule` entry (Create only happens when creating a `KeysetRoot` with the original throwaway key.)
+  - Output is the `ActionHash` of the new change rule.
+
+
+## Key Registration
+
+Agents can register public keys on their source chain in Deepkey.
+
+In the design space of all possible deepkey implementations, any type of public key could be registered and managed, e.g. for blockchains, TLS certificates, etc.
+
+In the default Deepkey instance (the one that needs to be installed into a conductor so that other happs can register their keys in a shared space), only Holochain `AgentPubKey` public keys are supported for registration.
+
+The `KeyRegistration` entry is the start of the process to manage a public key. There are other entry types that track and control how key registrations can work, i.e. which rules apply, which authority keys are registered under.
+
+The `KeyAnchor` entry contains only the core 32 bytes of the registered key, stripped of the 3 byte multihash prefix and 4 byte DHT location suffix. Using this `KeyAnchor` entry, the status (valid, revoked, replaced, etc.) of a key can be looked up in a single `get` call, without needing to first lookup the corresponding `KeyRegistration`.
+
+By default, Deepkey change rules support multisignature logic. This is through collecting multiple signatures and applying Holochain validation, not via a cryptographic threshold signature scheme. The `ChangeRule` defines the multisig rules that apply to all keys under the management of a `KeysetRoot`.
+
+Key replacements or revocations must be fully authorized by a `ChangeRule` multisig.
+
+
+### Generator API
+
+A `Generator` is a special purpose key required for registering new keys. Holochain's default key store, "Lair" allows for layers of password encryption of keys. We introduced the concept of a `Generator` in order to make registering a new key require typing an additional password to unlock the `Generator` private key. This makes it so someone can't register a new key on your chain if they're sitting at your workstation with Holochain unlocked.
+
+The structures comprising a `Generator` are:
+
+```rust
+pub struct Generator {
+    change_rule: ActionHash, // `ChangeRule` action that authorizes this `Generator`
+    change: Change,
+}
+pub struct Change {
+    new_key: AgentPubKey, // A new special-purpose key being authorized as a `Generator`
+    authorization: Vec<Authorization>, // authorizes the `new_key` according to the `ChangeRule` rules
+}
+```
+
+**Create**: The validation that happens when you create a new `Generator`
+
+- A `Generator` must deserialize cleanly from the record.
+- The `change_rule` must fetch and deserialize cleanly from the referenced `ActionHash`.
+- The `new_key` must be authorized by the authorization vec in the `Change` according to the `ChangeRule` rules.
+
+**Read**: There is no read or lookup zome call exposed for `Generator`
+
+**Update**: Not allowed
+
+**Delete**: Not allowed
+
+#### Zome Calls
+
+- `new_generator`
+  - input is a `Generator`
+  - output is a `ActionHash`
+  - creates a `Generator`
+
+### KeyGeneration API
+
+The structure of a `KeyGeneration` is:
+```rust
+pub struct KeyGeneration {
+    new_key: AgentPubKey, // New key associated with current chain and KSR
+    new_key_signing_of_author: Signature, // The author of this chain must sign the new key
+    // Ensure the generator has the same author as the KeyRegistration.
+    generator: ActionHash, // This is the key authorized to generate new keys on this chain
+    generator_signature: Signature, // The generator key signing the new key
+}
+```
+
+#### Validation
+
+- A `Generator` must fetch and deserialize cleanly for the `KeyGeneration` generator
+- The `Generator` author must be the same as the `KeyGeneration` author
+- The `Signature` of the `new_key` signing in the author of the `KeyGeneration` must be valid
+- The `Signature` of the `new_key` from the `AgentPubKey` of the `Generator` must be valid
+
 
 ### KeyRegistration API
 
 A `KeyRegistration` enum supports 4 ops/variants:
 
-- `Create` includes a `KeyGeneration` and can be updated or deleted
-- `CreateOnly` includes a `KeyGeneration` but can never be updated or deleted
-- `Update` includes a `KeyRevocation` and a `KeyGeneration` and must be an Update header
-- `Delete` includes a `KeyRevocation` and must be an `Update` header
+```rust
+pub enum KeyRegistration {
+    Create(KeyGeneration), // Creates a key under management of current KSR on this chain
+    CreateOnly(KeyGeneration), // Keys for hosted web users may be of this type, cannot replace/revoke
+    Update(KeyRevocation, KeyGeneration), // revokes a key and replaces it with a newly generated one
+    Delete(KeyRevocation) // permanently revokes a key (Note: still uses an update action.)
+}
+```
 
-`KeyGeneration` and `KeyRevocation` validation logic always work the same regardless of which op they are included in.
+`KeyGeneration` and `KeyRevocation` always use the same validation logic regardless of which `KeyRegistration` variant they are included in.
 
-The op is used to align the `Entry` intent with the `Element` header.
+The `Delete` variant for a `KeyRegistration` uses the update action type for a Record. This is because delete actions don't register their change on the entry hash (just the action hash).
 
-Note that `Delete` op for a `KeyRegistration` is aligned with the `Update` header for an `Element`. This is because `Delete` headers cannot be associated with an `Entry`.
+CRUD operations for a `KeyRegistration` must always be performed in the correct sequence with the corresponding CRUD operations for a `KeyAnchor`. Validation will enforce that the `KeyAnchor` is always preceded by its `KeyRegistration`.
 
-Note also that the CRUD operations for a `KeyRegistration` must always be performed in the correct sequence with the corresponding CRUD operations for a `KeyAnchor`. This is enforced by happ validation.
+**Note:** `CreateOnly` serves the temporary purpose of allowing Holo Hosts to register keys of web users without being able to manage those keys. This feature will most likely be replaced with adding a claim key for web users to claim their unmanaged keys if/when they become a self-hosted Holochain user. *TODO*
 
-#### Create
+**Create**: The validation that happens when you create a new `KeyRegistration`
 
-- A `KeyRegistration` must deserialize cleanly from the element
+- A `KeyRegistration` must deserialize cleanly from the record
 - The `KeyRegistration` must be a `Create` or `CreateOnly`
 - The `KeyGeneration` must be valid
 
-#### Read
+**Read**: No zome calls exposed for direct lookups. The status of a key is read by getting the `KeyAnchor` for a `KeyRegistration`.
 
-- not intended for direct lookups
-- the status of a key is read by getting the `KeyAnchor` for a `KeyRegistration`
+**Update**: The validation that happens when you update a `KeyRegistration`
 
-#### Update
-
-- A `KeyRegistration` must deserialize cleanly from the element
+- A `KeyRegistration` must deserialize cleanly from the record
 - The `KeyRegistration` must be an `Update` or `Delete`
 - The prior key registration from the `KeyRevocation` must fetch and deserialize to a `KeyRegistration`
 - The prior `KeyRegistration` must be a `Create` or `Update`
 - The prior `Generator` must fetch and deserialize cleanly from the prior `KeyRegistration`
 - The prior `ChangeRule` must fetch and deserialize cleanly from the prior `Generator`
 - The proposed `KeyRevocation` must validate according to the prior `ChangeRule`
-- IF the `KeyRegistration` is an `Update` then the `KeyGeneration` must be valid
+- If the `KeyRegistration` is an `Update` then the `KeyGeneration` must be valid
 
-#### Delete
+**Delete**:
 
-- A `KeyRegistration` must fetch and deserialize cleanly from the `Delete` header's `deletes_address`
+- A `KeyRegistration` must fetch and deserialize cleanly from the `Delete` action's `deletes_address`
 - The `KeyRegistration` must be a `KeyRegistration::Delete` variant
+- The proposed `KeyRevocation` must validate according to the prior `ChangeRule`
 
 #### Zome functions
 
 - `new_key_registration`:
   - input is a `KeyRegistration`
   - IF the `KeyRegistration` is `Create` or `CreateOnly`
-    - creates the `KeyRegistration` element
-    - creates the `KeyAnchor` element
+    - creates the `KeyRegistration` record
+    - creates the `KeyAnchor` record
   - IF the `KeyRegistration` is `Update`
     - updates the prior key registration to the new key registration
     - looks up the revoked `KeyAnchor` and updates it to the new `KeyAnchor`
@@ -283,72 +393,52 @@ Note also that the CRUD operations for a `KeyRegistration` must always be perfor
     - deletes that update
     - looks up the revoked `KeyAnchor` and deletes it
 
-### KeyGeneration API
-
-`KeyGeneration` is:
-
-- the `new_key` being associated with the deepkey author
-- the `new_key_signing_of_author` as a `Signature` that the new key accepts being associated with the deepkey author
-  - note that there is NOT a nonce under this `Signature` so the signing is permanent
-- the `generator` as a `HeaderHash` to the `Generator` entry defining the acceptance rules
-- the `generator_signature` as a `Signature` from the generator's `AgentPubKey`
-
-#### validation
-
-- A `Generator` must fetch and deserialize cleanly for the `KeyGeneration` generator
-- The `Generator` author must be the same as the `KeyGeneration` author
-- The `Signature` of the `new_key` signing in the author of the `KeyGeneration` must be valid
-- The `Signature` of the `new_key` from the `AgentPubKey` of the `Generator` must be valid
-
 ### KeyRevocation API
 
-`KeyRevocation` is:
+The structure of a `KeyRevocation` is:
 
 - The `prior_key_registration` being revoked
 - The `revocation_authorization` as a `Vec<Authorization>`
 
-#### validation
+#### Validation
 
-- The `KeyRevocation` element must be an `Update`
-- The `original_header_address` of the `Update` header must be the `prior_key_registration` of the `KeyRevocation`
+- The `KeyRevocation` record must be an `Update`
+- The `original_action_address` of the `Update` action must be the `prior_key_registration` of the `KeyRevocation`
 - The prior change rule from the prior generator (see above) must `authorize` the prior `KeyRegistration` with the `KeyRevocation` authorization vec
 
 ### KeyAnchor API
 
-A `KeyAnchor` is the literal `32` bytes of a pubkey.
+The `KeyAnchor` entry contains only the core 32 bytes of the registered key, stripped of the 3 byte multihash prefix and 4 byte DHT location suffix. Using this `KeyAnchor` entry, the status (valid, revoked, replaced, etc.) of a key can be looked up in a single `get` call, without needing to first lookup the corresponding `KeyRegistration`.
 
-This means that any external consumer of deepkey can query the key status with the `32` bytes of the key only. They do NOT need to know the registration details, or holochainisms such as key prefixes for an `AgentPubKey`.
+This als means that any external consumer of Deepkey (other DNA's, Holochain apps, etc.) can query the key status with the core 32 bytes of the key. They do NOT need to know its registration details.
 
-The `KeyAnchor` element must always pair with its `KeyRegistration` element. This is to avoid the need to manage links between the two entries, the `KeyAnchor` element header always directly references the `KeyRegistration`.
+The `KeyAnchor` record must always be written onto the chain immediately following its `KeyRegistration`. This is to avoid the need to manage links between the two entries, the `KeyAnchor` `prev_action` always references the `KeyRegistration`.
 
-#### Create
+**Create**: The validation that happens when you create a `KeyAnchor`
 
-- A `KeyAnchor` must deserialize cleanly from the element
-- A `KeyRegistration` must fetch and deserialize cleanly from the `KeyAnchor` prev header
+- A `KeyAnchor` must deserialize cleanly from the record
+- A `KeyRegistration` must fetch and deserialize cleanly from the `KeyAnchor` prev action
 - The `KeyRegistration` must be a `Create` or `CreateOnly` op
 - The `KeyGeneration` new key's raw 32 bytes must be the `KeyAnchor` bytes
 
-#### Read
+**Read**:`KeyAnchor` entries are designed to be looked up by hashing the core 32 bytes of a key. The `key_state` zome call returns relevant details about the status of key (valid, replaced, revoked, etc.)
 
-- `KeyAnchor` entries are designed to be looked up by their literal bytes
-- The `key_state` zome call fetches relevant details about the `KeyAnchor`
+**Update**: The validation that happens when you update a `KeyAnchor`
 
-#### Update
-
-- A `KeyAnchor` must deserialize cleanly from the element
-- A `KeyRegistration` must fetch and deserialize cleanly from the `KeyAnchor` prev header
+- A `KeyAnchor` must deserialize cleanly from the record
+- A `KeyRegistration` must fetch and deserialize cleanly from the `KeyAnchor` prev action
 - The `KeyRegistration` must be an `Update` op
-- The `KeyGeneration` new key's raw 32 bytes must be the `KeyAnchor` bytes
-- A `KeyAnchor` must fetch and deserialize cleanly from the `original_header_address` of the new `KeyAnchor` update header
+- The `KeyGeneration` new key's raw 32 bytes must be the content of the `KeyAnchor` entry
+- A `KeyAnchor` must fetch and deserialize cleanly from the `original_action_address` of the new `KeyAnchor` update action
 - A `KeyRegistration` must fetch and deserialize cleanly from the prior key registration
 - The revoked `KeyRegistration` must be a `Create` or `Update`
 - The new key of the `KeyGeneration` of the revoked `KeyRegistration` must match the revoked `KeyAnchor` bytes
 
-#### Delete
+**Delete**:
 
-- Must be able to fetch an `Element` from the `KeyAnchor` deletion element
-- A `KeyAnchor` must fetch and deserialize from the `deletes_address` of the deletion element
-- A `KeyRegistration` must fetch and deserialize from the `deletes_address` of the previous element
+- Must be able to fetch an `Record` from the `KeyAnchor` deletion record
+- A `KeyAnchor` must fetch and deserialize from the `deletes_address` of the deletion record
+- A `KeyRegistration` must fetch and deserialize from the `deletes_address` of the previous record
 - The `KeyRegistration` must be an `Update` of type `KeyRegistration::Delete`
 - The `KeyRevocation` from the `KeyRegistration` must be revoking the deleted `KeyAnchor`
 
@@ -357,175 +447,70 @@ The `KeyAnchor` element must always pair with its `KeyRegistration` element. Thi
 - `key_state`:
   - input is `(KeyAnchor, Timestamp)` tuple
   - `Timestamp` doesn't do anything yet
-  - output is `KeyState` which is `Valid/Invalidated/NotFound` as `SignedHeaderHashed`
-  - IF any updates found, first update is returned in `KeyState::Invalidated`
-  - IF any deletes found, first delete is returned in `KeyState::Invalidated`
-  - IF any headers found, first header is returned in `KeyState::Valid`
-  - IF nothing found `KeyState::NotFound` is returned
+  - output is `KeyState` which is `Valid/Invalidated/NotFound` as `SignedActionHashed`
+    - If nothing found, `KeyState::NotFound` is returned
+    - If any updates found, first update is returned in `KeyState::Invalidated`
+    - If any deletes found, first delete is returned in `KeyState::Invalidated`
+    - If any actions found, first action is returned in `KeyState::Valid`
 
-### ChangeRule API
+## Private Metadata
 
-A `ChangeRule` is:
+In addition to shared/public keysets and registrations, each agent can keep private data for personal records about registered keys. This private data can be used to rebuild keypairs for apps from a master seed.
 
-- A `keyset_root` reference to the `HeaderHash` of a `KeysetRoot`
-- A `keyset_leaf` reference to the `HeaderHash` of either the `KeysetRoot` or a `DeviceInviteAcceptance`
-- A `spec_change` defining the new multisig rules
+`KeyMeta` records record the derivation path and index used to generate a previously registered key.
 
-A `ChangeRule` can only be created immediately after a `KeysetRoot`.
-
-`ChangeRule` elements can be updated by any device currently under the same `KeysetRoot`.
-
-Note that the multisignature valiation does NOT require that all the signers exist as agents in deepkey.
-
-The `Create` for a `ChangeRule` is expected to be signed by a "1 of 1" revocation key that is not a deepkey device.
-
-#### Create
-
-- A `ChangeRule` must deserialize cleanly from the element
-- A `KeysetRoot` must fetch and deserialize cleanly from the keyset root on the `ChangeRule`
-- The keyset leaf must be in the validation package (the author's chain)
-- There must NOT be any newer `DeviceInviteAcceptance` elements in the validation package
-- The `KeysetRoot` FDA must be the author of the `ChangeRule`
-- The `ChangeRule` prev header must be the `KeysetRoot` element
-- The `ChangeRule` authorization of the new spec must have exactly one authorization signature
-- The `ChangeRule` authorization signature must be valid as from the `KeysetRoot` root (throwaway) pub key
-- The `ChangeRule` spec must have more or equal signers to required signatures
-- The `ChangeRule` must require at least one signature
-
-#### Read
-
-- `ChangeRule` elements are not directly looked up
-
-#### Update
-
-- A `ChangeRule` must deserialize cleanly from the element
-- A `KeysetRoot` must fetch and deserialize cleanly from the keyset root on the `ChangeRule`
-- A `ChangeRule` must fetch and deserialize cleanly from the `original_header_address` of the update element
-- __The previous `ChangeRule` element must be a `Create` element (flat CRUD tree)__
-- The keyset leaf must be in the validation package (the author's chain)
-- There must NOT be any newer `DeviceInviteAcceptance` elements in the validation package
-- The `KeysetRoot` of the proposed `ChangeRule` must be the same as the previous `ChangeRule`
-- __The proposed `ChangeRule` authorization must authorize the new spec according to the rules of the previous `ChangeRule`__
-- The proposed `ChangeRule` must have more or equal signers to required signatures
-- The proposed `ChangeRule` must require at least one signature
-
-#### Delete
-
-n/a
-
-#### Zome calls
-
-- `new_change_rule`:
-  - __input is `HeaderHash` of old change rule and new `ChangeRule`__
-  - updates the entry
-    - create must be done when creating a `KeysetRoot`
-  - output is `HeaderHash` of new change rule
-
-### Generator API
-
-A `Generator` is:
-
-- The `HeaderHash` of a `ChangeRule` that authorizes this `Generator`
-- A new `AgentPubKey` being authorized as a `Generator`
-- A `Vec<Authorization>` that authorizes the `AgentPubKey` according to the `ChangeRule` rules
-
-#### Create
-
-- A `Generator` must deserialize cleanly from the element
-- A `ChangeRule` must fetch and deserialize cleanly from the referenced `HeaderHash`
-- The `AgentPubKey` must be authorized by the authorization vec on the `Generator` according to the `ChangeRule` rules
-
-#### Read
-
-- there is no read or lookup functionality for `Generator`
-- it is used internally to validate `KeyRegistration` key generations
-
-#### Update
-
-n/a
-
-#### Delete
-
-n/a
-
-#### Zome calls
-
-- `new_generator`
-  - input is a `Generator`
-  - output is a `HeaderHash`
-  - creates a `Generator`
-
-## Private metadata
-
-In addition to shared/public key sets and registrations, each agent can keep private data for personal records about registered keys.
-
-`KeyMeta` elements record the derivation path and index used to generate a previously registered key.
-
-`DnaBinding` elements track how registered keys are being used by happs.
+`DnaBinding` records track how registered keys are being used by happs.
 
 ### Meta API
 
-A `KeyMeta` is:
 
-- `new_key` referencing a `KeyRegistration` by its `HeaderHash`
+The structure of `KeyMeta` is:
+
+- `new_key` referencing a `KeyRegistration` by its `ActionHash`
 - `derivation_path` as 32 bytes encoding a derivation path for generating the registered key
 - `derivation_index` as a u32 representing the index for generating the registered key from the `derivation_path`
-- `key_type` as an enum of `AppUI`, `AppSig`, `AppEncryption`, `TLS`
+- `key_type` as an enum of `AppUI`, `AppSig`, `AppEncryption`, `TLS` *TODO: confirm compatibility with Lair Key API*
 
-#### Create
+**Create**: 
 
-- A `KeyMeta` must deserialize cleanly from the `Element`
-- The `new_key` must fetch and deserialize to a `KeyRegistration` element
+- A `KeyMeta` must deserialize cleanly from the `Record`
+- The `new_key` must fetch and deserialize to a `KeyRegistration` record
 - The author of the `KeyMeta` and the `KeyRegistration` must be the same
 
-#### Read
+**Read**: *TODO*
 
-@todo
+**Update**: Not allowed
 
-#### Update
-
-n/a
-
-#### Delete
-
-n/a
+**Delete**: Not allowed
 
 #### Zome calls
 
 - `new_key_meta`
   - input is `key_meta`
-  - output is `HeaderHash` of the created `KeyMeta`
+  - output is `ActionHash` of the created `KeyMeta`
   - creates a `KeyMeta`
 
 ### DnaBinding API
 
 A `DnaBinding` is:
 
-- A `key_meta` as `HeaderHash` referencing a `KeyMeta`
+- A `key_meta` as `ActionHash` referencing a `KeyMeta`
 - A `dna_hash` of the DNA the key is bound to
-- An `app_name` as strings of `bundle_name` and `cell_nick`
+- An `app_name` as strings of `bundle_name` and `cell_nick` *TODO: make names compatible with new naming*
 
-#### Create
+**Create**: A `DnaBinding` must deserialize cleanly from the `Record`
 
-- A `DnaBinding` must deserialize cleanly from the `Element`
+**Read**: *TODO*
 
-#### Read
+**Update**: Not allowed
 
-@todo
-
-#### Update
-
-n/a
-
-#### Delete
-
-n/a
+**Delete**: Not allowed
 
 #### Zome calls
 
 - `new_dna_binding`
   - input is `DnaBinding`
-  - output is `HeaderHash` of the created `DnaBinding`
+  - output is `ActionHash` of the created `DnaBinding`
   - creates a `DnaBinding`
 - `install_an_app`
-  - @todo
+  - *TODO*
