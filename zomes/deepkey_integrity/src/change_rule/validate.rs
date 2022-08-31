@@ -33,14 +33,10 @@ fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule)
     }
 
     // @todo - way to do this without full chain validation package?
-    let info = zome_info()?;
-    let zome_id = info.id;
-    // TODO: I can't figure out how to get an EntryType::App(AppEntryType{ ... }) from any of this
-    // Zome's Entry Types, to compare against an action().entry_type().  It seems very
-    // ... difficult.
-    let dia_index: EntryDefIndex = UnitEntryTypes::DeviceInviteAcceptance.try_into().unwrap();
+    // Lets find the EntryTypeIndex and ZomeId of the target Entry type:
+    let dia_scoped_index: ScopedEntryDefIndex = UnitEntryTypes::DeviceInviteAcceptance.try_into().unwrap();
     let device_invite_acceptance_type = EntryType::App(AppEntryType::new(
-        dia_index, zome_id, EntryVisibility::Public,
+        dia_scoped_index.zome_type, dia_scoped_index.zome_id, EntryVisibility::Public,
     ));
     
     match &validate_data.validation_package {
