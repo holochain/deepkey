@@ -24,7 +24,7 @@ impl From<Error> for ValidateCallbackResult {
 
 impl From<Error> for WasmError {
     fn from(e: Error) -> Self {
-        WasmError::Guest(e.to_string())
+        wasm_error!(WasmErrorInner::Guest(e.to_string()))
     }
 }
 

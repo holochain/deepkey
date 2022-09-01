@@ -13,7 +13,7 @@ fn _validate_key_self_signing(validate_data: &ValidateData, key_generation: &Key
     if verify_signature_raw(
         key_generation.as_new_key_ref().to_owned(),
         key_generation.as_new_key_signing_of_author_ref().to_owned(),
-        validate_data.element.header().author().get_raw_32().to_vec()
+        validate_data.element.action().author().get_raw_32().to_vec()
     )? {
         Ok(ValidateCallbackResult::Valid)
     }
@@ -28,7 +28,7 @@ fn _validate_key_generation(validate_data: &ValidateData, key_generation: &KeyGe
         Err(validate_callback_result) => return Ok(validate_callback_result),
     };
 
-    if generator_element.header().author() != validate_data.element.header().author() {
+    if generator_element.action().author() != validate_data.element.action().author() {
         return Error::BadAuthor.into()
     }
 
@@ -50,8 +50,8 @@ fn _validate_key_generation(validate_data: &ValidateData, key_generation: &KeyGe
 }
 
 fn _validate_key_revocation(validate_data: &ValidateData, prior_key_change_rule: &ChangeRule, key_revocation: &KeyRevocation) -> ExternResult<ValidateCallbackResult> {
-    match validate_data.element.header() {
-        Action::Update(update) => if &update.original_header_address != key_revocation.as_prior_key_registration_ref() {
+    match validate_data.element.action() {
+        Action::Update(update) => if &update.original_action_address != key_revocation.as_prior_key_registration_ref() {
             return Error::BadHeaderRef.into()
         },
         _ => return Error::BadOp.into(),
@@ -136,7 +136,7 @@ fn validate_update_entry_key_registration(validate_data: ValidateData) -> Extern
 ///  - not sure of the usefulness of this, seems like it could open up optimisations on the get side of things later
 ///  - an attacker can always NOT include this, so it's intentionally left open for anyone to be able to "heal" a CRUD tree that has not been properly tombstoned
 fn validate_delete_entry_key_registration(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    match validate_data.element.header() {
+    match validate_data.element.action() {
         Action::Delete(delete_header) => {
             match resolve_dependency::<KeyRegistration>(delete_header.deletes_address.clone().into())? {
                 Ok(ResolvedDependency(_, prior_key_registration)) => match prior_key_registration {
@@ -537,7 +537,7 @@ pub mod test {
         );
 
         let mut generator_element_header = fixt!(Create);
-        generator_element_header.author = validate_data.element.header().author().clone();
+        generator_element_header.author = validate_data.element.action().author().clone();
 
         *generator_element.as_header_mut() = Action::Create(generator_element_header);
 
@@ -558,7 +558,7 @@ pub mod test {
                 VerifySignature::new_raw(
                     key_generation.as_new_key_ref().to_owned(),
                     key_generation.as_new_key_signing_of_author_ref().to_owned(),
-                    validate_data.element.header().author().get_raw_32().to_vec(),
+                    validate_data.element.action().author().get_raw_32().to_vec(),
                 )
             ))
             .times(1)
@@ -670,30 +670,30 @@ pub mod test {
             revocation_authorization.clone(),
         );
 
-        let create_header = fixt!(Create);
-        let mut update_header = fixt!(Update);
-        let delete_header = fixt!(Delete);
+        let create_action = fixt!(Create);
+        let mut update_action = fixt!(Update);
+        let delete_action = fixt!(Delete);
 
-        *validate_data.element.as_header_mut() = Action::Create(create_header.clone());
+        *validate_data.element.as_action_mut() = Action::Create(create_action.clone());
         assert_eq!(
             super::_validate_key_revocation(&validate_data, &prior_key_change_rule, &key_revocation),
             Error::BadOp.into(),
         );
 
-        *validate_data.element.as_header_mut() = Action::Delete(delete_header.clone());
+        *validate_data.element.as_action_mut() = Action::Delete(delete_action.clone());
         assert_eq!(
             super::_validate_key_revocation(&validate_data, &prior_key_change_rule, &key_revocation),
             Error::BadOp.into(),
         );
 
-        *validate_data.element.as_header_mut() = Action::Update(update_header.clone());
+        *validate_data.element.as_action_mut() = Action::Update(update_action.clone());
         assert_eq!(
             super::_validate_key_revocation(&validate_data, &prior_key_change_rule, &key_revocation),
             Error::BadHeaderRef.into(),
         );
 
-        update_header.original_header_address = key_revocation.as_prior_key_registration_ref().clone();
-        *validate_data.element.as_header_mut() = Action::Update(update_header.clone());
+        update_action.original_actio_address = key_revocation.as_prior_key_registration_ref().clone();
+        *validate_data.element.as_action_mut() = Action::Update(update_action.clone());
 
         let mut mock_hdk = MockHdkT::new();
 

@@ -19,7 +19,7 @@ impl KeysetRoot {
 impl TryFrom<&Record> for KeysetRoot {
     type Error = Error;
     fn try_from(element: &Record) -> Result<Self, Self::Error> {
-        match element.header() {
+        match element.action() {
             // Only creates are allowed for a KeysetRoot.
             Action::Create(_) => {
                 Ok(match element.entry() {
@@ -36,19 +36,19 @@ impl TryFrom<&Record> for KeysetRoot {
     }
 }
  */
-fn _validate_create_header(create_header: &Create) -> ExternResult<ValidateCallbackResult> {
+fn _validate_create_action(create_action: &Create) -> ExternResult<ValidateCallbackResult> {
     // Header needs to be in the correct position in the chain.
-    if create_header.header_seq != KEYSET_ROOT_CHAIN_INDEX {
-        Error::Position(create_header.header_seq, KEYSET_ROOT_CHAIN_INDEX).into()
+    if create_action.action_seq != KEYSET_ROOT_CHAIN_INDEX {
+        Error::Position(create_action.action_seq, KEYSET_ROOT_CHAIN_INDEX).into()
     }
     else {
         Ok(ValidateCallbackResult::Valid)
     }
 }
 
-fn _validate_create_authorization(create_header: &Create, proposed_keyset_root: &KeysetRoot) -> ExternResult<ValidateCallbackResult> {
+fn _validate_create_authorization(create_action: &Create, proposed_keyset_root: &KeysetRoot) -> ExternResult<ValidateCallbackResult> {
     // The author must be the FDA.
-    if *proposed_keyset_root.as_first_deepkey_agent_ref() != create_header.author {
+    if *proposed_keyset_root.as_first_deepkey_agent_ref() != create_action.author {
         return Error::FdaAuthor.into();
     }
     // The signature must be correct.
@@ -68,14 +68,14 @@ fn validate_create_entry_keyset_root(validate_data: ValidateData) -> ExternResul
         Err(e) => return Ok(ValidateCallbackResult::Invalid(e.to_string())),
     };
 
-    match validate_data.element.header() {
-        Action::Create(create_header) => {
-            match _validate_create_header(&create_header) {
+    match validate_data.element.action() {
+        Action::Create(create_action) => {
+            match _validate_create_action(&create_action) {
                 Ok(ValidateCallbackResult::Valid) => {},
                 validate_callback_result => return validate_callback_result,
             }
 
-            match _validate_create_authorization(&create_header, &proposed_keyset_root) {
+            match _validate_create_authorization(&create_action, &proposed_keyset_root) {
                 Ok(ValidateCallbackResult::Valid) => {},
                 validate_callback_result => return validate_callback_result,
             }
@@ -126,34 +126,34 @@ pub mod test {
     }
 
     #[test]
-    fn test_validate_create_header() {
-        let mut create_header = fixt!(Create);
-        create_header.header_seq = KEYSET_ROOT_CHAIN_INDEX + 1;
+    fn test_validate_create_action() {
+        let mut create_action = fixt!(Create);
+        create_action.header_seq = KEYSET_ROOT_CHAIN_INDEX + 1;
 
         assert_eq!(
-            super::_validate_create_header(&create_header),
+            super::_validate_create_action(&create_action),
             Error::Position(KEYSET_ROOT_CHAIN_INDEX + 1, KEYSET_ROOT_CHAIN_INDEX).into(),
         );
 
-        create_header.header_seq = KEYSET_ROOT_CHAIN_INDEX;
+        create_action.header_seq = KEYSET_ROOT_CHAIN_INDEX;
 
         assert_eq!(
-            super::_validate_create_header(&create_header),
+            super::_validate_create_action(&create_action),
             Ok(ValidateCallbackResult::Valid),
         );
     }
 
     #[test]
     fn test_validate_create_authorization() {
-        let create_header = fixt!(Create);
+        let create_action = fixt!(Create);
         let mut proposed_keyset_root = fixt!(KeysetRoot);
 
         assert_eq!(
-            super::_validate_create_authorization(&create_header, &proposed_keyset_root),
+            super::_validate_create_authorization(&create_action, &proposed_keyset_root),
             Error::FdaAuthor.into(),
         );
 
-        proposed_keyset_root.first_deepkey_agent = create_header.author.clone();
+        proposed_keyset_root.first_deepkey_agent = create_action.author.clone();
 
         let mut mock_hdk = MockHdkT::new();
 
@@ -171,7 +171,7 @@ pub mod test {
         set_hdk(mock_hdk);
 
         assert_eq!(
-            super::_validate_create_authorization(&create_header, &proposed_keyset_root),
+            super::_validate_create_authorization(&create_action, &proposed_keyset_root),
             Error::FdaSignature.into(),
         );
 
@@ -191,7 +191,7 @@ pub mod test {
         set_hdk(mock_hdk);
 
         assert_eq!(
-            super::_validate_create_authorization(&create_header, &proposed_keyset_root),
+            super::_validate_create_authorization(&create_action, &proposed_keyset_root),
             Ok(ValidateCallbackResult::Valid),
         );
     }
@@ -200,11 +200,11 @@ pub mod test {
     fn test_validate_create() {
         let mut validate_data = fixt!(ValidateData);
         let mut keyset_root = fixt!(KeysetRoot);
-        let mut create_header = fixt!(Create);
-        create_header.header_seq = KEYSET_ROOT_CHAIN_INDEX;
-        keyset_root.first_deepkey_agent = create_header.author.clone();
+        let mut create_action = fixt!(Create);
+        create_action.header_seq = KEYSET_ROOT_CHAIN_INDEX;
+        keyset_root.first_deepkey_agent = create_action.author.clone();
         *validate_data.element.as_entry_mut() = RecordEntry::Present(keyset_root.clone().try_into().unwrap());
-        *validate_data.element.as_header_mut() = Action::Create(create_header);
+        *validate_data.element.as_header_mut() = Action::Create(create_action);
 
         *validate_data.element.as_entry_mut() = RecordEntry::NotStored;
 

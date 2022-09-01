@@ -78,7 +78,7 @@ fn validate_update_entry_device_invite_acceptance(_: ValidateData) -> ExternResu
     Error::UpdateAttempted.into()
 }
 */
-pub fn confirm_update_entry_device_invite_acceptance(_device_invite_acceptance: DeviceInviteAcceptance, _header: Action) -> ExternResult<ValidateCallbackResult> {
+pub fn confirm_update_entry_device_invite_acceptance(_device_invite_acceptance: DeviceInviteAcceptance) -> ExternResult<ValidateCallbackResult> {
     Error::UpdateAttempted.into()
 }
 /*

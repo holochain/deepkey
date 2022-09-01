@@ -12,7 +12,7 @@ fn validate_create_entry_key_meta(validate_data: ValidateData) -> ExternResult<V
 
     match resolve_dependency::<KeyRegistration>(key_meta.as_new_key_ref().to_owned().into())? {
         Ok(ResolvedDependency(key_registration_element, _)) => {
-            if key_registration_element.header().author() != validate_data.element.header().author() {
+            if key_registration_element.action().author() != validate_data.element.action().author() {
                 return Error::WrongAuthor.into();
             }
         },

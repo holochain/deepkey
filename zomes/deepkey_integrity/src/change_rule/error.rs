@@ -70,6 +70,12 @@ impl From<Error> for ValidateCallbackResult {
     }
 }
 
+impl From<Error> for WasmError {
+    fn from(e: Error) -> Self {
+        wasm_error!(WasmErrorInner::Guest(e.to_string()))
+    }
+}
+
 impl From<Error> for ExternResult<ValidateCallbackResult> {
     fn from(e: Error) -> Self {
         Ok(e.into())

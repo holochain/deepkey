@@ -9,3 +9,4 @@ tests/test.gz
 .cargo
 target
 deepkey_types/target
+*~

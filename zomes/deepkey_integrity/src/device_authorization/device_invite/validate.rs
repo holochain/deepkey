@@ -22,7 +22,8 @@ fn _validate_self(create_header: &Create, device_invite: &DeviceInvite) -> Exter
 fn _validate_parent_current(validate_data: &ValidateData, device_invite: &DeviceInvite) -> ExternResult<ValidateCallbackResult> {
     let parent_element: Record = match get(device_invite.as_parent_ref().clone(), GetOptions::content())? {
         Some(element) => element,
-        None => return Ok(ValidateCallbackResult::UnresolvedDependencies(vec![device_invite.as_parent_ref().clone().into()])),
+        None => return Ok(ValidateCallbackResult::UnresolvedDependencies(
+		UnresolvedDependencies::Hashes(vec![device_invite.as_parent_ref().clone().into()]))),
     };
     match &validate_data.validation_package {
         Some(ValidationPackage(elements)) => {
@@ -72,13 +73,18 @@ fn _validate_parent_current(validate_data: &ValidateData, device_invite: &Device
             // }
             // 
             // So, we should be able to substitute a named Enum attribute for the results of the entry_type! macro:
-            let device_invite_acceptance_type = UnitEntryTypes::DeviceInviteAcceptance; //entry_type!(DeviceInviteAcceptance)?;
+	    // Lets find the EntryTypeIndex and ZomeId of the target Entry type:
+	    let dia_scoped_index: ScopedEntryDefIndex = UnitEntryTypes::DeviceInviteAcceptance.try_into().unwrap();
+            let device_invite_acceptance_type = EntryType::App(AppEntryType::new(
+	            dia_scoped_index.zome_type, dia_scoped_index.zome_id, EntryVisibility::Public,
+	    ));//entry_type!(DeviceInviteAcceptance)?;
+
             let device_invite_acceptances: Vec<&Record> = elements.iter()
-                .filter(|element| element.header().entry_type() == Some(&device_invite_acceptance_type))
-                .filter(|element| element.header().header_seq() >= parent_element.header().header_seq())
+                .filter(|element| element.action().entry_type() == Some(&device_invite_acceptance_type))
+                .filter(|element| element.action().action_seq() >= parent_element.action().action_seq())
                 .collect();
 
-            if parent_element.header().entry_type() == Some(&device_invite_acceptance_type) {
+            if parent_element.action().entry_type() == Some(&device_invite_acceptance_type) {
                 // The parent should be found and nothing else.
                 if device_invite_acceptances.len() != 1 {
                     return Error::StaleKeysetLeaf.into();
@@ -137,7 +143,7 @@ fn validate_create_entry_device_invite(validate_data: ValidateData) -> ExternRes
         Err(validate_callback_result) => return Ok(validate_callback_result),
     };
 
-    match validate_data.element.header().clone() {
+    match validate_data.element.action().clone() {
         Action::Create(create_header) => {
             match _validate_self(&create_header, &device_invite) {
                 Ok(ValidateCallbackResult::Valid) => { },

@@ -7,9 +7,13 @@ use crate::generator::error::Error;
 use crate::validate_classic::*;
 
 fn _validate_create_entry_generator_authorize(change_rule: &ChangeRule, generator: &Generator) -> ExternResult<ValidateCallbackResult> {
+    let generator_sig_serialized = match holochain_serialized_bytes::encode(&holochain_serialized_bytes::encode(&generator.as_change_ref().as_new_key_ref())) {
+    	Ok(s) => s,
+	Err(e) => return Ok(ValidateCallbackResult::Invalid(e.to_string())),
+    };
     match change_rule.authorize(
         generator.as_change_ref().as_authorization_ref(),
-        &holochain_serialized_bytes::encode(&generator.as_change_ref().as_new_key_ref())?,
+        &generator_sig_serialized,
     ) {
         Ok(_) => Ok(ValidateCallbackResult::Valid),
         Err(e) => e.into(),

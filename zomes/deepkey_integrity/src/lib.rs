@@ -29,7 +29,7 @@ use crate::entry::{LinkTypes, EntryTypes, UnitEntryTypes};
 /// 
 /// See Op in: ~/src/holochain/crates/holochain_zome_types/src/op.rs
 ///
-pub fn genesis_self_check(data: GenesisSelfCheckData) ->  ExternResult<ValidateCallbackResult> {
+pub fn genesis_self_check(_data: GenesisSelfCheckData) ->  ExternResult<ValidateCallbackResult> {
     // TODO
     // check data.dna_def
     // check data.membrane_proof
@@ -43,6 +43,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
     let info = zome_info()?;
     debug!("Validating integrity-template Zome {:?} Op: {:?}", info, op );
     match op.to_type::<EntryTypes, _>()? {
+        OpType::StoreRecord(_) => Ok(ValidateCallbackResult::Valid),
         // This authority is storing the Entry, but don't have access to the Action
         OpType::StoreEntry(store_entry) => {
 	    debug!("- Store Entry: {:?}", store_entry );
@@ -55,9 +56,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         debug!("Storing JoiningProof Entry: {:?}", joining_proof);
                         Ok(ValidateCallbackResult::Valid)
                     },
-                    EntryTypes::DeviceInviteAcceptance(device_invite_acceptance) => {
+                    EntryTypes::DeviceInviteAcceptance(ref device_invite_acceptance) => {
                         debug!("Storing DeviceInviteAcceptance Entry: {:?} == {:?}", entry_hash, entry_type);
-                        confirm_create_entry_device_invite_acceptance(device_invite_acceptance, op.author())
+                        confirm_create_entry_device_invite_acceptance(device_invite_acceptance.to_owned(), op.author().to_owned())
                     },
                     _other => {
                         debug!("Storing some other Entry: {:?}", _other);
@@ -73,9 +74,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         debug!("Updating JoiningProof Entry: {:?}", joining_proof);
                         Ok(ValidateCallbackResult::Valid)
                     },
-                    EntryTypes::DeviceInviteAcceptance(device_invite_acceptance) => {
+                    EntryTypes::DeviceInviteAcceptance(ref device_invite_acceptance) => {
                         debug!("Updating DeviceInviteAcceptance Entry: {:?} == {:?}", entry_hash, entry_type);
-                        confirm_update_entry_device_invite_acceptance(device_invite_acceptance, op.author())
+                        confirm_update_entry_device_invite_acceptance(device_invite_acceptance.to_owned())
                     },
                     _other => {
                         debug!("Updating some other Entry: {:?}", _other);
@@ -98,8 +99,8 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 // Agent joining network validation
                 OpActivity::AgentValidationPkg(_) => todo!(),
                 OpActivity::CloseChain(_) => todo!(),
-                OpActivity::CreateAgent(agent_pubkey) => {
-                    // we could perform a check on the new agent's pubkey
+                OpActivity::CreateAgent(_agent_pubkey) => {
+                    // TODO: we could perform a check on the new agent's pubkey
                 }
                 OpActivity::CreateCapClaim(_) => todo!(),
                 OpActivity::CreateCapGrant(_) => todo!(),
@@ -173,40 +174,41 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             match update_entry {
                 OpUpdate::Entry {
                     entry_hash,
-                    original_action_hash,
+                    original_action_hash: _,
                     original_entry_hash,
                     original_entry_type,
                     new_entry_type,
                 } => match new_entry_type {
-                    EntryTypes::JoiningProof(joining_proof) => {
+                    EntryTypes::JoiningProof(ref _joining_proof) => {
                         debug!("Register JoiningProof Update: from {:?} == {:?}, into: {:?} == {:?}",
                                original_entry_hash, original_entry_type,
                                entry_hash, new_entry_type,
                         );
+			Ok(ValidateCallbackResult::Valid)
                     },
                     _ => Ok(ValidateCallbackResult::Valid),
                 },
                 OpUpdate::PrivateEntry {
-                    entry_hash,
-                    original_action_hash,
-                    original_entry_hash,
-                    original_entry_type,
-                    new_entry_type,
+                    entry_hash: _,
+                    original_action_hash: _,
+                    original_entry_hash: _,
+                    original_entry_type: _,
+                    new_entry_type: _,
                 } => todo!(),
                 OpUpdate::Agent {
-                    new_key,
-                    original_key,
-                    original_action_hash,
+                    new_key: _,
+                    original_key: _,
+                    original_action_hash: _,
                 } => todo!(),
                 OpUpdate::CapClaim {
-                    entry_hash,
-                    original_action_hash,
-                    original_entry_hash,
+                    entry_hash: _,
+                    original_action_hash: _,
+                    original_entry_hash: _,
                 } => todo!(),
                 OpUpdate::CapGrant {
-                    entry_hash,
-                    original_action_hash,
-                    original_entry_hash,
+                    entry_hash: _,
+                    original_action_hash: _,
+                    original_entry_hash: _,
                 } => todo!(),
             }
         },

@@ -151,8 +151,12 @@ fn _validate_update_keyset_root(_: &ValidateData, previous_change_rule: &ChangeR
 }
 
 fn _validate_update_authorization(_: &ValidateData, previous_change_rule: &ChangeRule, proposed_change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResult> {
+    let new_spec_serialized = match holochain_serialized_bytes::encode(&proposed_change_rule.spec_change.new_spec) {
+    	Ok(s) => s,
+	Err(e) => return Ok(ValidateCallbackResult::Invalid(e.to_string())),
+    };
     match previous_change_rule.authorize(&proposed_change_rule.spec_change.authorization_of_new_spec,
-                                         &holochain_serialized_bytes::encode(&proposed_change_rule.spec_change.new_spec)?) {
+                                         &new_spec_serialized) {
         Ok(_) => Ok(ValidateCallbackResult::Valid),
         Err(e) => Ok(e.into()), // converts change_rule::error::Error to Invalid callback result w/ string description
     }
@@ -171,11 +175,7 @@ fn _validate_flat_update_tree(previous_change_rule_element: &Record)  -> ExternR
 
 #[hdk_extern]
 fn validate_update_entry_key_change_rule(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    let proposed_change_rule = match ChangeRule::try_from(&validate_data.element) {
-        Ok(change_rule) => change_rule,
-        Err(e) => return e.into(),
-    };
-
+    let proposed_change_rule = ChangeRule::try_from(&validate_data.element)?;
     // KeysetRoot needs to exist.
     match resolve_dependency::<KeysetRoot>(proposed_change_rule.as_keyset_root_ref().clone().into())? {
         Err(validate_callback_result) => return Ok(validate_callback_result),
@@ -185,7 +185,7 @@ fn validate_update_entry_key_change_rule(validate_data: ValidateData) -> ExternR
     // On update we need to validate the proposed change rule under the rules of the previous rule.
     match validate_data.element.action() {
         Action::Update(update_header) => {
-            let (previous_change_rule_element, previous_change_rule) = match resolve_dependency::<ChangeRule>(update_header.original_header_address.clone().into())? {
+            let (previous_change_rule_element, previous_change_rule) = match resolve_dependency::<ChangeRule>(update_header.original_action_address.clone().into())? {
                 Ok(ResolvedDependency(previous_change_rule_element, change_rule)) => (previous_change_rule_element, change_rule),
                 Err(validate_callback_result) => return Ok(validate_callback_result),
             };
@@ -498,7 +498,7 @@ pub mod tests {
         mock_hdk.expect_get()
             .with(mockall::predicate::eq(
                 GetInput::new(
-                    update_header.original_header_address.clone().into(),
+                    update_header.original_action_address.clone().into(),
                     GetOptions::content(),
                 )
             ))
@@ -509,7 +509,7 @@ pub mod tests {
 
         assert_eq!(
             Ok(
-                ValidateCallbackResult::UnresolvedDependencies(vec![update_header.original_header_address.clone().into()])
+                ValidateCallbackResult::UnresolvedDependencies(vec![update_header.original_action_address.clone().into()])
             ),
             super::validate_update_entry_key_change_rule(validate_data.clone()),
         );

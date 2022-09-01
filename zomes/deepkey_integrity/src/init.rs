@@ -49,7 +49,7 @@ pub struct JoiningProof {
 impl TryFrom<&Record> for JoiningProof {
     type Error = crate::error::Error;
     fn try_from(element: &Record) -> Result<Self, Self::Error> {
-        match element.header() {
+        match element.action() {
             // Only
             Action::Create(_) | Action::Update(_) | Action::Delete(_) => {
                 Ok(match element.entry() {
@@ -66,39 +66,11 @@ impl TryFrom<&Record> for JoiningProof {
     }
 }
  */
-#[hdk_extern]
-fn init(_: ()) -> ExternResult<InitCallbackResult> {
-    let q = ChainQueryFilter::new()
-        .sequence_range(JOINING_PROOF_CHAIN_INDEX..JOINING_PROOF_CHAIN_INDEX+1);
-    let maybe_proof: Vec<Record> = query(q)?;
-
-    let joining_proof = if maybe_proof.len() == 1 {
-        JoiningProof::try_from(&maybe_proof[0])?
-    }
-    else {
-        return Error::MultipleJoinProof.into()
-    };
-
-    match joining_proof.keyset_proof {
-        KeysetProof::KeysetRoot(keyset_root) => create_entry(keyset_root.clone())?,
-        KeysetProof::DeviceInviteAcceptance(device_invite_acceptance) => create_entry(device_invite_acceptance.clone())?,
-    };
-
-    // @todo
-    match joining_proof.membrane_proof {
-        MembraneProof::None => { },
-        MembraneProof::ProofOfWork(_proof_of_work) => { },
-        MembraneProof::ProofOfStake(_proof_of_stake) => { },
-        MembraneProof::ProofOfAuthority(_proof_of_authority) => { },
-    }
-
-    Ok(InitCallbackResult::Pass)
-}
 
 #[hdk_extern]
 fn validate_create_entry_joining_proof(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     match JoiningProof::try_from(&validate_data.element) {
-        Ok(_) => if validate_data.element.header().header_seq() == JOINING_PROOF_CHAIN_INDEX {
+        Ok(_) => if validate_data.element.action().action_seq() == JOINING_PROOF_CHAIN_INDEX {
             Ok(ValidateCallbackResult::Valid)
         } else {
             Error::JoiningProofPosition.into()

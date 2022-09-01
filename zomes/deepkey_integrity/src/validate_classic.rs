@@ -50,24 +50,24 @@ impl TryFrom<(Record,Vec<RegisterAgentActivity>)> for ValidateData {
     fn try_from(rc: (Record,Vec<RegisterAgentActivity>)) -> Result<Self, Self::Error> {
 	let element: Record = rc.0;
 	let records: Vec<Record> = rc.1.into_iter()
-	    .map(|signed_action| {
-                Ok(match signed_action.action.hashed.content.as_ref() { // a SignedHashed<Action>'s &Action
+	    .map(|signed_action| { // a RegisterAgentActivity
+                Ok(match signed_action.action.hashed.content { // a SignedHashed<Action>'s &Action
                     Action::Dna(_) | Action::AgentValidationPkg(_) | Action::InitZomesComplete(_) |
                     Action::CreateLink(_) | Action::DeleteLink(_) |
                     Action::OpenChain(_) | Action::CloseChain(_) |
                     Action::Delete(_) =>
-                        Record { signed_action, entry: RecordEntry::NotApplicable },
-                    Action::Create(Create { entry_type, entry_hash, .. }) |
-                    Action::Update(Update { entry_type, entry_hash, .. }) => {
-                        if entry_type.visibility() == EntryVisibility::Public {
-                            Record { signed_action, entry: RecordEntry::Present(must_get_entry( entry_hash )?) }
-                        } else {
-                            Record { signed_action, entry: RecordEntry::Hidden }
+                        Record { signed_action: signed_action.action, entry: RecordEntry::NotApplicable },
+                    Action::Create(Create { ref entry_type, ref entry_hash, .. }) |
+                    Action::Update(Update { ref entry_type, ref entry_hash, .. }) => {
+		        match entry_type.visibility() {
+			    EntryVisibility::Public => Record {
+			        signed_action: signed_action.action.to_owned(), entry: RecordEntry::Present(must_get_entry( entry_hash.to_owned() )?.content) },
+    			    _ => Record { signed_action: signed_action.action.to_owned(), entry: RecordEntry::Hidden },
                         }
                     },
                 })
             })
 	    .collect::<ExternResult<_>>()?;
-	ValidateData { element, validation_package: Some(ValidationPackage(records)) }
+	Ok(ValidateData { element, validation_package: Some(ValidationPackage(records)) })
     }
 }

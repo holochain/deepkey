@@ -13,7 +13,7 @@ pub fn resolve_dependency<'a, O>(hash: AnyDhtHash) -> ExternResult<Result<Resolv
     where
     O: TryFrom<SerializedBytes, Error = SerializedBytesError>
 {
-    let element: Record = must_get_valid_record(hash.clone(), GetOptions::content())?;
+    let element: Record = must_get_valid_record(hash.clone().into())?;
 
     let output: O = match element.entry().to_app_option() {
         Ok(Some(output)) => output,
