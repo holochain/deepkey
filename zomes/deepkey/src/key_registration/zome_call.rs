@@ -9,10 +9,10 @@ fn revoked_anchor_element(key_revocation: &KeyRevocation) -> ExternResult<Record
         Some(old_key_registration_element) => old_key_registration_element,
         None => return Err(Error::UpdatedKeyRegistrationLookup.into()),
     };
-    let old_key_anchor_seq = old_key_registration_element.header().header_seq() + 1;
-    let query = ChainQueryFilter::new().sequence_range(old_key_anchor_seq..old_key_anchor_seq+1);
+    let old_key_anchor_seq = old_key_registration_element.action().action_seq() + 1;
+    let query = ChainQueryFilter::new().sequence_range(ChainQueryFilterRange::ActionSeqRange(old_key_anchor_seq, old_key_anchor_seq+1));
     let agent_activty = get_agent_activity(
-        old_key_registration_element.header().author().to_owned(),
+        old_key_registration_element.action().author().to_owned(),
         query,
         ActivityRequest::Full,
     )?;
@@ -30,8 +30,8 @@ fn revoked_anchor_element(key_revocation: &KeyRevocation) -> ExternResult<Record
 }
 
 #[hdk_extern]
-/// Returns the key anchor header hash.
-fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<HeaderHash> {
+/// Returns the key anchor action hash.
+fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<ActionHash> {
     match &key_registration {
         KeyRegistration::Create(key_generation) | KeyRegistration::CreateOnly(key_generation) => {
             let key_anchor = KeyAnchor::from(key_generation);
@@ -42,13 +42,13 @@ fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<Heade
             let new_key_anchor = KeyAnchor::from(key_generation);
             let old_key_anchor_element = revoked_anchor_element(&key_revocation)?;
             update_entry(key_revocation.as_prior_key_registration_ref().clone(), key_registration)?;
-            update_entry(old_key_anchor_element.header_hashed().as_hash().to_owned(), new_key_anchor)
+            update_entry(old_key_anchor_element.action_hashed().as_hash().to_owned(), new_key_anchor)
         },
         KeyRegistration::Delete(key_revocation) => {
             let old_key_anchor_element = revoked_anchor_element(&key_revocation)?;
             let update_delete = update_entry(key_revocation.as_prior_key_registration_ref().clone(), key_registration)?;
             delete_entry(update_delete)?;
-            delete_entry(old_key_anchor_element.header_hashed().as_hash().to_owned())
+            delete_entry(old_key_anchor_element.action_hashed().as_hash().to_owned())
         }
     }
 }

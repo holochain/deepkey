@@ -5,7 +5,7 @@ use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAc
 use crate::validate_classic::*;
 
 // The joining proof is added to the chain before init.
-const JOINING_PROOF_CHAIN_INDEX: u32 = 2;
+pub const JOINING_PROOF_CHAIN_INDEX: u32 = 2;
 
 // @todo - e.g. configurable difficulty over hashing the DNA - https://docs.rs/pow/0.2.0/pow/
 #[derive(Debug, Serialize, Deserialize)]
@@ -20,7 +20,7 @@ pub struct ProofOfStake([u8; 32]);
 pub struct ProofOfAuthority([u8; 32]);
 
 #[derive(Debug, Serialize, Deserialize)]
-enum MembraneProof {
+pub enum MembraneProof {
     // No additional membrane.
     None,
     // Proof of Work membrane.
@@ -32,7 +32,7 @@ enum MembraneProof {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-enum KeysetProof {
+pub enum KeysetProof {
     KeysetRoot(KeysetRoot),
     DeviceInviteAcceptance(DeviceInviteAcceptance),
 }

@@ -13,8 +13,9 @@ pub mod init;
 
 pub mod validate_classic; // classic validate_... function ValidateData struct
 
-/// Re-export at the root for tests to use entry def macros.
+/// Re-export at the root for tests to use entry def macros, coordinator zome.
 pub use entry::entry_defs;
+pub use hdk;
 
 use hdk::prelude::*;
 

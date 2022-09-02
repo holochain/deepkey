@@ -4,8 +4,8 @@ use deepkey_integrity::key_anchor::entry::KeyAnchor;
 #[derive(Debug, Serialize, Deserialize)]
 pub enum KeyState {
     // Key anchor.
-    Valid(SignedHeaderHashed),
-    Invalidated(SignedHeaderHashed),
+    Valid(SignedActionHashed),
+    Invalidated(SignedActionHashed),
     NotFound,
 }
 

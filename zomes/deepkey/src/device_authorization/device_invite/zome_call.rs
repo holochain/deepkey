@@ -2,11 +2,12 @@ use deepkey_integrity::hdk::prelude::*;
 use deepkey_integrity::device_authorization::device_invite::entry::DeviceInvite;
 use deepkey_integrity::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
 use deepkey_integrity::device_authorization::inbox::DEVICE_INVITE_LINK_TAG_BYTES;
-use deepkey_integrity::device_authorization::device_invite::local_keyset_parent;
 use deepkey_integrity::entry::LinkTypes;
 
+use crate::device_authorization::device_invite::local_keyset_parent;
+
 #[hdk_extern]
-fn invite_agents(invitees: Vec<AgentPubKey>) -> ExternResult<Vec<DeviceInviteAcceptance>> {
+pub fn invite_agents(invitees: Vec<AgentPubKey>) -> ExternResult<Vec<DeviceInviteAcceptance>> {
     let mut acceptances: Vec<DeviceInviteAcceptance> = Vec::new();
     for invitee in invitees.iter() {
         let (keyset_root, parent) = local_keyset_parent()?;

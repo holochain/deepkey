@@ -1,6 +1,7 @@
 use deepkey_integrity::hdk::prelude::*;
-use deepkey_integrity::keyset_root::entry::KeysetRoot;
-use deepkey_integrity::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
+use deepkey_integrity::error::Error;
+use deepkey_integrity::init::JOINING_PROOF_CHAIN_INDEX;
+use deepkey_integrity::init::{ KeysetProof, MembraneProof, JoiningProof };
 
 #[hdk_extern]
 fn init(_: ()) -> ExternResult<InitCallbackResult> {

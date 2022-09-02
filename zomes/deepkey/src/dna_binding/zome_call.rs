@@ -2,7 +2,7 @@ use deepkey_integrity::hdk::prelude::*;
 use deepkey_integrity::dna_binding::entry::DnaBinding;
 
 #[hdk_extern]
-fn new_dna_binding(new_dna_binding: DnaBinding) -> ExternResult<HeaderHash> {
+fn new_dna_binding(new_dna_binding: DnaBinding) -> ExternResult<ActionHash> {
     create_entry(new_dna_binding)
 }
 
