@@ -10,9 +10,9 @@ let
 
     holochainVersionId = "custom";
     holochainVersion = {
-      url = "https://github.com/pjkundert/holochain";
-      rev = "914920835a36203961433ea2f305b8b0582b363a"; # Aug 1, 2022 - must-get-agent-activity-host-fn w/ ChainFilter, must_get_agent_activity
-      sha256 = "13gil2nnc4bry6wqbblznp399g4nm6fv0hpv63c0pvfqbbkhkjw4";
+      url = "https://github.com/holochain/holochain";
+      rev = "holochain-0.0.158"; # Aug 31, 2022 - 0cd777c789ee13ca655f9bffbd7fe11b49e47824
+      sha256 = "04zcz6mjnczrw6612a2miqs1zf274jxwpj8jblrlavgfi7qzqr92";
       cargoLock = {
         outputHashes = {
         };
@@ -24,7 +24,7 @@ let
         "kitsune-p2p-tx2-proxy"
       ];
 
-      rustVersion = "1.59.0";
+      rustVersion = "1.63.0";
 
       lair = {
         url = "https://github.com/holochain/lair";
@@ -35,7 +35,7 @@ let
           "lair-keystore"
         ];
 
-        rustVersion = "1.59.0";
+        rustVersion = "1.63.0";
 
         cargoLock = {
           outputHashes = {
