@@ -15,7 +15,7 @@ pub struct DeviceInviteAcceptance {
     /// Not strictly required for validation as this is on the DeviceInvite.
     /// This is here as it may save network hops other than during.
     pub keyset_root_authority: ActionHash,
-    invite: ActionHash,
+    pub invite: ActionHash,
 }
 /*
  * TODO: How do we limit to Create only?

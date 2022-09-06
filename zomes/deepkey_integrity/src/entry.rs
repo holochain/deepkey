@@ -9,6 +9,7 @@ use crate::key_meta::entry::KeyMeta;
 use crate::dna_binding::entry::DnaBinding;
 use crate::generator::entry::Generator;
 use crate::key_registration::entry::KeyRegistration;
+use crate::key_anchor::entry::KeyAnchor;
 
 #[hdk_link_types]
 pub enum LinkTypes {
@@ -37,6 +38,8 @@ pub enum EntryTypes {
     Generator(Generator),
     #[entry_def(name = "key_registration")]
     KeyRegistration(KeyRegistration),
+    #[entry_def(name = "key_anchor")]
+    KeyAnchor(KeyAnchor),
 }
 
 /*

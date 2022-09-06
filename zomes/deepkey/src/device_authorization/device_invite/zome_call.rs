@@ -2,7 +2,7 @@ use deepkey_integrity::hdk::prelude::*;
 use deepkey_integrity::device_authorization::device_invite::entry::DeviceInvite;
 use deepkey_integrity::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
 use deepkey_integrity::device_authorization::inbox::DEVICE_INVITE_LINK_TAG_BYTES;
-use deepkey_integrity::entry::LinkTypes;
+use deepkey_integrity::entry::{ EntryTypes, LinkTypes };
 
 use crate::device_authorization::device_invite::local_keyset_parent;
 
@@ -16,9 +16,9 @@ pub fn invite_agents(invitees: Vec<AgentPubKey>) -> ExternResult<Vec<DeviceInvit
             parent,
             invitee.clone(),
         );
-        let invite_header = create_entry(invite.clone())?;
+        let invite_header = create_entry(EntryTypes::DeviceInvite(invite.clone()))?;
         create_link(
-            invitee.clone().into(),
+            invitee.clone(),
             hash_entry(invite)?,
             LinkTypes::AgentInvite,
             LinkTag(DEVICE_INVITE_LINK_TAG_BYTES.iter().chain(invite_header.get_raw_39().iter()).cloned().collect::<Vec<u8>>()),

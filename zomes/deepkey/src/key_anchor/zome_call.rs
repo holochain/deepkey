@@ -29,8 +29,8 @@ fn key_state((key, _timestamp): (KeyAnchor, Timestamp)) -> ExternResult<KeyState
                         KeyState::Invalidated(entry_details.deletes[0].clone())
                     }
                     // No updates or deletes so this create is still valid.
-                    else if entry_details.headers.len() > 0 {
-                        KeyState::Valid(entry_details.headers[0].clone())
+                    else if entry_details.actions.len() > 0 {
+                        KeyState::Valid(entry_details.actions[0].clone())
                     }
                     // Maybe some rejected headers popped up or something...
                     // No valid CRUD headers at this point though.

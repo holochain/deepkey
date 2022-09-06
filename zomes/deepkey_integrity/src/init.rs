@@ -40,8 +40,8 @@ pub enum KeysetProof {
 //#[hdk_entry(id = "joining_proof")]
 #[hdk_entry_helper]
 pub struct JoiningProof {
-    keyset_proof: KeysetProof,
-    membrane_proof: MembraneProof,
+    pub keyset_proof: KeysetProof,
+    pub membrane_proof: MembraneProof,
 }
 /* 
  * TODO: How do we allow all CRUD?

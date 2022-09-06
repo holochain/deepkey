@@ -3,6 +3,7 @@ use deepkey_integrity::key_registration::entry::KeyRegistration;
 use deepkey_integrity::key_registration::error::Error;
 use deepkey_integrity::key_anchor::entry::KeyAnchor;
 use deepkey_integrity::key_registration::entry::KeyRevocation;
+use deepkey_integrity::entry::EntryTypes;
 
 fn revoked_anchor_element(key_revocation: &KeyRevocation) -> ExternResult<Record> {
     let old_key_registration_element = match get(key_revocation.as_prior_key_registration_ref().clone(), GetOptions::content())? {
@@ -35,8 +36,8 @@ fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<Actio
     match &key_registration {
         KeyRegistration::Create(key_generation) | KeyRegistration::CreateOnly(key_generation) => {
             let key_anchor = KeyAnchor::from(key_generation);
-            create_entry(key_registration)?;
-            create_entry(key_anchor)
+            create_entry(EntryTypes::KeyRegistration(key_registration))?;
+            create_entry(EntryTypes::KeyAnchor(key_anchor))
         },
         KeyRegistration::Update(key_revocation, key_generation) => {
             let new_key_anchor = KeyAnchor::from(key_generation);

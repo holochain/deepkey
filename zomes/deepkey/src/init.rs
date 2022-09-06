@@ -2,6 +2,7 @@ use deepkey_integrity::hdk::prelude::*;
 use deepkey_integrity::error::Error;
 use deepkey_integrity::init::JOINING_PROOF_CHAIN_INDEX;
 use deepkey_integrity::init::{ KeysetProof, MembraneProof, JoiningProof };
+use deepkey_integrity::entry::EntryTypes;
 
 #[hdk_extern]
 fn init(_: ()) -> ExternResult<InitCallbackResult> {
@@ -17,8 +18,8 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
     };
 
     match joining_proof.keyset_proof {
-        KeysetProof::KeysetRoot(keyset_root) => create_entry(keyset_root)?,
-        KeysetProof::DeviceInviteAcceptance(device_invite_acceptance) => create_entry(device_invite_acceptance)?,
+        KeysetProof::KeysetRoot(keyset_root) => create_entry(EntryTypes::KeysetRoot(keyset_root))?,
+        KeysetProof::DeviceInviteAcceptance(device_invite_acceptance) => create_entry(EntryTypes::DeviceInviteAcceptance(device_invite_acceptance))?,
     };
 
     // @todo
