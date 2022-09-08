@@ -31,13 +31,13 @@ clean:
 	    tests/node_modules \
 	    .cargo \
 	    target \
-	    zomes/target \
+	    Cargo.lock \
 	    $(HAPP_BUNDLE) \
-	    $(DNAREPO) \
-	    $(DNA_DEEPKEY_WASM)
+	    $(DNA_DEEPKEY)
 
-.PHONY: rebuild build
+.PHONY: rebuild build happ dna wasm
 rebuild:			clean build
+
 build:				happ
 
 happ:				$(HAPP_BUNDLE)
@@ -53,6 +53,7 @@ packs/%.dna:
 	@echo "Packaging '$*': $@"
 	@hc dna pack -o $@ packs/$*
 
+wasm:				$(DNA_DEEPKEY_WASM)
 
 target/wasm32-unknown-unknown/release/%.wasm:	Makefile zomes/%/src/*.rs zomes/%/Cargo.toml # deepkey_types/src/*.rs deepkey_types/Cargo.toml
 	@echo "Building  '$*' WASM: $@"; \
@@ -70,8 +71,8 @@ deep_types:			deepkey_types/src/*.rs deepkey_types/Cargo.toml
 #
 # Testing
 #
-test:				test-unit-all test-dnas
-test-debug:			test-unit-all test-dnas-debug
+test:				happ	test-dnas	test-unit-all 
+test-debug:			happ	test-dnas-debug	test-unit-all 
 
 test-unit-all:			test-unit test-unit-dna_library test-unit-happ_library test-unit-web_assets
 test-unit:
@@ -80,9 +81,9 @@ test-unit-%:
 	cd zomes;		RUST_BACKTRACE=1 cargo test $* -- --nocapture
 
 tests/test.dna:
-	cp $(DNAREPO) $@
+	cp $(DNA_DEEPKEY) $@
 tests/test.gz:
-	gzip -kc $(DNAREPO) > $@
+	gzip -kc $(DNA_DEEPKEY) > $@
 
 # DNAs
 test-setup:			tests/node_modules
@@ -90,9 +91,9 @@ test-setup:			tests/node_modules
 test-dnas:			test-setup test-dnarepo		test-happs		test-webassets		test-multi
 test-dnas-debug:		test-setup test-dnarepo-debug	test-happs-debug	test-webassets-debug	test-multi-debug
 
-test-dnarepo:			test-setup $(DNAREPO)
+test-dnarepo:			test-setup $(DNA_DEEPKEY)
 	cd tests; RUST_LOG=none LOG_LEVEL=fatal npx mocha integration/test_dnarepo.js
-test-dnarepo-debug:		test-setup $(DNAREPO)
+test-dnarepo-debug:		test-setup $(DNA_DEEPKEY)
 	cd tests; RUST_LOG=info LOG_LEVEL=silly npx mocha integration/test_dnarepo.js
 
 test-happs:			test-setup $(HAPPDNA)
@@ -105,9 +106,9 @@ test-webassets:			test-setup $(ASSETSDNA) tests/test.gz
 test-webassets-debug:		test-setup $(ASSETSDNA) tests/test.gz
 	cd tests; RUST_LOG=info LOG_LEVEL=silly npx mocha integration/test_webassets.js
 
-test-multi:			test-setup $(DNAREPO) $(HAPPDNA) $(ASSETSDNA) tests/test.gz tests/test.dna
+test-multi:			test-setup $(DNA_DEEPKEY) $(HAPPDNA) $(ASSETSDNA) tests/test.gz tests/test.dna
 	cd tests; RUST_LOG=none LOG_LEVEL=fatal npx mocha integration/test_multiple.js
-test-multi-debug:		test-setup $(DNAREPO) $(HAPPDNA) $(ASSETSDNA) tests/test.gz tests/test.dna
+test-multi-debug:		test-setup $(DNA_DEEPKEY) $(HAPPDNA) $(ASSETSDNA) tests/test.gz tests/test.dna
 	cd tests; RUST_LOG=info LOG_LEVEL=silly npx mocha integration/test_multiple.js
 
 

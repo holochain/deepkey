@@ -8,7 +8,7 @@ homepage = "https://github.com/holochain/deepkey"
 documentation = "https://github.com/holochain/deepkey"
 keywords = [ "holochain", "holo", "deepkey" ]
 categories = [ "cryptography", "holochain" ]
-edition = "2018"
+edition = "2021"
 
 [lib]
 name = "deepkey"

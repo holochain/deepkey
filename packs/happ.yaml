@@ -1,6 +1,6 @@
 manifest_version: "1"
 name: Holochain DeepKey
-description: DeepKey: A hApp for managing Holochain identities
+description: DeepKey - A hApp for managing Holochain identities
 roles:
   - id: deepkey
     provisioning:

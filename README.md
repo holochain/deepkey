@@ -4,7 +4,7 @@ Deepkey is a happ to provide a decentralized public key infrastructure (DPKI) fo
 
 The keys for happs installed on each device are also tracked under the keyset for the device.
 
-Because humans are notoriously bad at managing cryptographic keys, we believe a project like Holochain must provide key management tools to help people deal with real-world messiness such as lost/stolen keys or devices. How many billions of dollars have been lost due to the lack of a key management infrastructure.
+Because humans are notoriously bad at managing cryptographic keys, we believe a project like Holochain must provide key management tools to help people deal with real-world messiness such as lost/stolen keys or devices. How many billions of dollars have been lost due to the lack of a key management infrastructure?
 
 Deepkey provides the ability to:
 - Register keys under the authority of a keyset.
@@ -514,3 +514,12 @@ A `DnaBinding` is:
   - creates a `DnaBinding`
 - `install_an_app`
   - *TODO*
+
+
+## Building
+
+A Makefile is provided to build and test the deepkey happ in a deterministice Nix environment:
+
+```
+$ make   # (or 'make clean all' to observe the full build procedure)
+```

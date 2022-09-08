@@ -8,7 +8,7 @@ homepage = "https://github.com/holochain/deepkey"
 documentation = "https://github.com/holochain/deepkey"
 keywords = [ "holochain", "holo", "deepkey" ]
 categories = [ "cryptography", "holochain" ]
-edition = "2018"
+edition = "2021"
 
 [lib]
 name = "deepkey_integrity"
@@ -16,11 +16,11 @@ crate-type = [ "cdylib", "rlib" ]
 path = "src/lib.rs"
 
 [dependencies]
+hdk = "=0.0.148"
+hdi = "=0.0.20"
 #hdk = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
-hdk = "0.0.148"
 #hdk = { git = "https://github.com/pjkundert/holochain", branch = "must-get-agent-activity-host-fn"}
 #hdi = { git = "https://github.com/pjkundert/holochain", branch = "must-get-agent-activity-host-fn"}
-hdi = "0.0.20"
 # use whatever serde hdk gives us
 serde = "*"
 thiserror = "1"
@@ -28,7 +28,9 @@ mockall = "0.9"
 
 [dev-dependencies]
 fixt = "0.0.14"
+holochain = "0.0.158"
 holochain_types = "0.0.53"
+holochain_integrity_types = "0.0.16"
 rand = "0.7"
 strum = "0.18.0"
 strum_macros = "0.18.0"
