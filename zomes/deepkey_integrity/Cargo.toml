@@ -18,15 +18,11 @@ path = "src/lib.rs"
 [dependencies]
 hdk = "=0.0.148"
 hdi = "=0.0.20"
-#hdk = { git = "https://github.com/holochain/holochain", branch = "2021-03-22-deepkey-tweaks" }
-#hdk = { git = "https://github.com/pjkundert/holochain", branch = "must-get-agent-activity-host-fn"}
-#hdi = { git = "https://github.com/pjkundert/holochain", branch = "must-get-agent-activity-host-fn"}
-# use whatever serde hdk gives us
-serde = "*"
+serde = "*"  # use whatever serde hdk gives us
 thiserror = "1"
-mockall = "0.9"
 
 [dev-dependencies]
+mockall = "0.9"
 fixt = "0.0.14"
 holochain = "0.0.158"
 holochain_types = "0.0.53"
