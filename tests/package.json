@@ -1,0 +1,25 @@
+{
+  "name": "tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "@whi/crux-payload-parser": "^0.1.4",
+    "@whi/holo-hash": "^0.1.5",
+    "@whi/holochain-backdrop": "^0.24.3",
+    "@whi/holochain-client": "^0.32.1",
+    "@whi/json": "^0.1.3",
+    "@whi/stdlog": "^0.3.4",
+    "chai": "^4.3.4",
+    "mocha": "^9.2.0",
+    "ws": "^8.2.2"
+  },
+  "devDependencies": {
+    "@msgpack/msgpack": "^2.7.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "",
+  "license": "ISC"
+}

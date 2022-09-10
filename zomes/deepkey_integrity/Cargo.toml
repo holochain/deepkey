@@ -18,15 +18,16 @@ path = "src/lib.rs"
 [dependencies]
 hdk = "=0.0.148"
 hdi = "=0.0.20"
-serde = "*"  # use whatever serde hdk gives us
+serde = "*"		# use whatever serde hdk gives us
 thiserror = "1"
 
 [dev-dependencies]
+arbitrary = "=1.1.3"	# Avoid unstable rust in 1.1.4; defeats compilation of unit tests
 mockall = "0.9"
+hdi = { version = "=0.0.20",  features = ["mock", "test_utils"] }
+hdk = { version = "=0.0.148", features = ["mock"] }
 fixt = "0.0.14"
-holochain = "0.0.158"
 holochain_types = "0.0.53"
-holochain_integrity_types = "0.0.16"
 rand = "0.7"
 strum = "0.18.0"
 strum_macros = "0.18.0"

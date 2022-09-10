@@ -4,8 +4,8 @@ use crate::keyset_root::entry::KeysetRoot;
 use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
 use crate::validate_classic::*;
 
-// The joining proof is added to the chain before init.
-pub const JOINING_PROOF_CHAIN_INDEX: u32 = 2;
+// The joining proof is added to the chain immediately after init (only Dna, AgentValidation and AgentPubKey)
+pub const JOINING_PROOF_CHAIN_INDEX: u32 = 3;
 
 // @todo - e.g. configurable difficulty over hashing the DNA - https://docs.rs/pow/0.2.0/pow/
 #[derive(Debug, Serialize, Deserialize)]
@@ -70,7 +70,7 @@ impl TryFrom<&Record> for JoiningProof {
 #[hdk_extern]
 fn validate_create_entry_joining_proof(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     match JoiningProof::try_from(&validate_data.element) {
-        Ok(_) => if validate_data.element.action().action_seq() == JOINING_PROOF_CHAIN_INDEX {
+        Ok(_) => if validate_data.element.action().action_seq() == JOINING_PROOF_CHAIN_INDEX as u32 {
             Ok(ValidateCallbackResult::Valid)
         } else {
             Error::JoiningProofPosition.into()

@@ -127,24 +127,22 @@ impl ChangeRule {
 
     pub fn authorize(&self, authorization: &[Authorization], data: &[u8]) -> Result<(), Error> {
         if authorization.len() != self.spec_change.new_spec.sigs_required as usize {
-            Err(Error::WrongNumberOfSignatures)
-        }
-        else {
-            for (position, signature) in authorization.iter() {
-                match self.spec_change.new_spec.authorized_signers.get(*position as usize) {
-                    Some(agent) => if !verify_signature_raw(
-                        agent.to_owned(),
-                        signature.to_owned(),
-                        data.to_vec()
-                    )? {
-                        // Short circuit any failed sig.
-                        return Err(Error::BadUpdateSignature);
-                    },
-                    None => return Err(Error::AuthorizedPositionOutOfBounds),
-                }
+            return Err(Error::WrongNumberOfSignatures)
+        };
+        for (position, signature) in authorization.iter() {
+            match self.spec_change.new_spec.authorized_signers.get(*position as usize) {
+                Some(agent) => if !verify_signature_raw(
+                    agent.to_owned(),
+                    signature.to_owned(),
+                    data.to_vec()
+                )? {
+                    // Short circuit any failed sig.
+                    return Err(Error::BadUpdateSignature);
+                },
+                None => return Err(Error::AuthorizedPositionOutOfBounds),
             }
-            Ok(())
         }
+        Ok(())
     }
 }
 

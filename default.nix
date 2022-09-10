@@ -51,5 +51,6 @@ nixpkgs.mkShell {
   inputsFrom = [ holonix.main ];
   packages = with nixpkgs; [
     nodejs-16_x
+    sqlite  # for Rust unit tests
   ];
 }

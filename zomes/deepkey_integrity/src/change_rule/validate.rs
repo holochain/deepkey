@@ -1,4 +1,5 @@
-use hdk::prelude::*;
+use hdi::prelude::*;
+use hdk::prelude::{ ValidationPackage };
 use crate::change_rule::error::Error;
 use crate::change_rule::entry::ChangeRule;
 use crate::keyset_root::entry::KeysetRoot;
@@ -10,15 +11,13 @@ use crate::entry::UnitEntryTypes;
 use crate::validate_classic::*;
 
 fn _validate_keyset_leaf(validate_data: &ValidateData, change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResult> {
-    let leaf_header_element: Record = match get(change_rule.as_keyset_leaf_ref().clone(), GetOptions::content())? {
-        Some(element) => element,
-        None => return Ok(ValidateCallbackResult::UnresolvedDependencies(
-            UnresolvedDependencies::Hashes(vec![change_rule.as_keyset_leaf_ref().clone().into()]))),
-    };
+    // A valid DNA commits only valid ChangeRules, which always references a previously committed KeysetRoot
+    let leaf_header_element: Record = must_get_valid_record(change_rule.as_keyset_leaf_ref().clone())?;
 
     // The leaf MUST be a device acceptance if not the root itself.
     if change_rule.keyset_root != change_rule.keyset_leaf {
-        // so it MUST deserialize cleanly
+        // so it MUST deserialize cleanly.  TODO: also confirm Action EntryType, to avoid
+        // deserializing some other identically-sized entry?
         let device_invite_acceptance = match DeviceInviteAcceptance::try_from(&leaf_header_element) {
             Ok(device_invite_acceptance) => device_invite_acceptance,
             Err(e) => return Ok(ValidateCallbackResult::Invalid(e.to_string())),
@@ -70,11 +69,12 @@ fn _validate_spec(change_rule: &ChangeRule) -> ExternResult<ValidateCallbackResu
 }
 
 fn _validate_create_keyset_root(validate_data: &ValidateData, change_rule: &ChangeRule, keyset_root: &KeysetRoot) -> ExternResult<ValidateCallbackResult> {
-    // The KSR needs to reference the author as the FDA.
+    // The KSR needs to reference the author as the FDA: Only the "Fist Deepkey Agent" claimed in
+    // the Keyset Root may commit that Keyset Root; the commit will be signed by the author. 
     if keyset_root.as_first_deepkey_agent_ref() != validate_data.element.action().author() {
         return Error::AuthorNotFda.into()
     }
-
+    
     // Create must be immediately after KeysetRoot.
     if validate_data.element.action().prev_action() != Some(change_rule.as_keyset_root_ref()) {
         return Error::CreateNotAfterKeysetRoot.into()

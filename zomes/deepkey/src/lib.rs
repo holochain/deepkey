@@ -2,6 +2,7 @@ pub mod change_rule;
 pub mod device_authorization;
 pub mod dna_binding;
 pub mod generator;
+pub mod joining_proof;
 pub mod key_anchor;
 pub mod key_registration;
 pub mod keyset_root;

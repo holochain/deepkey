@@ -39,7 +39,7 @@ impl TryFrom<&Record> for KeysetRoot {
 fn _validate_create_action(create_action: &Create) -> ExternResult<ValidateCallbackResult> {
     // Header needs to be in the correct position in the chain.
     if create_action.action_seq != KEYSET_ROOT_CHAIN_INDEX {
-        Error::Position(create_action.action_seq, KEYSET_ROOT_CHAIN_INDEX).into()
+        Error::Position(create_action.action_seq, KEYSET_ROOT_CHAIN_INDEX.into()).into()
     }
     else {
         Ok(ValidateCallbackResult::Valid)

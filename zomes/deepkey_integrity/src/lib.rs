@@ -42,7 +42,7 @@ pub fn genesis_self_check(_data: GenesisSelfCheckData) ->  ExternResult<Validate
 pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
     // validation::common_validatation(data)
     let info = zome_info()?;
-    debug!("Validating integrity-template Zome {:?} Op: {:?}", info, op );
+    debug!("Validating {:?} Zome Op: {:?}", info.name.0, op );
     match op.to_type::<EntryTypes, _>()? {
         OpType::StoreRecord(_) => Ok(ValidateCallbackResult::Valid),
         // This authority is storing the Entry, but don't have access to the Action
