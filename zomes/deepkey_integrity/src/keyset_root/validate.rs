@@ -68,14 +68,18 @@ fn validate_create_entry_keyset_root(validate_data: ValidateData) -> ExternResul
         Err(e) => return Ok(ValidateCallbackResult::Invalid(e.to_string())),
     };
 
-    match validate_data.element.action() {
+    confirm_action_keyset_root( validate_data.element.action(), proposed_keyset_root )
+}
+
+pub fn confirm_action_keyset_root( action: &Action, keyset_root: KeysetRoot ) -> ExternResult<ValidateCallbackResult> {
+    match action {
         Action::Create(create_action) => {
             match _validate_create_action(&create_action) {
                 Ok(ValidateCallbackResult::Valid) => {},
                 validate_callback_result => return validate_callback_result,
             }
 
-            match _validate_create_authorization(&create_action, &proposed_keyset_root) {
+            match _validate_create_authorization(&create_action, &keyset_root) {
                 Ok(ValidateCallbackResult::Valid) => {},
                 validate_callback_result => return validate_callback_result,
             }
@@ -84,21 +88,10 @@ fn validate_create_entry_keyset_root(validate_data: ValidateData) -> ExternResul
         },
         Action::Update(_) => Error::UpdateAttempted.into(),
         Action::Delete(_) => Error::DeleteAttempted.into(),
-        _ => Error::WrongHeader.into(),
+        _ => Ok(ValidateCallbackResult::Invalid(format!("Invalid Action for KeysetRoot: {:?}", action ))),
     }
 }
 
-#[hdk_extern]
-/// Updates are not allowed for KeysetRoot.
-fn validate_update_entry_keyset_root(_: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    Error::UpdateAttempted.into()
-}
-
-#[hdk_extern]
-/// Deletes are not allowed for KeysetRoot.
-fn validate_delete_entry_keyset_root(_: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    Error::DeleteAttempted.into()
-}
 
 #[cfg(test)]
 pub mod test {

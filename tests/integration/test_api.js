@@ -32,11 +32,25 @@ function basic_tests () {
 	log.normal("New JoiningProof for agent: %s", String(Buffer.from( clients.alice._agent ).toString("hex")));
 
 	// Let's establish a new KeysetRoot, using alice's AgentPubKey
+        /*
+         * We'll generate one, instead 
+         * 
 	let keyset_root = {
 	    first_deepkey_agent: clients.alice._agent,
 	    root_pub_key: clients.alice._agent,  // Let's just re-use alice's pubkey TODO: create ephemeral
 	    fda_pubkey_signed_by_root_key: Buffer.from("dc95af8774d5f3a94326e5e1d855c00a25abcb341deb453f211c58eaa964a6572f1bb3c2a9003cf1b363166616d8d3496da63856cca17ad9f13e62cd5ba7ec0c", "hex") // TODO: generate
 	};
+         * 
+         */
+        let keyset_root			= await clients.alice.call(
+	    "deepkey-dna", "deepkey", "generate_keyset_root", [ null ]
+	);
+	log.normal("New KeysetRoot: %s", JSON.stringify( keyset_root ));
+
+        /*
+         * The default w/ None for spec_change is to authorize just this agent
+         * to issue a new KeysetRoot.
+         * 
 	let new_spec = {
 	    sigs_required: 1,
 	    authorized_signers: [
@@ -44,27 +58,30 @@ function basic_tests () {
 	    ]
 	}
 	let spec_change = {
-	    new_spec,
+	    new_spec: new_spec,
 	    authorization_of_new_spec: [
 		Buffer.from("dc95af8774d5f3a94326e5e1d855c00a25abcb341deb453f211c58eaa964a6572f1bb3c2a9003cf1b363166616d8d3496da63856cca17ad9f13e62cd5ba7ec0c", "hex") // TODO: generate // clients.alice.sign( new_spec ) ??
 	    ]
 	};
-
+        *
+        */
 	// First, initialize the Deepkey source-chain.  We'll include the KeysetRoot we're about to create.
         let addr			= new HoloHash( await clients.alice.call(
 	    "deepkey-dna", "deepkey", "initialize", [ { KeysetRoot: keyset_root }, null ]
 	));
 	log.normal("New JoiningProof Action address: %s", String(addr) );
 
-	/*
-	// Second, create the KeysetRoot we just initialized with, and a ChangeRule
+	// Second, create the KeysetRoot we just initialized with, and a ChangeRule.  This
+	// KeysetRoot must be the first entry after JoiningProof.
+        let create_keyset_args		= [ keyset_root, null, null ];
+	log.normal("New KeysetRoot/Change: %s", JSON.stringify( create_keyset_args ));
         let addr_pair			= await clients.alice.call(
-	    "deepkey-dna", "deepkey", "create_keyset_root", [ keyset_root, spec_change, null ]
+	    "deepkey-dna", "deepkey", "create_keyset_root", create_keyset_args
 	);
 	let addr_root			= new HoloHash( addr_pair[0] )
 	let addr_chng			= new HoloHash( addr_pair[1] )
 	log.normal("New KeysetRoot/Change Action addresses: %s, %s", String(addr_root), String(addr_chng) );
-	*/
+
     });
 }
 

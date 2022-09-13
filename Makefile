@@ -89,6 +89,6 @@ test-dna:			dna tests/node_modules FORCE
 	cd tests; npx mocha integration/test_api.js
 
 test-dna-debug:			dna tests/node_modules FORCE
-	cd tests; LOG_LEVEL=silly npx mocha integration/test_api.js
+	cd tests; RUST_LOG=info LOG_LEVEL=silly npx mocha integration/test_api.js
 
 

@@ -71,32 +71,27 @@ impl TryFrom<&Record> for JoiningProof {
 #[hdk_extern]
 fn validate_create_entry_joining_proof(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     match JoiningProof::try_from(&validate_data.element) {
-        Ok(joining_proof) => confirm_create_action_joining_proof( validate_data.element.action(), joining_proof ),
+        Ok(joining_proof) => confirm_action_joining_proof( validate_data.element.action(), joining_proof ),
         Err(e) => Ok(ValidateCallbackResult::Invalid(e.to_string())),
     }
 }
-
-#[hdk_extern]
-fn validate_update_entry_joining_proof(_validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    Error::UpdateJoiningProof.into()
-}
-
-#[hdk_extern]
-fn validate_delete_entry_joining_proof(_validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    Error::DeleteJoiningProof.into()
-}
-
 // 
 // confirm_ -- Validate based on the role of the agent
 // 
 // 
 // 
 
-pub fn confirm_create_action_joining_proof( action: &Action, joining_proof: JoiningProof ) -> ExternResult<ValidateCallbackResult> {
+pub fn confirm_action_joining_proof( action: &Action, joining_proof: JoiningProof ) -> ExternResult<ValidateCallbackResult> {
     debug!(" -- Confirm {:?}: {:?}", action, joining_proof);
-    if action.action_seq() == JOINING_PROOF_CHAIN_INDEX as u32 {
-        Ok(ValidateCallbackResult::Valid)
-    } else {
-        Error::JoiningProofPosition.into()
+    match action {
+        Action::Create(_create_action) =>
+            if action.action_seq() == JOINING_PROOF_CHAIN_INDEX as u32 {
+                Ok(ValidateCallbackResult::Valid)
+            } else {
+                Error::JoiningProofPosition.into()
+            },
+        Action::Update(_) => Error::UpdateJoiningProof.into(),
+        Action::Delete(_) => Error::DeleteJoiningProof.into(),
+        _ => Ok(ValidateCallbackResult::Invalid(format!("Invalid Action for JoiningProof: {:?}", action ))),
     }
 }

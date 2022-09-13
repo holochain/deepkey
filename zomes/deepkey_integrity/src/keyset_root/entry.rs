@@ -3,8 +3,8 @@ use hdk::prelude::*;
 #[cfg(test)]
 use ::fixt::prelude::*;
 
-/// KeysetRoot must be the 5th entry on `FirstDeepkeyAgent`'s chain (immediately after JoiningProof)
-pub const KEYSET_ROOT_CHAIN_INDEX: u32 = 4;
+/// KeysetRoot must be the 6th entry on `FirstDeepkeyAgent`'s chain (immediately after JoiningProof)
+pub const KEYSET_ROOT_CHAIN_INDEX: u32 = 5;
 
 /// Has test coverage in case entry_defs! ever changes.
 pub const KEYSET_ROOT_INDEX: EntryDefIndex = EntryDefIndex(KEYSET_ROOT_CHAIN_INDEX as u8);
@@ -27,8 +27,8 @@ pub const KEYSET_ROOT_INDEX: EntryDefIndex = EntryDefIndex(KEYSET_ROOT_CHAIN_IND
 pub struct KeysetRoot {
     pub first_deepkey_agent: AgentPubKey,
     /// The private key is thrown away.
-    root_pub_key: AgentPubKey,
-    fda_pubkey_signed_by_root_key: Signature,
+    pub root_pub_key: AgentPubKey,
+    pub fda_pubkey_signed_by_root_key: Signature,
 }
 
 impl KeysetRoot {

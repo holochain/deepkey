@@ -22,8 +22,9 @@ use hdk::prelude::*;
 
 //use crate::change_rule::entry::ChangeRule;
 //use crate::change_rule::validate::*;
-use crate::device_authorization::device_invite_acceptance::validate::*;
 use crate::init::*;
+use crate::device_authorization::device_invite_acceptance::validate::*;
+use crate::keyset_root::validate::*;
 use crate::entry::{LinkTypes, EntryTypes, UnitEntryTypes};
 
 /// 
@@ -76,8 +77,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     Ok(ValidateCallbackResult::Valid),
                 OpRecord::CreateEntry{ entry_hash: _, entry_type } => {
                     match entry_type {
-                        EntryTypes::JoiningProof(joining_proof)
-                            => confirm_create_action_joining_proof(&action, joining_proof),
+                        EntryTypes::JoiningProof(joining_proof) =>
+                            confirm_action_joining_proof(&action, joining_proof),
+                        EntryTypes::KeysetRoot(keyset_root) =>
+                            confirm_action_keyset_root(&action, keyset_root),
                         _ => Ok(ValidateCallbackResult::Valid),
                     }
                 }
