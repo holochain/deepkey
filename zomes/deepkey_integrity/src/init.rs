@@ -4,8 +4,9 @@ use crate::keyset_root::entry::KeysetRoot;
 use crate::device_authorization::device_invite_acceptance::entry::DeviceInviteAcceptance;
 use crate::validate_classic::*;
 
-// The joining proof is added to the chain immediately after init (only Dna, AgentValidation and AgentPubKey)
-pub const JOINING_PROOF_CHAIN_INDEX: u32 = 3;
+// The joining proof is added to the chain immediately after init (only Dna, AgentValidation,
+// AgentPubKey and InitZomesComplete)
+pub const JOINING_PROOF_CHAIN_INDEX: u32 = 4;
 
 // @todo - e.g. configurable difficulty over hashing the DNA - https://docs.rs/pow/0.2.0/pow/
 #[derive(Debug, Serialize, Deserialize)]
@@ -70,11 +71,7 @@ impl TryFrom<&Record> for JoiningProof {
 #[hdk_extern]
 fn validate_create_entry_joining_proof(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     match JoiningProof::try_from(&validate_data.element) {
-        Ok(_) => if validate_data.element.action().action_seq() == JOINING_PROOF_CHAIN_INDEX as u32 {
-            Ok(ValidateCallbackResult::Valid)
-        } else {
-            Error::JoiningProofPosition.into()
-        },
+        Ok(joining_proof) => confirm_create_action_joining_proof( validate_data.element.action(), joining_proof ),
         Err(e) => Ok(ValidateCallbackResult::Invalid(e.to_string())),
     }
 }
@@ -87,4 +84,19 @@ fn validate_update_entry_joining_proof(_validate_data: ValidateData) -> ExternRe
 #[hdk_extern]
 fn validate_delete_entry_joining_proof(_validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     Error::DeleteJoiningProof.into()
+}
+
+// 
+// confirm_ -- Validate based on the role of the agent
+// 
+// 
+// 
+
+pub fn confirm_create_action_joining_proof( action: &Action, joining_proof: JoiningProof ) -> ExternResult<ValidateCallbackResult> {
+    debug!(" -- Confirm {:?}: {:?}", action, joining_proof);
+    if action.action_seq() == JOINING_PROOF_CHAIN_INDEX as u32 {
+        Ok(ValidateCallbackResult::Valid)
+    } else {
+        Error::JoiningProofPosition.into()
+    }
 }

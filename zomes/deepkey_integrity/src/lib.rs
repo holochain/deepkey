@@ -18,11 +18,12 @@ pub use entry::entry_defs;
 pub use hdk;
 
 use hdk::prelude::*;
+//use crate::validate_classic::*;
 
 //use crate::change_rule::entry::ChangeRule;
 //use crate::change_rule::validate::*;
 use crate::device_authorization::device_invite_acceptance::validate::*;
-//use crate::error::*;
+use crate::init::*;
 use crate::entry::{LinkTypes, EntryTypes, UnitEntryTypes};
 
 /// 
@@ -30,11 +31,14 @@ use crate::entry::{LinkTypes, EntryTypes, UnitEntryTypes};
 /// 
 /// See Op in: ~/src/holochain/crates/holochain_zome_types/src/op.rs
 ///
+#[hdk_extern]
 pub fn genesis_self_check(_data: GenesisSelfCheckData) ->  ExternResult<ValidateCallbackResult> {
     // TODO
     // check data.dna_def
     // check data.membrane_proof
     // check data.agent_key
+    debug!("Genesis Self Check for {:?}: DNA {:?} ({:?}) w/ Zomes: {:?}",
+           _data.agent_key, _data.dna_info.name, _data.dna_info.hash, _data.dna_info.zome_names );
     Ok(ValidateCallbackResult::Valid)
 }
 
@@ -44,8 +48,59 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
     let info = zome_info()?;
     debug!("Validating {:?} Zome Op: {:?}", info.name.0, op );
     match op.to_type::<EntryTypes, _>()? {
-        OpType::StoreRecord(_) => Ok(ValidateCallbackResult::Valid),
-        // This authority is storing the Entry, but don't have access to the Action
+        // This authority is storing the Record (Action + Entry)
+        OpType::StoreRecord(store_record) => {
+            let action = match op {
+                Op::StoreRecord(StoreRecord{ record }) => record.action().to_owned(),
+                _ => unreachable!(),
+            };
+	    debug!("- Store Record: Action: {:?} == {:?}", action, store_record);
+            match store_record {
+                OpRecord::Dna(_dna_hash) =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::AgentValidationPkg(_membrane) =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::InitZomesComplete =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::OpenChain(_dna_hash) =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::CloseChain(_dna_hash) =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::CreateCapClaim(_entry_hash) =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::CreateCapGrant(_entry_hash) =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::UpdateCapClaim{ entry_hash: _, original_action_hash: _, original_entry_hash: _ } =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::UpdateCapGrant{ entry_hash: _, original_action_hash: _, original_entry_hash: _ } =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::CreateEntry{ entry_hash: _, entry_type } => {
+                    match entry_type {
+                        EntryTypes::JoiningProof(joining_proof)
+                            => confirm_create_action_joining_proof(&action, joining_proof),
+                        _ => Ok(ValidateCallbackResult::Valid),
+                    }
+                }
+                OpRecord::UpdateEntry{ entry_hash: _, original_action_hash: _, original_entry_hash: _, entry_type: _ } =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::DeleteEntry{ original_action_hash: _, original_entry_hash: _ } =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::CreatePrivateEntry { entry_hash: _, entry_type: _ } =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::UpdatePrivateEntry { entry_hash: _, original_action_hash: _, original_entry_hash: _, entry_type: _ } =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::CreateAgent(_agent) =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::UpdateAgent{ original_key: _, new_key: _, original_action_hash: _ } =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::CreateLink{ base_address: _, target_address: _, tag: _, link_type: _ } =>
+                    Ok(ValidateCallbackResult::Valid),
+                OpRecord::DeleteLink(_link_action_hash) =>
+                    Ok(ValidateCallbackResult::Valid),
+            }
+        },
+        // This authority is storing the Entry due to some Action, but don't have local access to
+        // the Action
         OpType::StoreEntry(store_entry) => {
 	    debug!("- Store Entry: {:?}", store_entry );
             match store_entry {
@@ -95,7 +150,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
         // invalidation use-case or explain why we signal valid by default here TODO: could all
         // cases marked with 'todo!()' really happen here as well?
         OpType::RegisterAgentActivity(agent_activity) => {
-	    debug!("- Agent Activity: {:?}", agent_activity );
+	    debug!("- Register Agent Activity: {:?}", agent_activity );
             match agent_activity {
                 // Agent joining network validation
                 OpActivity::AgentValidationPkg(_) => todo!(),
@@ -106,8 +161,13 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 OpActivity::CreateCapClaim(_) => todo!(),
                 OpActivity::CreateCapGrant(_) => todo!(),
                 OpActivity::CreateEntry{ entry_hash, entry_type } => match entry_type {
-		    // We can check the created entry's type number
+		    // For each entry type, obtain the required ValidationData.  For some, we need
+                    // only the current Record (Action + Entry); for others, we need part/all of the
+                    // source-chain.  TODO: convert to directly validate w/ internal
+                    // must_get_agent_activity calls.
                     Some(UnitEntryTypes::JoiningProof) => {
+                        // let agent_activity: Vec<RegisterAgentActivity> = vec![];
+                        // let validate_data: ValidateData = (entry_type, agent_activity).into();
                         debug!("Storing JoiningProof Action: {:?} == {:?}", entry_hash, entry_type);
                     },
                     Some(UnitEntryTypes::DeviceInviteAcceptance) => {
