@@ -52,17 +52,19 @@ function basic_tests () {
 
 	// First, initialize the Deepkey source-chain.  We'll include the KeysetRoot we're about to create.
         let addr			= new HoloHash( await clients.alice.call(
-	    "deepkey-dna", "deepkey", "initialize", [ keyset_root, null ]
+	    "deepkey-dna", "deepkey", "initialize", [ { KeysetRoot: keyset_root }, null ]
 	));
-	log.normal("New JoiningProof address: %s", String(addr) );
+	log.normal("New JoiningProof Action address: %s", String(addr) );
 
-	// Second, create the KeysetRoot we just initialized with, and a ChangeRule						
+	/*
+	// Second, create the KeysetRoot we just initialized with, and a ChangeRule
         let addr_pair			= await clients.alice.call(
 	    "deepkey-dna", "deepkey", "create_keyset_root", [ keyset_root, spec_change, null ]
 	);
 	let addr_root			= new HoloHash( addr_pair[0] )
 	let addr_chng			= new HoloHash( addr_pair[1] )
-	log.normal("New KeysetRoot/Change address: %s, %s", String(addr_root), String(addr_chng) );
+	log.normal("New KeysetRoot/Change Action addresses: %s, %s", String(addr_root), String(addr_chng) );
+	*/
     });
 }
 
