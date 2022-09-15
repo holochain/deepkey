@@ -28,8 +28,11 @@ let clients;
 function basic_tests () {
     it("should create a JoiningProof with a KeysetRoot", async function () {
 	this.timeout( 10_000 );
-	log.normal("New JoiningProof for agent: %s", clients.alice._agent );
-	log.normal("New JoiningProof for agent: %s", String(Buffer.from( clients.alice._agent ).toString("hex")));
+	log.normal("Testing agent: %s", JSON.stringify( clients.alice ));
+        let alice_agent			= new HoloHash( clients.alice._agent );
+	log.normal(" - HoloHash:   %s", String(alice_agent))
+	log.normal(" -  .toBytes:  %s", String(alice_agent.toBytes()))
+	log.normal(" -  .getHash:  %s", String(alice_agent.getHash()))
 
 	// Let's establish a new KeysetRoot, using alice's AgentPubKey
         /*
@@ -82,6 +85,14 @@ function basic_tests () {
 	let addr_chng			= new HoloHash( addr_pair[1] )
 	log.normal("New KeysetRoot/Change Action addresses: %s, %s", String(addr_root), String(addr_chng) );
 
+        // Invite another agent "Carol" to our newly created Deepkey group.  Provide a list of Agent IDs
+        let carol_agent			= new HoloHash( clients.carol._agent );
+        let invitees			= [ new Uint8Array(carol_agent.toBytes()), ]; //new Uint8Array(carol_agent.toBytes()); // 39-byte 
+        log.normal("The invite_agents invitees: %s", String( invitees ));
+        let acceptances			= await clients.alice.call(
+            "deepkey-dna", "deepkey", "invite_agents", [ invitees ]
+        );
+        log.normal("The invite_agents Acceptances: %s", JSON.stringify( acceptances ));
     });
 }
 
@@ -105,7 +116,7 @@ describe("Zome: Deepkey", () => {
 	clients				= await backdrop( holochain, {
 	    "deepkey-dna": DEEPKEY_DNA_PATH,
 	}, [
-	    "alice",
+	    "alice", "carol"
 	], {
 	    "parse_entities": false,
 	});

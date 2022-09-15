@@ -24,25 +24,19 @@ fn _validate_create_ksr(device_invite: &DeviceInvite, device_invite_acceptance: 
     }
 }
 
-/*
- * Under classic valiation, we received the element Action (Header); Only a Create should be seen.
- * 
-#[hdk_extern]
-fn validate_create_entry_device_invite_acceptance(validate_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    let device_invite_acceptance = match DeviceInviteAcceptance::try_from(&validate_data.element) {
-        Ok(device_invite_acceptance) => device_invite_acceptance,
-        Err(e) => return Ok(ValidateCallbackResult::Invalid(e.to_string())),
-    };
+/// Validate the CRUD actions for a DeviceInviteAcceptance.  Will obtain the corresponding
+/// DeviceInvite (which may require network access to the DHT, if executed on an Entry or Action
+/// Authority).
+pub fn confirm_action_device_invite_acceptance(action: &Action, device_invite_acceptance: DeviceInviteAcceptance) -> ExternResult<ValidateCallbackResult> {
+    match action {
+        Action::Create(_create_action) => {
+            let device_invite = match resolve_dependency(device_invite_acceptance.as_invite_ref().to_owned().into())? {
+                Ok(ResolvedDependency(_, device_invite)) => device_invite,
+                Err(validate_callback_result) => return Ok(validate_callback_result),
+            };
 
-    let device_invite = match resolve_dependency(device_invite_acceptance.as_invite_ref().to_owned().into())? {
-        Ok(ResolvedDependency(_, device_invite)) => device_invite,
-        Err(validate_callback_result) => return Ok(validate_callback_result),
-    };
-
-    match validate_data.element.header() {
-        Action::Create(create_header) => {
-            match _validate_create_author(&create_header.author, &device_invite) {
-                Ok(ValidateCallbackResult::Valid) => { },
+            match _validate_create_author(action.author(), &device_invite) {
+                Ok(ValidateCallbackResult::Valid) => (()),
                 validate_callback_result => return validate_callback_result,
             }
 
@@ -50,45 +44,8 @@ fn validate_create_entry_device_invite_acceptance(validate_data: ValidateData) -
         },
         Action::Update(_) => Error::UpdateAttempted.into(),
         Action::Delete(_) => Error::DeleteAttempted.into(),
-        _ => Error::WrongHeader.into(),
+        _ => Ok(ValidateCallbackResult::Invalid(format!("Invalid Action for KeysetRoot: {:?}", action ))),
     }
-}
- *
- */
-
-/// 
-/// Confirm that a Create DeviceInviteAcceptance is valid.  Requires the author be known
-/// 
-pub fn confirm_create_entry_device_invite_acceptance(device_invite_acceptance: DeviceInviteAcceptance, author: AgentPubKey) -> ExternResult<ValidateCallbackResult> {
-    let device_invite = match resolve_dependency(device_invite_acceptance.as_invite_ref().to_owned().into())? {
-        Ok(ResolvedDependency(_, device_invite)) => device_invite,
-        Err(validate_callback_result) => return Ok(validate_callback_result),
-    };
-
-    match _validate_create_author(&author, &device_invite) {
-        Ok(ValidateCallbackResult::Valid) => (()),
-        validate_callback_result => return validate_callback_result,
-    }
-
-    _validate_create_ksr(&device_invite, &device_invite_acceptance)
-}
-/*
-#[hdk_extern]
-fn validate_update_entry_device_invite_acceptance(_: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    Error::UpdateAttempted.into()
-}
-*/
-pub fn confirm_update_entry_device_invite_acceptance(_device_invite_acceptance: DeviceInviteAcceptance) -> ExternResult<ValidateCallbackResult> {
-    Error::UpdateAttempted.into()
-}
-/*
-#[hdk_extern]
-fn validate_delete_entry_device_invite_acceptance(_: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    Error::DeleteAttempted.into()
-}
-*/
-pub fn confirm_delete_entry_device_invite_acceptance(_device_invite_acceptance: DeviceInviteAcceptance, _original_header: Action, _delete_header: Action) -> ExternResult<ValidateCallbackResult> {
-    Error::DeleteAttempted.into()
 }
 
 #[cfg(test)]

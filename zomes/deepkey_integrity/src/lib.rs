@@ -23,8 +23,9 @@ use hdk::prelude::*;
 //use crate::change_rule::entry::ChangeRule;
 //use crate::change_rule::validate::*;
 use crate::init::*;
-use crate::device_authorization::device_invite_acceptance::validate::*;
 use crate::keyset_root::validate::*;
+use crate::device_authorization::device_invite_acceptance::validate::*;
+use crate::device_authorization::device_invite::validate::*;
 use crate::entry::{LinkTypes, EntryTypes, UnitEntryTypes};
 
 /// 
@@ -49,7 +50,13 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
     let info = zome_info()?;
     debug!("Validating {:?} Zome Op: {:?}", info.name.0, op );
     match op.to_type::<EntryTypes, _>()? {
-        // This authority is storing the Record (Action + Entry)
+        // 
+        // The Action Authority (see: holochain/crates/holochain_integrity_types/src/op.rs)
+        //
+        // This authority is storing the Record's Action.  Validation has access to both the Action
+        // and the Entry; any validation that requires other source-chain Records must obtain them
+        // from the DHT or a Chain Authority.
+        //
         OpType::StoreRecord(store_record) => {
             let action = match op {
                 Op::StoreRecord(StoreRecord{ record }) => record.action().to_owned(),
@@ -81,6 +88,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                             confirm_action_joining_proof(&action, joining_proof),
                         EntryTypes::KeysetRoot(keyset_root) =>
                             confirm_action_keyset_root(&action, keyset_root),
+                        EntryTypes::DeviceInvite(device_invite) =>
+                            confirm_action_device_invite(&action, &device_invite),
+                        EntryTypes::DeviceInviteAcceptance(device_invite_acceptance) =>
+                            confirm_action_device_invite_acceptance(&action, device_invite_acceptance.to_owned()),
                         _ => Ok(ValidateCallbackResult::Valid),
                     }
                 }
@@ -102,102 +113,44 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     Ok(ValidateCallbackResult::Valid),
             }
         },
-        // This authority is storing the Entry due to some Action, but don't have local access to
-        // the Action
+
+        // 
+        // The Entry Authority
+        //
+        // This authority is storing the Entry due to some Action.  Doing validation that requires
+        // the source-chain will require network access to obtain other Record Action or Entry data
+        // from the DHT or a Chain Authority.
+        // 
+        // Also responsible for Entry Metadata: Register{Update,Delete}, Register{Create,Update}Link
+        // 
         OpType::StoreEntry(store_entry) => {
+            let action: Action = match op {
+                Op::StoreEntry(StoreEntry{ action, .. }) => action.hashed.content.into(),
+                _ => unreachable!(),
+            };
 	    debug!("- Store Entry: {:?}", store_entry );
             match store_entry {
-                OpEntry::CreateEntry {
-                    entry_hash,
-                    entry_type,
-                } => match entry_type {
-                    EntryTypes::JoiningProof(joining_proof) => {
-                        debug!("Storing JoiningProof Entry: {:?}", joining_proof);
-                        Ok(ValidateCallbackResult::Valid)
-                    },
-                    EntryTypes::DeviceInviteAcceptance(ref device_invite_acceptance) => {
-                        debug!("Storing DeviceInviteAcceptance Entry: {:?} == {:?}", entry_hash, entry_type);
-                        confirm_create_entry_device_invite_acceptance(device_invite_acceptance.to_owned(), op.author().to_owned())
-                    },
+                OpEntry::CreateEntry { entry_hash: _, entry_type } |
+                OpEntry::UpdateEntry { entry_hash: _, entry_type, .. } => match entry_type {
+                    EntryTypes::JoiningProof(joining_proof) =>
+                        confirm_action_joining_proof(&action, joining_proof),
+                    EntryTypes::KeysetRoot(keyset_root) =>
+                        confirm_action_keyset_root(&action, keyset_root),
+                    EntryTypes::DeviceInvite(device_invite) =>
+                        confirm_action_device_invite(&action, &device_invite),
+                    EntryTypes::DeviceInviteAcceptance(device_invite_acceptance) =>
+                        confirm_action_device_invite_acceptance(&action, device_invite_acceptance.to_owned()),
                     _other => {
                         debug!("Storing some other Entry: {:?}", _other);
                         Ok(ValidateCallbackResult::Valid)
                     },
                 },
-                OpEntry::UpdateEntry {
-                    entry_hash,
-                    entry_type,
-                    ..
-                } => match entry_type {
-                    EntryTypes::JoiningProof(joining_proof) => {
-                        debug!("Updating JoiningProof Entry: {:?}", joining_proof);
-                        Ok(ValidateCallbackResult::Valid)
-                    },
-                    EntryTypes::DeviceInviteAcceptance(ref device_invite_acceptance) => {
-                        debug!("Updating DeviceInviteAcceptance Entry: {:?} == {:?}", entry_hash, entry_type);
-                        confirm_update_entry_device_invite_acceptance(device_invite_acceptance.to_owned())
-                    },
-                    _other => {
-                        debug!("Updating some other Entry: {:?}", _other);
-                        Ok(ValidateCallbackResult::Valid)
-                    },
-                },
-                OpEntry::CreateAgent(_) | OpEntry::UpdateAgent { .. } => {
+                OpEntry::CreateAgent(_) |
+                OpEntry::UpdateAgent { .. } => {
                     Ok(ValidateCallbackResult::Valid)
                 }
             }
         },
-
-        // This authority has the previous items of the chain. here we introduce rules based on
-        // previous Actions, with local (immediate) access to the source-chain.  TODO: show an
-        // invalidation use-case or explain why we signal valid by default here TODO: could all
-        // cases marked with 'todo!()' really happen here as well?
-        OpType::RegisterAgentActivity(agent_activity) => {
-	    debug!("- Register Agent Activity: {:?}", agent_activity );
-            match agent_activity {
-                // Agent joining network validation
-                OpActivity::AgentValidationPkg(_) => todo!(),
-                OpActivity::CloseChain(_) => todo!(),
-                OpActivity::CreateAgent(_agent_pubkey) => {
-                    // TODO: we could perform a check on the new agent's pubkey
-                }
-                OpActivity::CreateCapClaim(_) => todo!(),
-                OpActivity::CreateCapGrant(_) => todo!(),
-                OpActivity::CreateEntry{ entry_hash, entry_type } => match entry_type {
-		    // For each entry type, obtain the required ValidationData.  For some, we need
-                    // only the current Record (Action + Entry); for others, we need part/all of the
-                    // source-chain.  TODO: convert to directly validate w/ internal
-                    // must_get_agent_activity calls.
-                    Some(UnitEntryTypes::JoiningProof) => {
-                        // let agent_activity: Vec<RegisterAgentActivity> = vec![];
-                        // let validate_data: ValidateData = (entry_type, agent_activity).into();
-                        debug!("Storing JoiningProof Action: {:?} == {:?}", entry_hash, entry_type);
-                    },
-                    Some(UnitEntryTypes::DeviceInviteAcceptance) => {
-                        debug!("Storing DeviceInviteAcceptance Action: {:?} == {:?}", entry_hash, entry_type);
-                    },
-                    _other => {
-                        debug!("Storing some other Action: {:?} == {:?}: {:?}", entry_hash, entry_type, _other);
-                    },
-		},
-                OpActivity::CreatePrivateEntry { .. } => todo!(),
-                OpActivity::CreateLink { .. } => todo!(),
-                OpActivity::DeleteEntry { .. } => todo!(),
-                OpActivity::DeleteLink(_) => todo!(),
-                OpActivity::Dna(_) => todo!(),
-                OpActivity::InitZomesComplete => {
-                    // we could perform an integrity check on the Zome genesis
-                },
-                OpActivity::OpenChain(_) => todo!(),
-                OpActivity::UpdateAgent { .. } => todo!(),
-                OpActivity::UpdateCapClaim { .. } => todo!(),
-                OpActivity::UpdateCapGrant { .. } => todo!(),
-                OpActivity::UpdateEntry { .. } => todo!(),
-                OpActivity::UpdatePrivateEntry { .. } => todo!(),
-            }
-
-            Ok(ValidateCallbackResult::Valid)
-        }
 
         // Validation for creating links
         OpType::RegisterCreateLink {
@@ -283,164 +236,60 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 "deleting entries isn't valid".to_string(),
             ))
         },
-    }
 
 
-    /*
-    match op {
-        // Validation for elements based on header type
-        Op::StoreRecord { element } => {
-            match element.header() {
-                Action::Dna(_) => todo!(),
-                Action::AgentValidationPkg(_) => todo!(),
-                Action::InitZomesComplete(_) => todo!(),
-                Action::CreateLink(create) => todo!()
-                //  match create.link_type.into() {
-                //     LinkTypes::Fish => todo!(),
-                //     _ => {}
-                // },
-                Action::DeleteLink(_) => todo!(),
-                Action::OpenChain(_) => todo!(),
-                Action::CloseChain(_) => todo!(),
-                Action::Create(create) => match create.entry_type {
-                    EntryType::AgentPubKey => todo!(),
-                    EntryType::App(app_entry_type) => {
-                        match info.entry_defs.get(app_entry_type.id.index()).map(|entry_def| entry_def.id.to_string()) {
-                            "change_rule" => {
-                                let device_invite_acceptance_maybe: Result<DeviceInviteAcceptance> = create_entry.try_into();
-                                match device_invite_acceptance_maybe {
-                                    Ok(device_invite_acceptance) => confirm_create_entry_device_invite_acceptance(device_invite_acceptance, create_header),
-                                    Err(err) => Error::EntryMissing.into()
-                                }
-                            }
-                            "device_invite_acceptance" => {
-                                let change_rule_maybe: Result<ChangeRule> = create_entry.try_into();
-                                match change_rule_maybe {
-                                    Ok(change_rule) => confirm_create_entry_key_change_rule(change_rule, header),
-                                    Err(err) => Error::EntryMissing.into()
-                                }
-                            }
-                            _ => todo!(),
-                        }
-                    }
-                    EntryType::CapClaim => todo!(),
-                    EntryType::CapGrant => todo!(),
+        //
+        // The Chain Authority
+        // 
+        // This authority has the previous items of the chain. here we introduce rules based on
+        // previous Actions, with local (immediate) access to the source-chain.  TODO: show an
+        // invalidation use-case or explain why we signal valid by default here TODO: could all
+        // cases marked with 'todo!()' really happen here as well?
+        // 
+        OpType::RegisterAgentActivity(agent_activity) => {
+            let signed_action: SignedHashed<Action> = match op {
+                Op::RegisterAgentActivity(RegisterAgentActivity{ action, .. }) => action,
+                _ => unreachable!(),
+            };
+	    debug!("- Register Agent Activity: {:?}", agent_activity );
+            match agent_activity {
+                // Agent joining network validation
+                OpActivity::AgentValidationPkg(_) => Ok(ValidateCallbackResult::Valid),
+                OpActivity::CloseChain(_) => Ok(ValidateCallbackResult::Valid),
+                OpActivity::CreateAgent(_agent_pubkey) => {
+                    // TODO: we could perform a check on the new agent's pubkey
+                    Ok(ValidateCallbackResult::Valid)
+                }
+                OpActivity::CreateCapClaim(_) => Ok(ValidateCallbackResult::Valid),
+                OpActivity::CreateCapGrant(_) => Ok(ValidateCallbackResult::Valid),
+                OpActivity::UpdateEntry { entry_hash, entry_type, .. } |
+                OpActivity::CreateEntry{ entry_hash, entry_type } => match entry_type {
+		    // For each entry type, obtain the required ValidationData.  For some, we need
+                    // only the current Record (Action + Entry); for others, we need part/all of the
+                    // source-chain.  TODO: convert to directly validate w/ internal
+                    // must_get_agent_activity calls.
+                    Some(UnitEntryTypes::DeviceInvite) =>
+                        confirm_chain_device_invite(signed_action),
+                    _other => {
+                        debug!("Storing some other Action: {:?} == {:?}: {:?}", entry_hash, entry_type, _other);
+                        Ok(ValidateCallbackResult::Valid)
+                    },
+		},
+                OpActivity::CreatePrivateEntry { .. } => Ok(ValidateCallbackResult::Valid),
+                OpActivity::CreateLink { .. } => Ok(ValidateCallbackResult::Valid),
+                OpActivity::DeleteEntry { .. } => Ok(ValidateCallbackResult::Valid),
+                OpActivity::DeleteLink(_) => Ok(ValidateCallbackResult::Valid),
+                OpActivity::Dna(_) => Ok(ValidateCallbackResult::Valid),
+                OpActivity::InitZomesComplete => {
+                    // we could perform an integrity check on the Zome genesis
+                    Ok(ValidateCallbackResult::Valid)
                 },
-                Action::Update(update) => match update.entry_type {
-                    EntryType::App(app_entry_type) => {
-                        match info.entry_defs.get(app_entry_type.id.index()).map(|entry_def| entry_def.id.to_string()) {
-                            "change_rule" => {
-                                let device_invite_acceptance_maybe: Result<DeviceInviteAcceptance> = create_entry.try_into();
-                                match device_invite_acceptance_maybe {
-                                    Ok(device_invite_acceptance) => confirm_update_entry_device_invite_acceptance(device_invite_acceptance, create_header),
-                                    Err(err) => Error::EntryMissing.into()
-                                }
-                            }
-                            "device_invite_acceptance" => {
-                                let change_rule_maybe: Result<ChangeRule> = create_entry.try_into();
-                                match change_rule_maybe {
-                                    Ok(change_rule) => confirm_update_entry_key_change_rule(change_rule, header),
-                                    Err(err) => Error::EntryMissing.into()
-                                }
-                            }
-                            _ => todo!(),
-                        }
-                    }
-                },
-                Action::Delete(delete) =>  match update.entry_type {
-                    EntryType::App(app_entry_type) => {
-                        match info.entry_defs.get(app_entry_type.id.index()).map(|entry_def| entry_def.id.to_string()) {
-                            "change_rule" => {
-                                let device_invite_acceptance_maybe: Result<DeviceInviteAcceptance> = create_entry.try_into();
-                                let prev_header: ActionHash = Action::Delete(delete).prev_header();
-                                match device_invite_acceptance_maybe {
-                                    Ok(device_invite_acceptance) => confirm_delete_entry_device_invite_acceptance(device_invite_acceptance, prev_header, Action::Delete(delete)),
-                                    Err(err) => Error::EntryMissing.into()
-                                }
-                            }
-                            "device_invite_acceptance" => {
-                                let change_rule_maybe: Result<ChangeRule> = create_entry.try_into();
-                                let prev_header: ActionHash = Action::Delete(delete).prev_header();
-                                match change_rule_maybe {
-                                    Ok(change_rule) => confirm_delete_entry_key_change_rule(change_rule, prev_header, Action::Delete(delete)),
-                                    Err(err) => Error::EntryMissing.into()
-                                }
-                            }
-                            _ => todo!(),
-                        }
-                    }
-                },
+                OpActivity::OpenChain(_) => Ok(ValidateCallbackResult::Valid),
+                OpActivity::UpdateAgent { .. } => Ok(ValidateCallbackResult::Valid),
+                OpActivity::UpdateCapClaim { .. } => Ok(ValidateCallbackResult::Valid),
+                OpActivity::UpdateCapGrant { .. } => Ok(ValidateCallbackResult::Valid),
+                OpActivity::UpdatePrivateEntry { .. } => Ok(ValidateCallbackResult::Valid),
             }
-            Ok(ValidateCallbackResult::Valid)
-        }
-        // Validation for Entries based on Entry::App type
-        Op::StoreEntry { entry, header, .. } => {
-            match header.hashed.content.entry_type() {
-                //entry_def_index!(String::from("change_rule")) => {
-                //entry_def_index!(ChangeRule) => {
-                UnitEntryTypes::ChangeRule => {
-                    let device_invite_acceptance_maybe: Result<DeviceInviteAcceptance> = create_entry.try_into();
-                    match device_invite_acceptance_maybe {
-                        Ok(device_invite_acceptance) => match header.hashed.content {
-                            Action::Create(_) => confirm_create_entry_device_invite_acceptance(device_invite_acceptance, header.hashed.content),
-                            Action::Update(_) => confirm_update_entry_device_invite_acceptance(device_invite_acceptance, header.hashed.content),
-                        },
-                        Err(err) => Error::EntryMissing.into()
-                    }
-                },
-                //entry_def_index!(String::from("device_invite_acceptance")) => {
-                UnitEntryTypes::DeviceInviteAcceptance => {
-                    let change_rule_maybe: Result<ChangeRule> = create_entry.try_into();
-                    match change_rule_maybe {
-                        Ok(change_rule) => match header.hashed.content {
-                            Action::Create(_) => confirm_create_entry_key_change_rule(change_rule, header),
-                            Action::Update(_) => confirm_create_entry_key_change_rule(change_rule, header),
-                        },
-                        Err(err) => Error::EntryMissing.into()
-                    }
-                },
-                _ => Error::EntryMissing.into() // TODO: We must handle every known Entry Type in DNA
-            }
-        },
-        // Agent joining network validation
-        // this is a new DHT op
-        Op::RegisterAgent { header, agent_pub_key } => {
-            // get validation package and then do stuff
-            Ok(ValidateCallbackResult::Valid)
-        },
-        // Chain structure validation
-        Op::RegisterAgentActivity { .. } => Ok(ValidateCallbackResult::Valid),
-
-        Op::RegisterCreateLink { create_link: _ } => Ok(ValidateCallbackResult::Valid),
-        Op::RegisterDeleteLink { create_link: _, .. } => Ok(ValidateCallbackResult::Valid),
-        Op::RegisterUpdate { .. } => Ok(ValidateCallbackResult::Valid),
-        Op::RegisterDelete { delete, original_entry, original_header } => {
-            let delete_header: HoloHashed<Action> = delete.into(); // A SignedHashed<Action::Delete>>
-            let delete_header: Action = *delete_header.as_content();
-            let original_header: HoloHashed<Action> = original_header.into();
-            confirm_delete_entry(original_entry, original_header.as_hash(), delete_header)
         }
     }
-    */
 }
-
-/*
-pub fn confirm_delete_entry(original_entry: Entry, original_header: Action, delete_header: Action) -> ExternResult<ValidateCallbackResult> {
-    match original_entry {
-        Entry::App(_) => {
-            let change_rule_maybe: Result<ChangeRule> = original_entry.try_into();
-            match change_rule_maybe {
-                Ok(change_rule) => return confirm_delete_entry_key_change_rule(change_rule, original_header, delete_header),
-                _ => { },
-            }
-            let device_invite_acceptance_maybe: Result<DeviceInviteAcceptance> = original_entry.try_into();
-            match device_invite_acceptance_maybe {
-                Ok(device_invite_acceptance) => return confirm_delete_entry_device_invite_acceptance(device_invite_acceptance, original_header, delete_header),
-                _ => { },
-            }
-            Error::EntryMissing.into() // TODO: We must handle every known Entry Type in DNA
-        },
-        _ => Ok(ValidateCallbackResult::Valid),
-    }
-}
-*/

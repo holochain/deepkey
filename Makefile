@@ -50,7 +50,7 @@ packs/%.dna:
 
 wasm:				$(DNA_DEEPKEY_WASM)
 
-target/wasm32-unknown-unknown/release/%.wasm:	Makefile zomes/%/Cargo.toml zomes/%/src/*.rs zomes/%/src/*/*.rs 
+target/wasm32-unknown-unknown/release/%.wasm:	Makefile zomes/%/Cargo.toml zomes/%/src/*.rs zomes/%/src/*/*.rs FORCE
 	@echo "Building  '$*' WASM: $@"; \
 	RUST_BACKTRACE=1 CARGO_TARGET_DIR=target cargo build --release \
 	    --target wasm32-unknown-unknown \
