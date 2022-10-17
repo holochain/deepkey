@@ -1,29 +1,31 @@
 [package]
-name = "deepkey"
-description = "DeepKey hApp"
+name = "deepkey_integrity"
+description = "DeepKey hApp DNA Integrity Zome"
 version = "0.0.2"
-authors = [ "Holochain Core Dev Team <devcore@holochain.org>" ]
+authors = ["Holochain Core Dev Team <devcore@holochain.org>"]
 license = "CAL-1.0"
 homepage = "https://github.com/holochain/deepkey"
 documentation = "https://github.com/holochain/deepkey"
 keywords = ["holochain", "holo", "deepkey", "DPKI", "PKI"]
-categories = [ "cryptography", "holochain" ]
+categories = ["cryptography", "holochain"]
 edition = "2021"
 
 [lib]
-name = "deepkey"
-crate-type = [ "cdylib", "rlib" ]
+name = "deepkey_integrity"
+crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"
 
 [dependencies]
-deepkey_integrity = {path = "../deepkey_integrity"}
 hdk = "=0.0.155"
 hdi = "=0.1.4"
 serde = "*"      # use whatever serde hdk gives us
 thiserror = "1"
-mockall = "0.11.2"
 
 [dev-dependencies]
+arbitrary = "=1.1.7"                                            # Avoid unstable rust in 1.1.4; defeats compilation of unit tests
+mockall = "0.11.2"
+hdi = { version = "=0.1.4", features = ["mock", "test_utils"] }
+hdk = { version = "=0.0.155", features = ["mock"] }
 fixt = "0.0.14"
 holochain_types = "0.0.61"
 rand = "0.8.5"

@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = [
+    "zomes/deepkey_integrity",
+    # "zomes/deepkey"
+]
+
+[profile.dev]
+opt-level = "z"
+
+[profile.release]
+opt-level = "z"
