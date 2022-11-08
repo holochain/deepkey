@@ -16,18 +16,18 @@ crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"
 
 [dependencies]
-hdk = "=0.0.155"
-hdi = "=0.1.4"
+hdk = "=0.0.159"
+hdi = "=0.1.7"
 serde = "*"      # use whatever serde hdk gives us
 thiserror = "1"
 
 [dev-dependencies]
 arbitrary = "=1.1.7"                                            # Avoid unstable rust in 1.1.4; defeats compilation of unit tests
 mockall = "0.11.2"
-hdi = { version = "=0.1.4", features = ["mock", "test_utils"] }
-hdk = { version = "=0.0.155", features = ["mock"] }
+hdk = { version = "=0.0.159", features = ["mock"] }
+hdi = { version = "=0.1.7", features = ["mock", "test_utils"] }
 fixt = "0.0.14"
-holochain_types = "0.0.61"
+holochain_types = "0.0.65"
 rand = "0.8.5"
 strum = "0.24.1"
 strum_macros = "0.24.3"
