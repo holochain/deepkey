@@ -2,7 +2,7 @@ import { pause, runScenario } from "@holochain/tryorama"
 import path from "path"
 import { test } from "tape-promise/tape"
 export const loadHcFile = (partialDir) =>
-  path.join(__dirname, `../hcdefs/partialDir`)
+  path.join(__dirname, `../dist/partialDir`)
 
 import { Base64 } from "js-base64"
 
