@@ -5,6 +5,8 @@ specifiers:
   '@holochain/tryorama': ^0.9.1
   '@msgpack/msgpack': ^2.8.0
   '@types/node': ^18.11.9
+  '@types/tape': ^4.13.2
+  '@types/tape-promise': ^4.0.1
   concurrently: ^6.2.1
   concurrently-repeat: ^0.0.1
   cross-env: ^7.0.3
@@ -22,6 +24,8 @@ devDependencies:
   '@holochain/tryorama': 0.9.1_eslint@8.27.0
   '@msgpack/msgpack': 2.8.0
   '@types/node': 18.11.9
+  '@types/tape': 4.13.2
+  '@types/tape-promise': 4.0.1
   concurrently: 6.5.1
   concurrently-repeat: 0.0.1
   cross-env: 7.0.3
@@ -200,6 +204,18 @@ packages:
 
   /@types/node/18.11.9:
     resolution: {integrity: sha512-CRpX21/kGdzjOpFsZSkcrXMGIBWMGNIHXXBVFSH+ggkftxg+XYP20TESbh+zFvFj3EQOl5byk0HTRn1IL6hbqg==}
+    dev: true
+
+  /@types/tape-promise/4.0.1:
+    resolution: {integrity: sha512-1yBeq9y0EmJ2RpxfXMPrFeD3yMetBapY9zArTexp/wCRdBToJac/y//rtcZZjmiArgodTqz0RrK0VxxySoKyVg==}
+    dependencies:
+      '@types/tape': 4.13.2
+    dev: true
+
+  /@types/tape/4.13.2:
+    resolution: {integrity: sha512-V1ez/RtYRGN9cNYApw5xf27DpMkTB0033X6a2i3KUmKhSojBfbWN0i3EgZxboUG96WJLHLdOyZ01aiZwVW5aSA==}
+    dependencies:
+      '@types/node': 18.11.9
     dev: true
 
   /acorn-jsx/5.3.2_acorn@8.8.1:
