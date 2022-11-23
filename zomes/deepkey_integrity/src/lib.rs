@@ -1,52 +1,60 @@
+pub mod change_rule;
 pub mod keyset_root;
 
+use change_rule::*;
+use hdi::prelude::*;
+use keyset_root::*;
 
 #[hdk_entry_defs]
 #[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
     #[entry_def(required_validations = 5)]
-    KeysetRoot(KeysetRoot), 
+    KeysetRoot(KeysetRoot),
+    #[entry_def(required_validations = 5)]
+    ChangeRule(ChangeRule),
+}
+
+#[hdk_link_types]
+pub enum LinkTypes {
+    PathToPost,
+    PathToRole,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Genesis self-check callback
 ////////////////////////////////////////////////////////////////////////////////
-#[hdk_extern]
-pub fn genesis_self_check(data: GenesisSelfCheckData) -> ExternResult<ValidateCallbackResult> {
-    is_membrane_proof_valid(data.agent_key, data.membrane_proof)
-}
-
+// #[hdk_extern]
+// pub fn genesis_self_check(data: GenesisSelfCheckData) -> ExternResult<ValidateCallbackResult> {
+//     is_membrane_proof_valid(data.agent_key, data.membrane_proof)
+// }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Validation callback
 ////////////////////////////////////////////////////////////////////////////////
 
-pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
-    let op_type: OpType<EntryTypes, ()> = op.into();
-    match op_type {
-        OpType::StoreRecord(_) => todo!(),
-        OpType::StoreEntry(_) => todo!(),
-        OpType::RegisterAgentActivity(_) => todo!(),
-        OpType::RegisterCreateLink { base_address, target_address, tag, link_type } => todo!(),
-        OpType::RegisterDeleteLink { original_link_hash, base_address, target_address, tag, link_type } => todo!(),
-        OpType::RegisterUpdate(_) => todo!(),
-        OpType::RegisterDelete(_) => todo!(),
-    }
-
-
-    // match op {
-    //     Op::StoreRecord(_) => todo!(),
-    //     Op::StoreEntry(_) => todo!(),
-    //     Op::RegisterUpdate(_) => todo!(),
-    //     Op::RegisterDelete(_) => todo!(),
-    //     Op::RegisterAgentActivity(_) => todo!(),
-    //     Op::RegisterCreateLink(_) => todo!(),
-    //     Op::RegisterDeleteLink(_) => todo!(),
+pub fn validate(_op: Op) -> ExternResult<ValidateCallbackResult> {
+    return Ok(ValidateCallbackResult::Valid);
+    // let op_type: OpType<EntryTypes, ()> = ;
+    // match op.to_type::<EntryTypes, LinkTypes>()? {
+    //     OpType::StoreRecord(_) => todo!(),
+    //     OpType::StoreEntry(_) => todo!(),
+    //     OpType::RegisterAgentActivity(_) => todo!(),
+    //     OpType::RegisterCreateLink {
+    //         base_address,
+    //         target_address,
+    //         tag,
+    //         link_type,
+    //     } => todo!(),
+    //     OpType::RegisterDeleteLink {
+    //         original_link_hash,
+    //         base_address,
+    //         target_address,
+    //         tag,
+    //         link_type,
+    //     } => todo!(),
+    //     OpType::RegisterUpdate(_) => todo!(),
+    //     OpType::RegisterDelete(_) => todo!(),
     // }
-    
-    
-
-
 
     /*
     match op {
@@ -98,7 +106,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 LinkTypes::Fish => (),
                 LinkTypes::Dog => (),
                 LinkTypes::Cow => (),
-            }        
+            }
         },
 
         // Validation for records based on action type
@@ -125,10 +133,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 Action::CloseChain(_) => todo!(),
 
                 // Validate capabilities, rarely used
-                Action::CapGrant() => todo!(), 
+                Action::CapGrant() => todo!(),
                 Action::CapClaim() => todo!(),
 
-                // Validate init and genesis entries, also rarely 
+                // Validate init and genesis entries, also rarely
                 Action::InitZomesComplete(_)=>todo!(),
                 Action::AgentValidationPkg(_)=>todo!(), // mostly this will be validated in the process of using it to validate the Agent Key
                 Action::Dna(_)=>todo!(),
@@ -194,7 +202,5 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
         )),
         Op::RegisterAgentActivity { .. } => Ok(ValidateCallbackResult::Valid),
     }
-     */    
+     */
 }
-
-

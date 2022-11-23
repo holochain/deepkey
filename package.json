@@ -2,26 +2,40 @@
   "name": "@holochain/deepkey",
   "private": true,
   "engines": {
-    "node": ">=18",
-    "pnpm": ">=7"
+    "node": ">=14",
+    "pnpm": ">=6"
   },
+  "packageManager": "pnpm@7.1.1",
   "workspaces": [],
   "scripts": {
-    "start": "npm run network 2",
-    "network": "hc s clean && npm run build:happ && concurrently-repeat \"npm run start:agent\"",
-    "test": "npm run build:happ && cargo test -- --nocapture",
-    "start:happ": "RUST_LOG=warn echo \"pass\" | hc s --piped generate ./workdir/happ/profiles-test.happ --run=$HC_PORT network mdns",
-    "build:happ": "pnpm build:dna && hc app pack workdir/happ",
-    "build:dna": "pnpm build:zome && hc dna pack workdir/dna",
-    "build:zome": "CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
+    "start": "pnpm network 2",
+    "network": "hc s clean && pnpm build:happ && concurrently-repeat \"pnpm start:agent\"",
+    "test:rust": "pnpm build:happ && cargo test -- --nocapture",
+    "test": "pnpm build:happ && pnpm t -w tests",
+    "start:happ": "RUST_LOG=warn echo \"pass\" | hc s --piped generate './hcdefs/Holochain DeepKey.happ' --run=$HC_PORT network mdns",
+    "build:happ": "pnpm build:dna && hc app pack hcdefs",
+    "build:dna": "pnpm build:zomes && hc dna pack hcdefs",
+    "build:zomes": "CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
     "docs:start": "pnpm docs:setup && rocket start",
     "docs:publish": "pnpm docs:setup && rocket build && gh-pages --dotfiles -d ./_site -b gh-pages",
     "setup": "corepack enable && corepack prepare pnpm@latest --activate"
   },
   "devDependencies": {
+    "@holochain/client": "^0.9.3",
+    "@holochain/tryorama": "^0.9.1",
+    "@msgpack/msgpack": "^2.8.0",
+    "@types/node": "^18.11.9",
     "concurrently": "^6.2.1",
     "concurrently-repeat": "^0.0.1",
-    "cross-env": "^7.0.3"
+    "cross-env": "^7.0.3",
+    "eslint": "^8.27.0",
+    "js-base64": "^3.7.2",
+    "path": "^0.12.7",
+    "tape": "^5.6.1",
+    "tape-promise": "^4.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.8.4",
+    "ws": "^8.11.0"
   },
   "type": "module"
 }

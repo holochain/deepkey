@@ -1,2 +1,5 @@
 .cargo
 target
+node_modules
+dist/*.dna
+dist/*.happ

@@ -22,7 +22,7 @@ serde = "*"      # use whatever serde hdk gives us
 thiserror = "1"
 
 [dev-dependencies]
-arbitrary = "=1.1.7"                                            # Avoid unstable rust in 1.1.4; defeats compilation of unit tests
+arbitrary = "1.2.0"                                            # Avoid unstable rust in 1.1.4; defeats compilation of unit tests
 mockall = "0.11.2"
 hdk = { version = "=0.0.159", features = ["mock"] }
 hdi = { version = "=0.1.7", features = ["mock", "test_utils"] }
