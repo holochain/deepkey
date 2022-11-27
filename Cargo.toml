@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     "zomes/deepkey_integrity",
-    "zomes/deepkey"
+    # "zomes/deepkey"
 ]
 
 [profile.dev]

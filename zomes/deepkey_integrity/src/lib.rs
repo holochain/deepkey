@@ -1,24 +1,24 @@
 pub mod change_rule;
-pub mod keyset_root;
+// pub mod keyset_root;
 
 use change_rule::*;
 use hdi::prelude::*;
-use keyset_root::*;
+// use keyset_root::*;
 
 #[hdk_entry_defs]
 #[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
-    #[entry_def(required_validations = 5)]
-    KeysetRoot(KeysetRoot),
+    // #[entry_def(required_validations = 5)]
+    // KeysetRoot(KeysetRoot),
     #[entry_def(required_validations = 5)]
     ChangeRule(ChangeRule),
 }
 
-#[hdk_link_types]
-pub enum LinkTypes {
-    PathToPost,
-    PathToRole,
-}
+// #[hdk_link_types]
+// pub enum LinkTypes {
+//     PathToPost,
+//     PathToRole,
+// }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Genesis self-check callback

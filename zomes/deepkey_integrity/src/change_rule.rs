@@ -2,7 +2,7 @@ use hdi::prelude::*;
 
 /// Same as entry_def_index! but constant.
 /// Has test coverage in case entry_defs! ever changes.
-pub const CHANGE_RULE_INDEX: EntryDefIndex = EntryDefIndex(0);
+// pub const CHANGE_RULE_INDEX: EntryDefIndex = EntryDefIndex(0);
 
 /// Represents an M:N multisignature spec.
 /// The trivial case 1:1 represents a single agent to sign.

@@ -1,4 +1,4 @@
-use crate::change_rule::entry::ChangeRule;
+use deepkey_integrity::change_rule::ChangeRule;
 use hdk::prelude::*;
 
 #[hdk_extern]

@@ -18,8 +18,8 @@ pub const KEYSET_ROOT_CHAIN_INDEX: u32 = 3;
 /// We need an entry to create a permanent anchor that can be used to reference the space of keys under the control of a human agent.
 /// This is commited only by the FirstDeepkeyAgent (FDA) not later devices that are joining this same agency context.
 
-// #[derive(Clone)]
 #[hdk_entry_helper]
+#[derive(Clone)]
 pub struct KeysetRoot {
     pub first_deepkey_agent: AgentPubKey,
     /// The private key is thrown away.
