@@ -1,12 +1,19 @@
-[workspace]
-resolver = "2"
-members = [
-    "zomes/deepkey_integrity",
-    # "zomes/deepkey"
-]
-
 [profile.dev]
 opt-level = "z"
 
 [profile.release]
 opt-level = "z"
+
+[workspace]
+members = ["dnas/*/zomes/coordinator/*", "dnas/*/zomes/integrity/*"]
+
+[workspace.dependencies]
+hdi = "0.1.9"
+hdk = "0.0.162"
+serde = "1"
+
+[workspace.dependencies.first_zome]
+path = "dnas/first/zomes/coordinator/first_zome"
+
+[workspace.dependencies.first_zome_integrity]
+path = "dnas/first/zomes/integrity/first_zome"

@@ -1,0 +1,15 @@
+[package]
+name = "first_zome"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "first_zome"
+
+[dependencies]
+hdk = { workspace = true }
+
+serde = { workspace = true }
+
+first_zome_integrity = { workspace = true } 

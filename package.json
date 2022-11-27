@@ -1,43 +1,31 @@
 {
   "name": "@holochain/deepkey",
   "private": true,
-  "engines": {
-    "node": ">=14",
-    "pnpm": ">=6"
-  },
-  "packageManager": "pnpm@7.1.1",
-  "type": "module",
+  "workspaces": [
+    "ui",
+    "tests"
+  ],
   "scripts": {
-    "start": "pnpm network 2",
-    "network": "hc s clean && pnpm build:happ && concurrently-repeat \"pnpm start:agent\"",
-    "test:rust": "pnpm build:happ && cargo test -- --nocapture",
-    "test": "pnpm build:happ && pnpm t -w tests",
-    "start:happ": "RUST_LOG=warn echo \"pass\" | hc s --piped generate './dist/Holochain DeepKey.happ' --run=$HC_PORT network mdns",
-    "build:happ": "pnpm build:dna && hc app pack dist",
-    "build:dna": "pnpm build:zomes && hc dna pack dist",
+    "start": "npm run network 2",
+    "network": "hc s clean && npm run build:happ && concurrently-repeat \"npm run start:agent\"",
+    "start:agent": "cross-env HC_PORT=$(port) concurrently -k \"npm run start:happ\" \"sleep 5 && npm run start -w ui\"",
+    "test": "npm run build:zomes && hc app pack workdir --recursive && npm t -w tests",
+    "start:happ": "concurrently \"RUST_LOG=warn echo \"pass\" | hc s --piped generate workdir/new-app.happ --run=$HC_PORT -a new-app network mdns\" \"npm run playground\"",
+    "package": "npm run build:happ && npm run package -w ui && hc web-app pack workdir --recursive",
+    "build:happ": "npm run build:zomes && hc app pack workdir --recursive",
     "build:zomes": "CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
-    "docs:start": "pnpm docs:setup && rocket start",
-    "docs:publish": "pnpm docs:setup && rocket build && gh-pages --dotfiles -d ./_site -b gh-pages",
-    "setup": "corepack enable && corepack prepare pnpm@latest --activate"
+    "playground": "run-singleton \"holochain-playground\""
   },
   "devDependencies": {
-    "@holochain/client": "^0.9.3",
-    "@holochain/tryorama": "^0.9.1",
-    "@msgpack/msgpack": "^2.8.0",
-    "@types/node": "^18.11.9",
-    "@types/tape": "^4.13.2",
-    "@types/tape-promise": "^4.0.1",
+    "@holochain-playground/cli": "^0.0.11",
     "concurrently": "^6.2.1",
     "concurrently-repeat": "^0.0.1",
     "cross-env": "^7.0.3",
-    "eslint": "^8.27.0",
-    "js-base64": "^3.7.2",
-    "path": "^0.12.7",
-    "tape": "^5.6.1",
-    "tape-promise": "^4.0.0",
-    "ts-node": "^10.9.1",
-    "typescript": "^4.8.4",
-    "vitest": "^0.25.3",
-    "ws": "^8.11.0"
+    "new-port-cli": "^1.0.0",
+    "rimraf": "^3.0.2",
+    "run-singleton-cli": "^0.0.5"
+  },
+  "engines": {
+    "npm": ">=7.0.0"
   }
 }

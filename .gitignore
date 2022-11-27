@@ -1,5 +1,11 @@
-.cargo
-target
 node_modules
-dist/*.dna
-dist/*.happ
+**/dist/
+/target/
+/.cargo/
+*.happ
+*.webhapp
+*.zip
+*.dna
+.hc*
+.hc
+.running
