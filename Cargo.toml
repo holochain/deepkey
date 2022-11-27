@@ -12,6 +12,12 @@ hdi = "0.1.9"
 hdk = "0.0.162"
 serde = "1"
 
+[workspace.dependencies.deepkey]
+path = "dnas/deepkey/zomes/coordinator/deepkey"
+
+[workspace.dependencies.deepkey_integrity]
+path = "dnas/deepkey/zomes/integrity/deepkey"
+
 [workspace.dependencies.first_zome]
 path = "dnas/first/zomes/coordinator/first_zome"
 

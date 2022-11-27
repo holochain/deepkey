@@ -1,0 +1,15 @@
+[package]
+name = "deepkey"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "deepkey"
+
+[dependencies]
+hdk = { workspace = true }
+
+serde = { workspace = true }
+
+deepkey_integrity = { workspace = true } 

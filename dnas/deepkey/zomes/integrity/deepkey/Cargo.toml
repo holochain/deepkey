@@ -1,0 +1,13 @@
+[package]
+name = "deepkey_integrity"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "deepkey_integrity"
+
+[dependencies]
+hdi = { workspace = true }
+serde = { workspace = true }
+thiserror = "1"

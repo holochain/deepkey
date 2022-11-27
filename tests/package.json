@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "foreach -g \"**/*.test.ts\" -x \"NODE_NO_WARNINGS=1 ts-node-test #{path}\" --no-C",
-    "vitest": "vitest"
+    "test": "NODE_NO_WARNINGS=1 vitest"
   },
   "author": "",
   "license": "CAL-1.0",
@@ -14,7 +13,6 @@
     "@holochain/tryorama": "^0.9.0",
     "@msgpack/msgpack": "^2.7.0",
     "foreach-cli": "^1.8.1",
-    "ts-node-test": "^0.2.0",
     "vitest": "^0.25.3"
   },
   "type": "module",

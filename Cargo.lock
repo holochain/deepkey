@@ -364,6 +364,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "deepkey"
+version = "0.0.1"
+dependencies = [
+ "deepkey_integrity",
+ "hdk",
+ "serde",
+]
+
+[[package]]
+name = "deepkey_integrity"
+version = "0.0.1"
+dependencies = [
+ "hdi",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "derive_more"
 version = "0.99.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
