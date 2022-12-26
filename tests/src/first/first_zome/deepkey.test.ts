@@ -12,43 +12,40 @@ import { decode } from "@msgpack/msgpack"
 
 import { describe, expect, test } from "vitest"
 
-test("create first_entry", async (t) => {
+test("create a KeysetRoot entry", async (t) => {
   await runScenario(async (scenario) => {
-    // Construct proper paths for your app.
-    // This assumes app bundle created by the `hc app pack` command.
-    const testDnaPath = process.cwd() + "/" + "../dnas/first/workdir/first.dna"
-
-    // Set up the array of DNAs to be installed, which only consists of the
-    // test DNA referenced by path.
+    const testDnaPath =
+      process.cwd() + "/" + "../dnas/deepkey/workdir/deepkey.dna"
+    console.log(testDnaPath)
     const dnas: DnaSource[] = [{ path: testDnaPath }]
 
-    // Add 2 players with the test DNA to the Scenario. The returned players
-    // can be destructured.
-    const [alice, bob] = await scenario.addPlayersWithHapps([dnas, dnas])
+    const [alice] = await scenario.addPlayersWithHapps([dnas])
 
-    // Shortcut peer discovery through gossip and register all agents in every
-    // conductor of the scenario.
     await scenario.shareAllAgents()
 
-    const createInput = {
-      name: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec eros quis enim hendrerit aliquet.",
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec eros quis enim hendrerit aliquet.",
-      age: 24,
-    }
 
-    // Alice creates a first_entry
-    const record: Record = await alice.cells[0].callZome({
-      zome_name: "first_zome",
-      fn_name: "create_first_entry",
-      payload: createInput,
-    })
-    // assert.ok(record)
-    expect(record).toBeTruthy()
+    // verify that a keyset root was created
+
+    // call a function on the zome
+
+    console.log(alice.cells[0])
+    // await alice.cells[0].callZome({
+    //   zome_name: "deepkey",
+    //   fn_name: "create",
+    // })
+
+    // // Alice creates a first_entry
+    // const record: Record = await alice.cells[0].callZome({
+    //   zome_name: "first_zome",
+    //   fn_name: "create_first_entry",
+    //   payload: createInput,
+    // })
+    // // assert.ok(record)
+    // expect(record).toBeTruthy()
   })
 })
 
-test("create and read first_entry", async (t) => {
+test.skip("create and read first_entry", async (t) => {
   await runScenario(async (scenario) => {
     // Construct proper paths for your app.
     // This assumes app bundle created by the `hc app pack` command.
@@ -101,7 +98,7 @@ test("create and read first_entry", async (t) => {
   })
 })
 
-test("create and update first_entry", async (t) => {
+test.skip("create and update first_entry", async (t) => {
   await runScenario(async (scenario) => {
     // Construct proper paths for your app.
     // This assumes app bundle created by the `hc app pack` command.
@@ -215,7 +212,7 @@ test("create and update first_entry", async (t) => {
   })
 })
 
-test("create and delete first_entry", async (t) => {
+test.skip("create and delete first_entry", async (t) => {
   await runScenario(async (scenario) => {
     // Construct proper paths for your app.
     // This assumes app bundle created by the `hc app pack` command.

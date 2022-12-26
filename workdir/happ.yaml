@@ -4,24 +4,12 @@ name: deepkey
 description: ~
 roles:
   - id: deepkey
+    name: deepkey
     provisioning:
       strategy: create
       deferred: false
     dna:
       bundled: "../dnas/deepkey/workdir/deepkey.dna"
-      modifiers:
-        network_seed: ~
-        properties: ~
-        origin_time: ~
-        quantum_time: ~
-      version: ~
-      clone_limit: 0
-  - id: first
-    provisioning:
-      strategy: create
-      deferred: false
-    dna:
-      bundled: "../dnas/first/workdir/first.dna"
       modifiers:
         network_seed: ~
         properties: ~

@@ -58,7 +58,7 @@ If the keyset proof is a new `KeysetRoot` then it must be immediately followed b
 A keyset is the set of keys governed by a ruleset, presumably under the control of one person.
 
 
-When you install a new app in Holochain, by default a new keypair is generated to to control the source chain of that app. The public key of that keypair serves as the address of your agent in that app's DHT. The private key signs all of your network communications and all actions on your chain. Deepkey registers, manages, and reports on the validity of each `AgentPubKey` installed on your conductor.
+When you install a new app in Holochain, by default a new keypair is generated to control the source chain of that app. The public key of that keypair serves as the address of your agent in that app's DHT. The private key signs all of your network communications and all actions on your chain. Deepkey registers, manages, and reports on the validity of each `AgentPubKey` installed on your conductor.
 
 ### Keyset Root
 

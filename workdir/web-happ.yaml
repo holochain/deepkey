@@ -1,7 +1,0 @@
----
-manifest_version: "1"
-name: new-app
-ui:
-  bundled: "../ui/dist.zip"
-happ_manifest:
-  bundled: "./new-app.happ"

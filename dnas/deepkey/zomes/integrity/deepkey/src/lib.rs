@@ -1,24 +1,63 @@
 pub mod change_rule;
-// pub mod keyset_root;
+pub mod keyset_root;
 
 use change_rule::*;
 use hdi::prelude::*;
-// use keyset_root::*;
+use keyset_root::*;
+
+
+// @todo - e.g. configurable difficulty over hashing the DNA - https://docs.rs/pow/0.2.0/pow/
+#[hdk_entry_helper]
+pub struct ProofOfWork([u8; 32]);
+
+// @todo
+#[hdk_entry_helper]
+pub struct ProofOfStake([u8; 32]);
+
+// @todo
+#[hdk_entry_helper]
+pub struct ProofOfAuthority([u8; 32]);
+
+#[hdk_entry_helper]
+enum MembraneProof {
+    // No additional membrane.
+    None,
+    // Proof of Work membrane.
+    ProofOfWork(ProofOfWork),
+    // Proof of Stake membrane.
+    ProofOfStake(ProofOfStake),
+    // Proof of Authority membrane.
+    ProofOfAuthority(ProofOfAuthority),
+}
+
+#[hdk_entry_helper]
+enum KeysetProof {
+    KeysetRoot(KeysetRoot),
+    // TODO: invitation
+    // DeviceInviteAcceptance(DeviceInviteAcceptance),
+}
+
+#[hdk_entry_helper]
+pub struct JoiningProof {
+    keyset_proof: KeysetProof,
+    membrane_proof: MembraneProof,
+}
+
 
 #[hdk_entry_defs]
 #[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
-    // #[entry_def(required_validations = 5)]
-    // KeysetRoot(KeysetRoot),
+    #[entry_def(required_validations = 5)]
+    JoiningProof(JoiningProof),
+    KeysetRoot(KeysetRoot),
     #[entry_def(required_validations = 5)]
     ChangeRule(ChangeRule),
 }
 
-// #[hdk_link_types]
-// pub enum LinkTypes {
-//     PathToPost,
-//     PathToRole,
-// }
+#[hdk_link_types]
+pub enum LinkTypes {
+    AgentToMembraneProof,
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Genesis self-check callback

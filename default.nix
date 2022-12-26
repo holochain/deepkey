@@ -6,7 +6,7 @@ let
       version = "1.64.0";
     };
 
-    holochainVersionId = "v0_0_174"; # specifies the Holochain version
+    holochainVersionId = "v0_0_175"; # specifies the Holochain version
   };
   nixpkgs = holonix.pkgs;
 in nixpkgs.mkShell {
