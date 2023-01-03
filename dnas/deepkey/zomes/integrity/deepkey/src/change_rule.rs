@@ -9,7 +9,8 @@ use hdi::prelude::*;
 /// We need an entry to define the rules of authority
 /// (for authorizing or revoking) keys in the space under a KeysetRoot.
 /// This is only committed by the FDA.
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
+#[hdk_entry_helper]
+#[derive(Clone, PartialEq)]
 pub struct AuthoritySpec {
     /// set to 1 for a single signer scenario
     pub sigs_required: u8,

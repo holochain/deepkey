@@ -4,7 +4,7 @@ Deepkey is a happ to provide a decentralized public key infrastructure (DPKI) fo
 
 The keys for happs installed on each device are also tracked under the keyset for the device.
 
-Because humans are notoriously bad at managing cryptographic keys, we believe a project like Holochain must provide key management tools to help people deal with real-world messiness such as lost/stolen keys or devices. How many billions of dollars have been lost due to the lack of a key management infrastructure.
+Because humans are notoriously bad at managing cryptographic keys, we believe a project like Holochain must provide key management tools to help people deal with real-world messiness such as lost/stolen keys or devices. How many billions of dollars have been lost due to the lack of a key management infrastructure?
 
 Deepkey provides the ability to:
 - Register keys under the authority of a keyset.
@@ -29,7 +29,7 @@ The purpose of a `membrane_proof` is to make it hard to flood the network with f
 
 *TODO: The membrane logic is not currently implemented.*
 
-Future membrane logic possibilities include:
+Future membrane logic implementations planned:
 
 - `ProofOfWork`: Agent must prove that they've performed some computational work to prevent low-effort spam bots.
 - `ProofOfStake`: Agent must put up value that can be taken in case of bad behaviour.
@@ -57,7 +57,6 @@ If the keyset proof is a new `KeysetRoot` then it must be immediately followed b
 
 A keyset is the set of keys governed by a ruleset, presumably under the control of one person.
 
-
 When you install a new app in Holochain, by default a new keypair is generated to control the source chain of that app. The public key of that keypair serves as the address of your agent in that app's DHT. The private key signs all of your network communications and all actions on your chain. Deepkey registers, manages, and reports on the validity of each `AgentPubKey` installed on your conductor.
 
 ### Keyset Root
@@ -68,7 +67,7 @@ The structure of a `KeysetRoot` is:
 
 - The `first_deepkey_agent` (FDA), the author of the `KeysetRoot`.
 - The `root_pub_key`, the public part of an throwaway keypair which is only used to generate this KSR. (Using the `sign_ephemeral` HDK function.)
--  A `Signature`: the authority of the FDA is established using the private part of the throwaway keypair to sign sign the FDA's pubkey.
+-  A `Signature`: the authority of the FDA is established using the private part of the throwaway keypair to sign the FDA's pubkey.
 
 Note that if a device is to issue a KSR it must do so as its very first action in Deepkey. 
 
@@ -79,7 +78,7 @@ Note that if a device is to issue a KSR it must do so as its very first action i
 **Create**: The validation that happens when you create a new `KeysetRoot`
 
 - A `KeysetRoot` struct must deserialize cleanly from the record being validated.
-- Must be created at index 4 (5th position) in the author's chain.
+- Must be created at index 4 (5th item) in the author's chain.
 - The author must be the FDA.
 - The signature of the FDA from the root/ephemeral pubkey must be valid.
 
@@ -205,7 +204,7 @@ pub struct AuthorizedSpecChange {
 ```rust
 pub type Authorization = (u8, Signature); 
 ```
-A `ChangeRule` ties the new authorization spec to a KSR. It includes a proof of authority in the form of the `keyset_leaf`.
+A `ChangeRule` ties the new authorization spec to a KeysetRoot. It includes a proof of authority in the form of the `keyset_leaf`.
 ```rust
 pub struct ChangeRule {
     pub keyset_root: ActionHash, // reference to a `KeysetRoot`
@@ -410,7 +409,7 @@ The structure of a `KeyRevocation` is:
 
 The `KeyAnchor` entry contains only the core 32 bytes of the registered key, stripped of the 3 byte multihash prefix and 4 byte DHT location suffix. Using this `KeyAnchor` entry, the status (valid, revoked, replaced, etc.) of a key can be looked up in a single `get` call, without needing to first lookup the corresponding `KeyRegistration`.
 
-This als means that any external consumer of Deepkey (other DNA's, Holochain apps, etc.) can query the key status with the core 32 bytes of the key. They do NOT need to know its registration details.
+This also means that any external consumer of Deepkey (other DNA's, Holochain apps, etc.) can query the key status with the core 32 bytes of the key. They do NOT need to know its registration details.
 
 The `KeyAnchor` record must always be written onto the chain immediately following its `KeyRegistration`. This is to avoid the need to manage links between the two entries, the `KeyAnchor` `prev_action` always references the `KeyRegistration`.
 
@@ -514,3 +513,5 @@ A `DnaBinding` is:
   - creates a `DnaBinding`
 - `install_an_app`
   - *TODO*
+
+*TODO*: Discuss Rate Limiting

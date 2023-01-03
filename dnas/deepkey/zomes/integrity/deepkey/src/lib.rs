@@ -5,7 +5,6 @@ use change_rule::*;
 use hdi::prelude::*;
 use keyset_root::*;
 
-
 // @todo - e.g. configurable difficulty over hashing the DNA - https://docs.rs/pow/0.2.0/pow/
 #[hdk_entry_helper]
 pub struct ProofOfWork([u8; 32]);
@@ -19,7 +18,7 @@ pub struct ProofOfStake([u8; 32]);
 pub struct ProofOfAuthority([u8; 32]);
 
 #[hdk_entry_helper]
-enum MembraneProof {
+pub enum MembraneProof {
     // No additional membrane.
     None,
     // Proof of Work membrane.
@@ -31,7 +30,7 @@ enum MembraneProof {
 }
 
 #[hdk_entry_helper]
-enum KeysetProof {
+pub enum KeysetProof {
     KeysetRoot(KeysetRoot),
     // TODO: invitation
     // DeviceInviteAcceptance(DeviceInviteAcceptance),
@@ -43,6 +42,14 @@ pub struct JoiningProof {
     membrane_proof: MembraneProof,
 }
 
+impl JoiningProof {
+    pub fn new(keyset_proof: KeysetProof, membrane_proof: MembraneProof) -> Self {
+        Self {
+            keyset_proof,
+            membrane_proof,
+        }
+    }
+}
 
 #[hdk_entry_defs]
 #[unit_enum(UnitEntryTypes)]

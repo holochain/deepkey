@@ -72,7 +72,7 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
         JoiningProof::try_from(&maybe_proof[0])?
     }
     else {
-        return Error::MultipleJoinProof.into()
+        return Error::MultipleJoinProof.into() // TODO: better error
     };
 
     match joining_proof.keyset_proof {
