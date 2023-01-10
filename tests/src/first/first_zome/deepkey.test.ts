@@ -16,32 +16,34 @@ test("create a KeysetRoot entry", async (t) => {
   await runScenario(async (scenario) => {
     const testDnaPath =
       process.cwd() + "/" + "../dnas/deepkey/workdir/deepkey.dna"
-    console.log(testDnaPath)
     const dnas: DnaSource[] = [{ path: testDnaPath }]
 
-    const [alice] = await scenario.addPlayersWithHapps([dnas])
+    const [laptop, server] = await scenario.addPlayersWithHapps([dnas, dnas])
 
     await scenario.shareAllAgents()
 
+    const [keysetRootHash, changeRuleHash]: ActionHash[] =
+      await laptop.cells[0].callZome({
+        zome_name: "deepkey",
+        fn_name: "create_keyset_root",
+      })
 
-    // verify that a keyset root was created
-
-    // call a function on the zome
-
-    console.log(alice.cells[0])
-    // await alice.cells[0].callZome({
-    //   zome_name: "deepkey",
-    //   fn_name: "create",
-    // })
-
-    // // Alice creates a first_entry
-    // const record: Record = await alice.cells[0].callZome({
-    //   zome_name: "first_zome",
-    //   fn_name: "create_first_entry",
-    //   payload: createInput,
-    // })
-    // // assert.ok(record)
-    // expect(record).toBeTruthy()
+    // Alice creates a first_entry
+    const deviceInviteAcceptance: Record = await laptop.cells[0].callZome({
+      zome_name: "deepkey",
+      fn_name: "invite_agent",
+      payload: laptop.agentPubKey,
+    })
+    console.log(deviceInviteAcceptance);
+    
+    expect(deviceInviteAcceptance).toBeTruthy();
+    
+    const inviteAcceptanceHash = await server.cells[0].callZome({
+      zome_name: "deepkey",
+      fn_name: "accept_invite",
+      payload: deviceInviteAcceptance,
+    })
+    console.log(inviteAcceptanceHash);
   })
 })
 

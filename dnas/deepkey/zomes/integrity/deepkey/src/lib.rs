@@ -1,9 +1,14 @@
 pub mod change_rule;
+pub mod device_invite;
+pub mod device_invite_acceptance;
 pub mod keyset_root;
 
 use change_rule::*;
+use device_invite::DeviceInvite;
+use device_invite_acceptance::DeviceInviteAcceptance;
 use hdi::prelude::*;
 use keyset_root::*;
+// use device_invite::*;
 
 // @todo - e.g. configurable difficulty over hashing the DNA - https://docs.rs/pow/0.2.0/pow/
 #[hdk_entry_helper]
@@ -54,16 +59,22 @@ impl JoiningProof {
 #[hdk_entry_defs]
 #[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
-    #[entry_def(required_validations = 5)]
+    #[entry_def]
     JoiningProof(JoiningProof),
+    #[entry_def]
     KeysetRoot(KeysetRoot),
-    #[entry_def(required_validations = 5)]
+    #[entry_def]
     ChangeRule(ChangeRule),
+    #[entry_def]
+    DeviceInvite(DeviceInvite),
+    #[entry_def]
+    DeviceInviteAcceptance(DeviceInviteAcceptance),
 }
 
 #[hdk_link_types]
 pub enum LinkTypes {
     AgentToMembraneProof,
+    AgentPubKeyToDeviceInvite
 }
 
 ////////////////////////////////////////////////////////////////////////////////
