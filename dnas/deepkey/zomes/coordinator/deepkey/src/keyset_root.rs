@@ -10,8 +10,6 @@ use deepkey_integrity::{
 pub fn create_keyset_root(_: ()) -> ExternResult<(ActionHash, ActionHash)> {
     let first_deepkey_agent: AgentPubKey = agent_info()?.agent_latest_pubkey;
 
-    // TODO: Make sure this is the first JoiningProof
-
     // There is only one authorized signer: the first deepkey agent (fda)
     let new_authority_spec = AuthoritySpec::new(1, vec![first_deepkey_agent.clone()]);
 
@@ -42,16 +40,16 @@ pub fn create_keyset_root(_: ()) -> ExternResult<(ActionHash, ActionHash)> {
         )),
         MembraneProof::None,
     );
-    let keyset_root_hash = create_entry(EntryTypes::JoiningProof(joining_proof))?;
+    let joining_proof_hash = create_entry(EntryTypes::JoiningProof(joining_proof))?;
 
     let spec_change = AuthorizedSpecChange::new(new_authority_spec, vec![(0, auth_spec_signature)]);
-    // TODO: keyset_leaf can be a device invite acceptance here, depending on the keyset proof type
+    // TODO: keyset_leaf can be a device invite acceptance, depending on the keyset proof type
     let change_rule = ChangeRule::new(
-        keyset_root_hash.clone(),
-        keyset_root_hash.clone(),
+        joining_proof_hash.clone(),
+        joining_proof_hash.clone(),
         spec_change,
     );
     let change_rule_hash = create_entry(EntryTypes::ChangeRule(change_rule))?;
 
-    Ok((keyset_root_hash, change_rule_hash))
+    Ok((joining_proof_hash, change_rule_hash))
 }

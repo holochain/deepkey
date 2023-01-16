@@ -2,10 +2,16 @@ use hdk::prelude::*;
 
 use deepkey_integrity::{
     device_invite::DeviceInvite, device_invite_acceptance::DeviceInviteAcceptance,
-    keyset_root::KEYSET_ROOT_CHAIN_INDEX, EntryTypes, LinkTypes, UnitEntryTypes,
+    keyset_root::KEYSET_ROOT_INDEX, EntryTypes, LinkTypes, UnitEntryTypes,
 };
 
 #[hdk_extern]
+/// Create a new device invitation for the given agent and return the acceptance.
+///
+/// This function will create a new device invitation for the given agent and then return the
+/// acceptance for that invitation.
+///
+/// This function will fail if the given agent is already a device of the current device.
 pub fn invite_agent(agent_to_invite: AgentPubKey) -> ExternResult<DeviceInviteAcceptance> {
     let (keyset_root, parent) = local_keyset_parent()?;
 
@@ -26,10 +32,15 @@ pub fn invite_agent(agent_to_invite: AgentPubKey) -> ExternResult<DeviceInviteAc
     ))
 }
 
-// Parent: An `ActionHash` referring to the invitor's direct parent in the keyset tree, 
-// which is either its KSR 
-// or its current `DeviceInviteAcceptance`. 
-// This is used to establish the chain of authority from the original KSR.
+/// This function returns the [ActionHash] of the [KeysetRoot], and an [ActionHash] that demonstrates
+/// the source of authority for this invite, either a [DeviceInviteAcceptance] or the [KeysetRoot] itself.
+///
+/// Searches for a [DeviceInviteAcceptance] committed to the local chain. If it finds one, it returns
+/// the [ActionHash] of the [KeysetRoot] and the [ActionHash] of the [DeviceInviteAcceptance].
+///
+/// If it doesn't find one, then this chain is the First Deepkey Agent, so it returns the
+/// [ActionHash] of the [KeysetRoot], and the [ActionHash] of the [KeysetRoot] again as the
+/// self-declared source of authority.
 pub fn local_keyset_parent() -> ExternResult<(ActionHash, ActionHash)> {
     // TODO: If this is querying for any device invite acceptance on this chain, won't it pull
     // Any of the DIA's we're generating to invite others too?
@@ -47,14 +58,13 @@ pub fn local_keyset_parent() -> ExternResult<(ActionHash, ActionHash)> {
             ))
         }
         None => {
-            let keyset_root_query =
-                ChainQueryFilter::new().sequence_range(ChainQueryFilterRange::ActionSeqRange(
-                    KEYSET_ROOT_CHAIN_INDEX,
-                    KEYSET_ROOT_CHAIN_INDEX + 1,
-                ));
+            let keyset_root_query = ChainQueryFilter::new().sequence_range(
+                ChainQueryFilterRange::ActionSeqRange(KEYSET_ROOT_INDEX, KEYSET_ROOT_INDEX + 1),
+            );
             match query(keyset_root_query)?.into_iter().next() {
                 Some(keyset_root_record) => {
-                    let ksr_action_hash: ActionHash = keyset_root_record.action_address().to_owned();
+                    let ksr_action_hash: ActionHash =
+                        keyset_root_record.action_address().to_owned();
                     Ok((ksr_action_hash.clone(), ksr_action_hash.clone()))
                 }
                 None => {

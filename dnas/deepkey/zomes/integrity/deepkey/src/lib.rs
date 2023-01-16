@@ -37,8 +37,7 @@ pub enum MembraneProof {
 #[hdk_entry_helper]
 pub enum KeysetProof {
     KeysetRoot(KeysetRoot),
-    // TODO: invitation
-    // DeviceInviteAcceptance(DeviceInviteAcceptance),
+    DeviceInviteAcceptance(DeviceInviteAcceptance),
 }
 
 #[hdk_entry_helper]
@@ -74,7 +73,7 @@ pub enum EntryTypes {
 #[hdk_link_types]
 pub enum LinkTypes {
     AgentToMembraneProof,
-    AgentPubKeyToDeviceInvite
+    AgentPubKeyToDeviceInvite,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -89,30 +88,87 @@ pub enum LinkTypes {
 // Validation callback
 ////////////////////////////////////////////////////////////////////////////////
 
-pub fn validate(_op: Op) -> ExternResult<ValidateCallbackResult> {
-    return Ok(ValidateCallbackResult::Valid);
-    // let op_type: OpType<EntryTypes, ()> = ;
+#[hdk_extern]
+pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
+    // return Ok(ValidateCallbackResult::Valid);
+    // return Ok(ValidateCallbackResult::Invalid("Invalid operation".into()));
+    // return Err(wasm_error!("Invalid operation"));
     // match op.to_type::<EntryTypes, LinkTypes>()? {
-    //     OpType::StoreRecord(_) => todo!(),
-    //     OpType::StoreEntry(_) => todo!(),
+    //     // OpType::StoreRecord(op_record) => match op_record {
+    //     //     OpRecord::CreateEntry {
+    //     //         entry_hash,
+    //     //         entry_type,
+    //     //     } => todo!(),
+    //     //     OpRecord::UpdateEntry {
+    //     //         entry_hash,
+    //     //         original_action_hash,
+    //     //         original_entry_hash,
+    //     //         entry_type,
+    //     //     } => todo!(),
+    //     //     OpRecord::AgentValidationPkg(_) => todo!(),
+    //     //     _ => Ok(ValidateCallbackResult::Invalid("Invalid operation".into())),
+    //     // },
+    //     OpType::StoreEntry(op_entry) => match op_entry {
+    //         OpEntry::CreateEntry {
+    //             entry_type,
+    //             entry_hash,
+    //         } => match entry_type {
+    //             EntryTypes::KeysetRoot(_) => validate_create_keyset_root(entry_hash),
+    //             EntryTypes::JoiningProof(_) => todo!(),
+    //             EntryTypes::ChangeRule(_) => todo!(),
+    //             EntryTypes::DeviceInvite(_) => todo!(),
+    //             EntryTypes::DeviceInviteAcceptance(_) => todo!(),
+    //         },
+    //         OpEntry::CreateAgent(_) => Ok(ValidateCallbackResult::Valid),
+    //         _ => Ok(ValidateCallbackResult::Invalid("Invalid operation".into())),
+    //     },
     //     OpType::RegisterAgentActivity(_) => todo!(),
-    //     OpType::RegisterCreateLink {
-    //         base_address,
-    //         target_address,
-    //         tag,
-    //         link_type,
-    //     } => todo!(),
-    //     OpType::RegisterDeleteLink {
-    //         original_link_hash,
-    //         base_address,
-    //         target_address,
-    //         tag,
-    //         link_type,
-    //     } => todo!(),
-    //     OpType::RegisterUpdate(_) => todo!(),
-    //     OpType::RegisterDelete(_) => todo!(),
+    //     _ => Ok(ValidateCallbackResult::Invalid("Invalid operation".into())),
     // }
 
+    match op {
+        Op::StoreRecord(_) => todo!(),
+        // Op::StoreRecord(StoreRecord { record }) => {
+        //     // EntryTypes::deserialize_from_type(zome_index, entry_def_index, entry)
+        //     // validate_create_keyset_root(record)
+        // }
+        Op::StoreEntry(StoreEntry {
+            action:
+                SignedHashed {
+                    hashed:
+                        HoloHashed {
+                            content: action, ..
+                        },
+                    ..
+                },
+            entry,
+        }) => {
+            if let EntryType::App(AppEntryDef {
+                entry_index,
+                zome_index,
+                ..
+            }) = action.entry_type()
+            {
+                match EntryTypes::deserialize_from_type(*zome_index, *entry_index, &entry)? {
+                    Some(EntryTypes::KeysetRoot(keyset_root)) => {
+                        validate_create_keyset_root(keyset_root, action)
+                    }
+                    Some(EntryTypes::JoiningProof(_joining_proof)) => todo!(),
+                    Some(EntryTypes::ChangeRule(_change_rule)) => todo!(),
+                    Some(EntryTypes::DeviceInvite(_device_invite)) => todo!(),
+                    Some(EntryTypes::DeviceInviteAcceptance(_device_invite_acceptance)) => todo!(),
+                    None => Ok(ValidateCallbackResult::Invalid("Invalid operation".into())),
+                }
+            } else {
+                Ok(ValidateCallbackResult::Valid)
+            }
+        }
+        Op::RegisterUpdate(_) => Ok(ValidateCallbackResult::Valid),
+        Op::RegisterDelete(_) => Ok(ValidateCallbackResult::Valid),
+        Op::RegisterAgentActivity(_) => Ok(ValidateCallbackResult::Valid),
+        Op::RegisterCreateLink(_) => Ok(ValidateCallbackResult::Valid),
+        Op::RegisterDeleteLink(_) => Ok(ValidateCallbackResult::Valid),
+    }
     /*
     match op {
         // Validation for entries
