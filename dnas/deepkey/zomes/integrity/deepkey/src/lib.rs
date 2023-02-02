@@ -4,7 +4,7 @@ pub mod device_invite_acceptance;
 pub mod keyset_root;
 
 use change_rule::*;
-use device_invite::DeviceInvite;
+use device_invite::{validate_device_invite, DeviceInvite};
 use device_invite_acceptance::DeviceInviteAcceptance;
 use hdi::prelude::*;
 use keyset_root::*;
@@ -55,6 +55,11 @@ impl JoiningProof {
     }
 }
 
+/*
+joining proof smuggles information
+can pass in a  device invite acceptance
+keyset root (agentkey)
+*/
 #[hdk_entry_defs]
 #[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
@@ -88,232 +93,19 @@ pub enum LinkTypes {
 // Validation callback
 ////////////////////////////////////////////////////////////////////////////////
 
-#[hdk_extern]
 pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
     // return Ok(ValidateCallbackResult::Valid);
     // return Ok(ValidateCallbackResult::Invalid("Invalid operation".into()));
     // return Err(wasm_error!("Invalid operation"));
-    // match op.to_type::<EntryTypes, LinkTypes>()? {
-    //     // OpType::StoreRecord(op_record) => match op_record {
-    //     //     OpRecord::CreateEntry {
-    //     //         entry_hash,
-    //     //         entry_type,
-    //     //     } => todo!(),
-    //     //     OpRecord::UpdateEntry {
-    //     //         entry_hash,
-    //     //         original_action_hash,
-    //     //         original_entry_hash,
-    //     //         entry_type,
-    //     //     } => todo!(),
-    //     //     OpRecord::AgentValidationPkg(_) => todo!(),
-    //     //     _ => Ok(ValidateCallbackResult::Invalid("Invalid operation".into())),
-    //     // },
-    //     OpType::StoreEntry(op_entry) => match op_entry {
-    //         OpEntry::CreateEntry {
-    //             entry_type,
-    //             entry_hash,
-    //         } => match entry_type {
-    //             EntryTypes::KeysetRoot(_) => validate_create_keyset_root(entry_hash),
-    //             EntryTypes::JoiningProof(_) => todo!(),
-    //             EntryTypes::ChangeRule(_) => todo!(),
-    //             EntryTypes::DeviceInvite(_) => todo!(),
-    //             EntryTypes::DeviceInviteAcceptance(_) => todo!(),
-    //         },
-    //         OpEntry::CreateAgent(_) => Ok(ValidateCallbackResult::Valid),
-    //         _ => Ok(ValidateCallbackResult::Invalid("Invalid operation".into())),
-    //     },
-    //     OpType::RegisterAgentActivity(_) => todo!(),
-    //     _ => Ok(ValidateCallbackResult::Invalid("Invalid operation".into())),
-    // }
-
-    match op {
-        Op::StoreRecord(_) => todo!(),
-        // Op::StoreRecord(StoreRecord { record }) => {
-        //     // EntryTypes::deserialize_from_type(zome_index, entry_def_index, entry)
-        //     // validate_create_keyset_root(record)
-        // }
-        Op::StoreEntry(StoreEntry {
-            action:
-                SignedHashed {
-                    hashed:
-                        HoloHashed {
-                            content: action, ..
-                        },
-                    ..
-                },
-            entry,
-        }) => {
-            if let EntryType::App(AppEntryDef {
-                entry_index,
-                zome_index,
-                ..
-            }) = action.entry_type()
-            {
-                match EntryTypes::deserialize_from_type(*zome_index, *entry_index, &entry)? {
-                    Some(EntryTypes::KeysetRoot(keyset_root)) => {
-                        validate_create_keyset_root(keyset_root, action)
-                    }
-                    Some(EntryTypes::JoiningProof(_joining_proof)) => todo!(),
-                    Some(EntryTypes::ChangeRule(_change_rule)) => todo!(),
-                    Some(EntryTypes::DeviceInvite(_device_invite)) => todo!(),
-                    Some(EntryTypes::DeviceInviteAcceptance(_device_invite_acceptance)) => todo!(),
-                    None => Ok(ValidateCallbackResult::Invalid("Invalid operation".into())),
-                }
-            } else {
-                Ok(ValidateCallbackResult::Valid)
-            }
-        }
-        Op::RegisterUpdate(_) => Ok(ValidateCallbackResult::Valid),
-        Op::RegisterDelete(_) => Ok(ValidateCallbackResult::Valid),
-        Op::RegisterAgentActivity(_) => Ok(ValidateCallbackResult::Valid),
-        Op::RegisterCreateLink(_) => Ok(ValidateCallbackResult::Valid),
-        Op::RegisterDeleteLink(_) => Ok(ValidateCallbackResult::Valid),
+    match op.to_type::<EntryTypes, LinkTypes>()? {
+        OpType::StoreRecord(op_record) => match op_record {
+            OpRecord::CreateEntry { app_entry, action } => match app_entry {
+                EntryTypes::DeviceInvite(invite) => validate_device_invite(invite, action),
+                _ => Ok(ValidateCallbackResult::Valid),
+            },
+            _ => Ok(ValidateCallbackResult::Valid),
+        },
+        OpType::RegisterAgentActivity(_) => Ok(ValidateCallbackResult::Valid),
+        _ => Ok(ValidateCallbackResult::Valid),
     }
-    /*
-    match op {
-        // Validation for entries
-        Op::StoreEntry {
-            action:
-                SignedHashed {
-                    hashed: HoloHashed {
-                        content: action, ..
-                    },
-                    ..
-                },
-            entry,
-        } => {
-            if let Some(AppEntryType {
-                id: entry_def_index,
-                zome_id,
-                ..
-            }) = action.app_entry_type()
-            {
-                match EntryTypes::deserialize_from_type(*zome_id, *entry_def_index, &entry)? {
-                    Some(EntryTypes::MyThing1(_my_thing1)) => (),
-                    Some(EntryTypes::MyThing2(_my_thing2)) => (),
-                    Some(EntryTypes::MyThingPrivate(_my_thing_private)) => (),
-                    None => return Ok(ValidateCallbackResult::Invalid(
-                        "expected app entry type, got none".to_string(),
-                    )),
-                }
-            }
-        },
-        Op::RegisterUpdate { .. } => return Ok(ValidateCallbackResult::Invalid(
-            "updating entries isn't valid".to_string(),
-        )),
-        Op::RegisterDelete { .. } => return Ok(ValidateCallbackResult::Invalid(
-            "deleting entries isn't valid".to_string(),
-        )),
-
-        // Validation for links
-        Op::RegisterCreateLink { create_link } => {
-            let (create_link, _) = create_link.hashed.into_inner();
-            match create_link.link_type.into() {
-                LinkTypes::Fish => (),
-                LinkTypes::Dog => (),
-                LinkTypes::Cow => (),
-            }
-        },
-        Op::RegisterDeleteLink { delete_link: _, create_link} => {
-            match create_link.link_type.into() {
-                LinkTypes::Fish => (),
-                LinkTypes::Dog => (),
-                LinkTypes::Cow => (),
-            }
-        },
-
-        // Validation for records based on action type
-        Op::StoreRecord { record } => {
-            match record.action() {
-                // Validate agent joining the network
-                Action::AgentValidationPkg(_) => todo!(),
-
-                // Validate entries
-                Action::Create(create) => match create.entry_type {
-                    EntryTypes::MyThing1(_) => todo!(),
-                    EntryTypes::MyThing2(_) => todo!(),
-                    EntryTypes::MyThingPrivate(_) => todo!(),
-                },
-                Action::Update(_) => todo!(),
-                Action::Delete(_) => todo!(),
-
-                // Validate Links
-                Action::CreateLink(_) => todo!(),
-                Action::DeleteLink(_) => todo!(),
-
-                // Validation chain migration
-                Action::OpenChain(_) => todo!(),
-                Action::CloseChain(_) => todo!(),
-
-                // Validate capabilities, rarely used
-                Action::CapGrant() => todo!(),
-                Action::CapClaim() => todo!(),
-
-                // Validate init and genesis entries, also rarely
-                Action::InitZomesComplete(_)=>todo!(),
-                Action::AgentValidationPkg(_)=>todo!(), // mostly this will be validated in the process of using it to validate the Agent Key
-                Action::Dna(_)=>todo!(),
-            };
-        },
-
-        // Agent joining network validation
-        // this is a new DHT op
-        Op::RegisterAgent { action, agent_pub_key } => {
-            // get validation package and then do stuff
-         //   Ok(ValidateCallbackResult::Valid)
-        },
-        // Chain structure validation
-        Op::RegisterAgentActivity { .. } => Ok(ValidateCallbackResult::Valid),
-    }
-
-    // this is what we currently have to do to make things work
-    let info = zome_info()?;
-    match op {
-        Op::StoreRecord { record } => {
-            match record.action() {
-                Action::Dna(_) => todo!(),
-                Action::AgentValidationPkg(_) => todo!(),
-                Action::InitZomesComplete(_) => todo!(),
-                Action::CreateLink(create) => match create.link_type.into() {
-                    LinkTypes::Fish => todo!(),
-                    _ => {}
-                },
-                Action::DeleteLink(_) => todo!(),
-                Action::OpenChain(_) => todo!(),
-                Action::CloseChain(_) => todo!(),
-                Action::Create(create) => match create.entry_type {
-                    EntryType::AgentPubKey => todo!(),
-                    EntryType::App(app_entry_type) => {
-                        match info.entry_defs.get(app_entry_type.id.index()).map(|entry_def| entry_def.id.to_string()) {
-                            "my_entry1" => _
-                        }
-                    }
-                    EntryType::CapClaim => todo!(),
-                    EntryType::CapGrant => todo!(),
-                },
-                Action::Update(_) => todo!(),
-                Action::Delete(_) => todo!(),
-            }
-            Ok(ValidateCallbackResult::Valid)
-        }
-        Op::StoreEntry { action, .. } => {
-            match action.hashed.content.entry_type() {
-                entry_def_index!(String::from("my_entry1")) => todo!(),
-                _ => {}
-            }
-            Ok(ValidateCallbackResult::Valid)
-        }
-        Op::RegisterCreateLink { create_link: _ } => Ok(ValidateCallbackResult::Valid),
-        Op::RegisterDeleteLink { create_link: _, .. } => Ok(ValidateCallbackResult::Invalid(
-            "deleting links isn't valid".to_string(),
-        )),
-        Op::RegisterUpdate { .. } => Ok(ValidateCallbackResult::Invalid(
-            "updating entries isn't valid".to_string(),
-        )),
-        Op::RegisterDelete { .. } => Ok(ValidateCallbackResult::Invalid(
-            "deleting entries isn't valid".to_string(),
-        )),
-        Op::RegisterAgentActivity { .. } => Ok(ValidateCallbackResult::Valid),
-    }
-     */
 }

@@ -6,8 +6,7 @@ use deepkey_integrity::{
     EntryTypes, JoiningProof, KeysetProof, MembraneProof,
 };
 
-#[hdk_extern]
-pub fn create_keyset_root(_: ()) -> ExternResult<(ActionHash, ActionHash)> {
+pub fn create_keyset_root() -> ExternResult<(ActionHash, ActionHash)> {
     let first_deepkey_agent: AgentPubKey = agent_info()?.agent_latest_pubkey;
 
     // There is only one authorized signer: the first deepkey agent (fda)

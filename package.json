@@ -7,14 +7,15 @@
   ],
   "scripts": {
     "start": "npm run network 2",
-    "network": "hc s clean && npm run build:happ && concurrently-repeat \"npm run start:agent\"",
-    "start:agent": "cross-env HC_PORT=$(port) concurrently -k \"npm run start:happ\" \"sleep 5 && npm run start -w ui\"",
+    "network": "hc s clean && pnpm run build:happ && concurrently-repeat \"pnpm run start:agent\"",
+    "start:agent": "cross-env HC_PORT=$(port) concurrently -k \"pnpm run start:happ\" \"sleep 5 && pnpm run start -w ui\"",
     "test": "pnpm run build:zomes && hc app pack workdir --recursive && pnpm test --filter tests",
-    "start:happ": "concurrently \"RUST_LOG=warn echo \"pass\" | hc s --piped generate workdir/new-app.happ --run=$HC_PORT -a new-app network mdns\" \"npm run playground\"",
-    "package": "npm run build:happ && npm run package -w ui && hc web-app pack workdir --recursive",
-    "build:happ": "npm run build:zomes && hc app pack workdir --recursive",
+    "start:happ": "concurrently \"RUST_LOG=warn echo \"pass\" | hc s --piped generate workdir/new-app.happ --run=$HC_PORT -a new-app network mdns\" \"pnpm run playground\"",
+    "package": "pnpm run build:happ && pnpm run package -w ui && hc web-app pack workdir --recursive",
+    "build:happ": "pnpm run build:zomes && hc app pack workdir --recursive",
     "build:zomes": "CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
-    "playground": "run-singleton \"holochain-playground\""
+    "playground": "run-singleton \"holochain-playground\"",
+    "dev-build": "RUSTFLAGS=\"$RUSTFLAGS -A dead_code -A unused-imports\" pnpm build:zomes"
   },
   "devDependencies": {
     "@holochain-playground/cli": "^0.0.11",

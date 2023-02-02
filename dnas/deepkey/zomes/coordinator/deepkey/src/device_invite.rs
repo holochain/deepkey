@@ -2,7 +2,7 @@ use hdk::prelude::*;
 
 use deepkey_integrity::{
     device_invite::DeviceInvite, device_invite_acceptance::DeviceInviteAcceptance,
-    keyset_root::KEYSET_ROOT_INDEX, EntryTypes, LinkTypes, UnitEntryTypes,
+    keyset_root::KEYSET_ROOT_INDEX, EntryTypes, UnitEntryTypes,
 };
 
 #[hdk_extern]
@@ -18,13 +18,13 @@ pub fn invite_agent(agent_to_invite: AgentPubKey) -> ExternResult<DeviceInviteAc
     let invite = DeviceInvite::new(keyset_root.clone(), parent, agent_to_invite.clone());
     let invite_header = create_entry(EntryTypes::DeviceInvite(invite.clone()))?;
 
-    let linkable_ksr: AnyLinkableHash = keyset_root.clone().into();
-    create_link(
-        linkable_ksr,
-        hash_entry(invite)?,
-        LinkTypes::AgentPubKeyToDeviceInvite,
-        (),
-    )?;
+    // let linkable_ksr: AnyLinkableHash = keyset_root.clone().into();
+    // create_link(
+    //     linkable_ksr,
+    //     hash_entry(invite)?,
+    //     LinkTypes::KeysetRootToDeviceInvite,
+    //     (),
+    // )?;
 
     Ok(DeviceInviteAcceptance::new(
         keyset_root.clone(),
@@ -41,7 +41,7 @@ pub fn invite_agent(agent_to_invite: AgentPubKey) -> ExternResult<DeviceInviteAc
 /// If it doesn't find one, then this chain is the First Deepkey Agent, so it returns the
 /// [ActionHash] of the [KeysetRoot], and the [ActionHash] of the [KeysetRoot] again as the
 /// self-declared source of authority.
-pub fn local_keyset_parent() -> ExternResult<(ActionHash, ActionHash)> {
+fn local_keyset_parent() -> ExternResult<(ActionHash, ActionHash)> {
     // TODO: If this is querying for any device invite acceptance on this chain, won't it pull
     // Any of the DIA's we're generating to invite others too?
     // Should we restrict the query to only our AgentPubKey?

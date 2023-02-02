@@ -120,15 +120,15 @@ The structure of a `DeviceInviteAcceptance` (written to the invitee's chain) is:
 
 - A `DeviceInvite` must deserialize cleanly from the validating record.
 - The KSR must be fetched and deserialized into a `KeysetRoot`.
-- An author cannot invite themselves.
-- The parent record must be fetched.
-- There must be no `DeviceInviteAcceptance` actions in the invitor's chain between the parent action and the current record.
-- If the parent and KSR are the same `ActionHash` then:
-  - The author must be the FDA of the KSR.
-- Else (parent and KSR are not the same):
-  - The parent must fetch and deserialize to a `DeviceInviteAcceptance`.
-  - The invite in that acceptance must fetch and deserialize to a `DeviceInvite`.
-  - That deserialized `DeviceInvite` must have the same KSR as the new `DeviceInvite` currently being validated.
+- An invitee must have a different `AgentPubkey` than the invitor.
+- If the author of the invitation is the FDA in the invitation's KSR
+  - Do a hash-bounded query from the invite hash back to the KSR in the invitor's source chain.
+  - Check that that range contains no invite acceptances (have abandoned the Keyset they are inviting a new device into).
+  
+- Else (author of invitation and FDA of KSR are not the same):
+  - Search from invite backwards (must_get_agent_activity of the invitor), find the first `DeviceInviteAcceptance` in their chain.
+  - The invite in that `DeviceInviteAcceptance` must fetch and deserialize to a `DeviceInvite`.
+  - That deserialized `DeviceInvite` must have the same KSR authority as the new `DeviceInvite` currently being validated.
   - Also in that `DeviceInvite`, the invitee must be the author of the new `DeviceInvite`.
 
 We do not check whether the invitee exists on the DHT yet because they likely don't, that's why we're inviting them. If the `DeviceInviteAcceptance` is valid, and the `DeviceInvite` is valid, we trust that the parent's `DeviceInviteAcceptance` was properly validated, which ensures chain of authority to the KSR.
