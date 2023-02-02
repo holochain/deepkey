@@ -2,7 +2,6 @@ use crate::{
     device_invite_acceptance::DeviceInviteAcceptance, keyset_root::KeysetRoot, UnitEntryTypes,
 };
 use hdi::prelude::*;
-use std::hash::Hash;
 
 /// Same as entry_def_index! but constant.
 /// Has test coverage in case entry_defs! ever changes.
