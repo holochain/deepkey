@@ -27,6 +27,6 @@
     "run-singleton-cli": "^0.0.5"
   },
   "engines": {
-    "npm": ">=7.0.0"
+    "pnpm": ">=7.0.0"
   }
 }
