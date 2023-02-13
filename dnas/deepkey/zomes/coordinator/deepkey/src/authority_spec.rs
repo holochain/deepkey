@@ -3,7 +3,7 @@ use hdk::prelude::*;
 #[hdk_extern]
 pub fn create_authority_spec(authority_spec: AuthoritySpec) -> ExternResult<Record> {
     let authority_spec_hash = create_entry(&EntryTypes::AuthoritySpec(authority_spec.clone()))?;
-    for base in authority_spec.signers.clone() {
+    for base in authority_spec.authorized_signers.clone() {
         create_link(
             base,
             authority_spec_hash.clone(),

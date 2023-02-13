@@ -10,3 +10,4 @@ name = "deepkey_integrity"
 [dependencies]
 hdi = { workspace = true }
 serde = { workspace = true }
+thiserror = "1.0.38"

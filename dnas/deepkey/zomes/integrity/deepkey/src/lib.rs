@@ -9,8 +9,9 @@ pub use authorized_spec_change::*;
 pub mod authority_spec;
 pub use authority_spec::*;
 pub mod keyset_root;
-use hdi::prelude::*;
 pub use keyset_root::*;
+pub mod error;
+use hdi::prelude::*;
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
 #[hdk_entry_defs]

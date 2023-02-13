@@ -1,166 +1,15 @@
 use hdi::prelude::*;
+
+use crate::{Authorization, AuthorizedSpecChange, error::Error};
+
+// The author needs to be linked from the KeysetRoot
 #[hdk_entry_helper]
 #[derive(Clone)]
 pub struct ChangeRule {
     pub keyset_root: ActionHash,
     pub keyset_leaf: ActionHash,
-    pub spec_change: ActionHash,
-}
-pub fn validate_create_change_rule(
-    _action: EntryCreationAction,
-    _change_rule: ChangeRule,
-) -> ExternResult<ValidateCallbackResult> {
-    Ok(ValidateCallbackResult::Valid)
-}
-pub fn validate_update_change_rule(
-    _action: Update,
-    _change_rule: ChangeRule,
-    _original_action: EntryCreationAction,
-    _original_change_rule: ChangeRule,
-) -> ExternResult<ValidateCallbackResult> {
-    Ok(ValidateCallbackResult::Valid)
-}
-pub fn validate_delete_change_rule(
-    _action: Delete,
-    _original_action: EntryCreationAction,
-    _original_change_rule: ChangeRule,
-) -> ExternResult<ValidateCallbackResult> {
-    Ok(ValidateCallbackResult::Invalid(String::from("Change Rules cannot be deleted")))
-}
-pub fn validate_create_link_change_rule_updates(
-    _action: CreateLink,
-    base_address: AnyLinkableHash,
-    target_address: AnyLinkableHash,
-    _tag: LinkTag,
-) -> ExternResult<ValidateCallbackResult> {
-    let action_hash = ActionHash::from(base_address);
-    let record = must_get_valid_record(action_hash)?;
-    let _change_rule: crate::ChangeRule = record
-        .entry()
-        .to_app_option()
-        .map_err(|e| wasm_error!(e))?
-        .ok_or(
-            wasm_error!(
-                WasmErrorInner::Guest(String::from("Linked action must reference an entry"))
-            ),
-        )?;
-    let action_hash = ActionHash::from(target_address);
-    let record = must_get_valid_record(action_hash)?;
-    let _change_rule: crate::ChangeRule = record
-        .entry()
-        .to_app_option()
-        .map_err(|e| wasm_error!(e))?
-        .ok_or(
-            wasm_error!(
-                WasmErrorInner::Guest(String::from("Linked action must reference an entry"))
-            ),
-        )?;
-    Ok(ValidateCallbackResult::Valid)
-}
-pub fn validate_delete_link_change_rule_updates(
-    _action: DeleteLink,
-    _original_action: CreateLink,
-    _base: AnyLinkableHash,
-    _target: AnyLinkableHash,
-    _tag: LinkTag,
-) -> ExternResult<ValidateCallbackResult> {
-    Ok(
-        ValidateCallbackResult::Invalid(
-            String::from("ChangeRuleUpdates links cannot be deleted"),
-        ),
-    )
-}
-
-
-
-
-
-
-
-/* 
-
-
-
-use hdi::prelude::*;
-
-/// Same as entry_def_index! but constant.
-/// Has test coverage in case entry_defs! ever changes.
-// pub const CHANGE_RULE_INDEX: EntryDefIndex = EntryDefIndex(0);
-
-/// Represents an M:N multisignature spec.
-/// The trivial case 1:1 represents a single agent to sign.
-/// We need an entry to define the rules of authority
-/// (for authorizing or revoking) keys in the space under a KeysetRoot.
-/// This is only committed by the FDA.
-#[hdk_entry_helper]
-#[derive(Clone, PartialEq)]
-pub struct AuthoritySpec {
-    /// set to 1 for a single signer scenario
-    pub sigs_required: u8,
-    /// These signers probably do NOT exist on the DHT.
-    /// E.g. a revocation key used to create the first change rule.
-    pub authorized_signers: Vec<AgentPubKey>,
-}
-
-impl AuthoritySpec {
-    pub fn new(sigs_required: u8, authorized_signers: Vec<AgentPubKey>) -> Self {
-        Self {
-            sigs_required,
-            authorized_signers,
-        }
-    }
-}
-
-pub type Authorization = (u8, Signature);
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct AuthorizedSpecChange {
-    pub new_spec: AuthoritySpec,
-    /// Signature of the content of the authority_spec field,
-    /// signed by throwaway RootKey on Create,
-    /// or according to previous AuthSpec upon Update.
-    pub authorization_of_new_spec: Vec<Authorization>,
-}
-
-impl AuthorizedSpecChange {
-    pub fn new(new_spec: AuthoritySpec, authorization_of_new_spec: Vec<Authorization>) -> Self {
-        Self {
-            new_spec,
-            authorization_of_new_spec,
-        }
-    }
-    pub fn as_new_spec_ref(&self) -> &AuthoritySpec {
-        &self.new_spec
-    }
-    pub fn as_authorization_of_new_spec_ref(&self) -> &Vec<Authorization> {
-        &self.authorization_of_new_spec
-    }
-}
-
-// #[hdk_entry(id = "change_rule", required_validation_type = "full")]
-// The author needs to be linked from the KeysetRoot
-// #[derive(Clone)]
-#[hdk_entry_helper]
-pub struct ChangeRule {
-    pub keyset_root: ActionHash,
-    pub keyset_leaf: ActionHash,
     pub spec_change: AuthorizedSpecChange,
 }
-
-// impl TryFrom<&Record> for ChangeRule {
-//     type Error = Error;
-//     fn try_from(element: &Record) -> Result<Self, Self::Error> {
-//         Ok(match element.entry() {
-//             RecordEntry::Present(serialized_change_rule) => {
-//                 match ChangeRule::try_from(serialized_change_rule) {
-//                     Ok(change_rule) => change_rule,
-//                     Err(e) => return Err(Error::Wasm(e)),
-//                 }
-//             }
-//             __ => return Err(Error::EntryMissing),
-//         })
-//     }
-// }
 
 impl ChangeRule {
     pub fn new(
@@ -173,18 +22,6 @@ impl ChangeRule {
             keyset_leaf,
             spec_change,
         }
-    }
-
-    pub fn as_keyset_leaf_ref(&self) -> &ActionHash {
-        &self.keyset_leaf
-    }
-
-    pub fn as_keyset_root_ref(&self) -> &ActionHash {
-        &self.keyset_root
-    }
-
-    pub fn as_spec_change_ref(&self) -> &AuthorizedSpecChange {
-        &self.spec_change
     }
 
     pub fn authorize(&self, authorization: &[Authorization], data: &[u8]) -> Result<(), Error> {
@@ -215,6 +52,92 @@ impl ChangeRule {
         }
     }
 }
+
+pub fn validate_create_change_rule(
+    _action: EntryCreationAction,
+    _change_rule: ChangeRule,
+) -> ExternResult<ValidateCallbackResult> {
+    Ok(ValidateCallbackResult::Valid)
+}
+pub fn validate_update_change_rule(
+    _action: Update,
+    _change_rule: ChangeRule,
+    _original_action: EntryCreationAction,
+    _original_change_rule: ChangeRule,
+) -> ExternResult<ValidateCallbackResult> {
+    Ok(ValidateCallbackResult::Valid)
+}
+pub fn validate_delete_change_rule(
+    _action: Delete,
+    _original_action: EntryCreationAction,
+    _original_change_rule: ChangeRule,
+) -> ExternResult<ValidateCallbackResult> {
+    Ok(ValidateCallbackResult::Invalid(String::from(
+        "Change Rules cannot be deleted",
+    )))
+}
+pub fn validate_create_link_change_rule_updates(
+    _action: CreateLink,
+    base_address: AnyLinkableHash,
+    target_address: AnyLinkableHash,
+    _tag: LinkTag,
+) -> ExternResult<ValidateCallbackResult> {
+    let action_hash = ActionHash::from(base_address);
+    let record = must_get_valid_record(action_hash)?;
+    let _change_rule: crate::ChangeRule = record
+        .entry()
+        .to_app_option()
+        .map_err(|e| wasm_error!(e))?
+        .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Linked action must reference an entry"
+        ))))?;
+    let action_hash = ActionHash::from(target_address);
+    let record = must_get_valid_record(action_hash)?;
+    let _change_rule: crate::ChangeRule = record
+        .entry()
+        .to_app_option()
+        .map_err(|e| wasm_error!(e))?
+        .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Linked action must reference an entry"
+        ))))?;
+    Ok(ValidateCallbackResult::Valid)
+}
+pub fn validate_delete_link_change_rule_updates(
+    _action: DeleteLink,
+    _original_action: CreateLink,
+    _base: AnyLinkableHash,
+    _target: AnyLinkableHash,
+    _tag: LinkTag,
+) -> ExternResult<ValidateCallbackResult> {
+    Ok(ValidateCallbackResult::Invalid(String::from(
+        "ChangeRuleUpdates links cannot be deleted",
+    )))
+}
+
+/*
+
+
+
+use hdi::prelude::*;
+
+/// Same as entry_def_index! but constant.
+/// Has test coverage in case entry_defs! ever changes.
+// pub const CHANGE_RULE_INDEX: EntryDefIndex = EntryDefIndex(0);
+
+// impl TryFrom<&Record> for ChangeRule {
+//     type Error = Error;
+//     fn try_from(element: &Record) -> Result<Self, Self::Error> {
+//         Ok(match element.entry() {
+//             RecordEntry::Present(serialized_change_rule) => {
+//                 match ChangeRule::try_from(serialized_change_rule) {
+//                     Ok(change_rule) => change_rule,
+//                     Err(e) => return Err(Error::Wasm(e)),
+//                 }
+//             }
+//             __ => return Err(Error::EntryMissing),
+//         })
+//     }
+// }
 
 // #[cfg(test)]
 // use ::fixt::prelude::*;
@@ -343,88 +266,5 @@ impl ChangeRule {
 // }
 
 // use hdk::prelude::*;
-use thiserror::Error;
 
-#[derive(Error, Debug, PartialEq)]
-pub enum Error {
-    #[error("Element missing its ChangeRule")]
-    EntryMissing,
-
-    #[error("Attempted to delete a ChangeRule")]
-    DeleteAttempted,
-
-    #[error("Attempted to update a ChangeRule")]
-    UpdateAttempted,
-
-    #[error("The ChangeRule author is not the FDA on the KeysetRoot")]
-    AuthorNotFda,
-
-    #[error("Multiple creation signatures found")]
-    MultipleCreateSignatures,
-
-    #[error("No creation signature found")]
-    NoCreateSignature,
-
-    #[error("Invalid creation signature")]
-    BadCreateSignature,
-
-    #[error("The new ChangeRule has a different KeysetRoot")]
-    KeysetRootMismatch,
-
-    #[error("The new ChangeRule has the wrong number of signatures")]
-    WrongNumberOfSignatures,
-
-    #[error("The new ChangeRule referenced an authorizor position that doesn't exist")]
-    AuthorizedPositionOutOfBounds,
-
-    #[error("The new ChangeRule references a KeysetLeaf that is incompatible with its KeysetRoot")]
-    BadKeysetLeaf,
-
-    #[error("The new ChangeRule references a stale keyset leaf")]
-    StaleKeysetLeaf,
-
-    #[error("The new ChangeRule has no validation package")]
-    MissingValidationPackage,
-
-    #[error("The new ChangeRule has an invalid signature")]
-    BadUpdateSignature,
-
-    #[error(
-        "The new ChangeRule has fewer authorized signers than the minimum required signatures"
-    )]
-    NotEnoughSigners,
-
-    #[error("The new ChangeRule requires zero signatures")]
-    NotEnoughSignatures,
-
-    #[error("The new ChangeRule update does not reference the root ChangeRule")]
-    BranchingUpdates,
-
-    #[error("The ChangeRule created does not immediately follow its KeysetRoot")]
-    CreateNotAfterKeysetRoot,
-
-    #[error("The ChangeRule element has the wrong header")]
-    WrongHeader,
-
-    #[error("Wasm error {0}")]
-    Wasm(WasmError),
-}
-
-impl From<Error> for ValidateCallbackResult {
-    fn from(e: Error) -> Self {
-        ValidateCallbackResult::Invalid(e.to_string())
-    }
-}
-
-impl From<Error> for ExternResult<ValidateCallbackResult> {
-    fn from(e: Error) -> Self {
-        Ok(e.into())
-    }
-}
-
-impl From<WasmError> for Error {
-    fn from(e: WasmError) -> Error {
-        Error::Wasm(e)
-    }
-}
 */

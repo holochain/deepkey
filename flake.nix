@@ -25,7 +25,10 @@
           }: {
             devShells.default = pkgs.mkShell {
               inputsFrom = [ inputs.holochain-dev.devShells.${system}.holonix ];
-              packages = [ pkgs.nodejs-18_x ];
+              packages = [ 
+                pkgs.nodejs-18_x 
+                pkgs.nodePackages.pnpm 
+              ];
             };
           };
       };

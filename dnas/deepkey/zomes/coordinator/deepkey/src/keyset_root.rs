@@ -1,33 +1,8 @@
-use hdk::prelude::*;
 use deepkey_integrity::*;
-#[hdk_extern]
-pub fn create_keyset_root(keyset_root: KeysetRoot) -> ExternResult<Record> {
-    let keyset_root_hash = create_entry(&EntryTypes::KeysetRoot(keyset_root.clone()))?;
-    let record = get(keyset_root_hash.clone(), GetOptions::default())?
-        .ok_or(
-            wasm_error!(
-                WasmErrorInner::Guest(String::from("Could not find the newly created KeysetRoot"))
-            ),
-        )?;
-    Ok(record)
-}
-#[hdk_extern]
-pub fn get_keyset_root(keyset_root_hash: ActionHash) -> ExternResult<Option<Record>> {
-    get(keyset_root_hash, GetOptions::default())
-}
-
-
-
-/*
 use hdk::prelude::*;
 
-use deepkey_integrity::{
-    change_rule::{AuthoritySpec, AuthorizedSpecChange, ChangeRule},
-    keyset_root::KeysetRoot,
-    EntryTypes, JoiningProof, KeysetProof, MembraneProof,
-};
-
-pub fn create_keyset_root() -> ExternResult<(ActionHash, ActionHash)> {
+#[hdk_extern]
+pub fn create_keyset_root(_: ()) -> ExternResult<(Record, Record)> {
     let first_deepkey_agent: AgentPubKey = agent_info()?.agent_latest_pubkey;
 
     // There is only one authorized signer: the first deepkey agent (fda)
@@ -52,25 +27,37 @@ pub fn create_keyset_root() -> ExternResult<(ActionHash, ActionHash)> {
     let fda_signature = sig_iter.next().ok_or_else(sig_error_closure)?;
     let auth_spec_signature = sig_iter.next().ok_or_else(sig_error_closure)?;
 
-    let joining_proof = JoiningProof::new(
-        KeysetProof::KeysetRoot(KeysetRoot::new(
-            first_deepkey_agent.clone(),
-            root_pub_key,
-            fda_signature,
-        )),
-        MembraneProof::None,
-    );
-    let joining_proof_hash = create_entry(EntryTypes::JoiningProof(joining_proof))?;
+    // TODO: Should we make JoiningProof its own struct, or use holochain's joining proof functionality directly?
+    // let joining_proof = JoiningProof::new(
+    //     MembraneProof::None,
+    // );
+    // let joining_proof_hash = create_entry(EntryTypes::JoiningProof(joining_proof))?;
+    let keyset_root_hash = create_entry(EntryTypes::KeysetRoot(KeysetRoot::new(
+        first_deepkey_agent.clone(),
+        root_pub_key,
+        fda_signature,
+    )))?;
 
     let spec_change = AuthorizedSpecChange::new(new_authority_spec, vec![(0, auth_spec_signature)]);
-    // TODO: keyset_leaf can be a device invite acceptance, depending on the keyset proof type
-    let change_rule = ChangeRule::new(
-        joining_proof_hash.clone(),
-        joining_proof_hash.clone(),
+    let change_rule_hash = create_entry(EntryTypes::ChangeRule(ChangeRule::new(
+        keyset_root_hash.clone(),
+        keyset_root_hash.clone(),
         spec_change,
-    );
-    let change_rule_hash = create_entry(EntryTypes::ChangeRule(change_rule))?;
+    )))?;
 
-    Ok((joining_proof_hash, change_rule_hash))
+    let keyset_root_record =
+        get(keyset_root_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
+            WasmErrorInner::Guest(String::from("Could not find the newly created Keyset Root"))
+        ))?;
+
+    let change_rule_record =
+        get(change_rule_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
+            WasmErrorInner::Guest(String::from("Could not find the newly created Change Rule"))
+        ))?;
+
+    Ok((keyset_root_record, change_rule_record))
 }
-*/
+#[hdk_extern]
+pub fn get_keyset_root(keyset_root_hash: ActionHash) -> ExternResult<Option<Record>> {
+    get(keyset_root_hash, GetOptions::default())
+}

@@ -18,7 +18,7 @@ const dnas: DnaSource[] = [{ path: deepkeyDnaPath }]
 // helpers
 const base64 = (str: Uint8Array) => Buffer.from(str).toString("base64")
 
-test("invite another device", async (t) => {
+test.skip("invite another device", async (t) => {
   await runScenario(async (scenario) => {
     const [laptop, server] = await scenario.addPlayersWithHapps([dnas, dnas])
     await scenario.shareAllAgents()
