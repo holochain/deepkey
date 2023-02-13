@@ -1,3 +1,63 @@
+use deepkey_integrity::*;
+use hdk::prelude::*;
+#[hdk_extern]
+pub fn create_device_invite(device_invite: DeviceInvite) -> ExternResult<Record> {
+    let device_invite_hash = create_entry(&EntryTypes::DeviceInvite(device_invite.clone()))?;
+    create_link(
+        device_invite.keyset_root.clone(),
+        device_invite_hash.clone(),
+        LinkTypes::KeysetRootToDeviceInvites,
+        (),
+    )?;
+    create_link(
+        device_invite.invitee.clone(),
+        device_invite_hash.clone(),
+        LinkTypes::InviteeToDeviceInvites,
+        (),
+    )?;
+    let record = get(device_invite_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
+        WasmErrorInner::Guest(String::from(
+            "Could not find the newly created DeviceInvite"
+        ))
+    ))?;
+    Ok(record)
+}
+#[hdk_extern]
+pub fn get_device_invite(device_invite_hash: ActionHash) -> ExternResult<Option<Record>> {
+    get(device_invite_hash, GetOptions::default())
+}
+#[hdk_extern]
+pub fn get_device_invites_for_keyset_root(
+    keyset_root_hash: ActionHash,
+) -> ExternResult<Vec<Record>> {
+    let links = get_links(keyset_root_hash, LinkTypes::KeysetRootToDeviceInvites, None)?;
+    let get_input: Vec<GetInput> = links
+        .into_iter()
+        .map(|link| GetInput::new(ActionHash::from(link.target).into(), GetOptions::default()))
+        .collect();
+    let records: Vec<Record> = HDK
+        .with(|hdk| hdk.borrow().get(get_input))?
+        .into_iter()
+        .filter_map(|r| r)
+        .collect();
+    Ok(records)
+}
+#[hdk_extern]
+pub fn get_device_invites_for_invitee(invitee: AgentPubKey) -> ExternResult<Vec<Record>> {
+    let links = get_links(invitee, LinkTypes::InviteeToDeviceInvites, None)?;
+    let get_input: Vec<GetInput> = links
+        .into_iter()
+        .map(|link| GetInput::new(ActionHash::from(link.target).into(), GetOptions::default()))
+        .collect();
+    let records: Vec<Record> = HDK
+        .with(|hdk| hdk.borrow().get(get_input))?
+        .into_iter()
+        .filter_map(|r| r)
+        .collect();
+    Ok(records)
+}
+
+/*
 use hdk::prelude::*;
 
 use deepkey_integrity::{
@@ -76,3 +136,4 @@ fn local_keyset_parent() -> ExternResult<(ActionHash, ActionHash)> {
         }
     }
 }
+*/

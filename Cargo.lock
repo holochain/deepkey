@@ -491,7 +491,6 @@ version = "0.0.1"
 dependencies = [
  "hdi",
  "serde",
- "thiserror",
 ]
 
 [[package]]

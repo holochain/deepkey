@@ -1,3 +1,120 @@
+use hdi::prelude::*;
+#[hdk_entry_helper]
+#[derive(Clone)]
+pub struct DeviceInvite {
+    pub keyset_root: ActionHash,
+    pub parent: ActionHash,
+    pub invitee: AgentPubKey,
+}
+pub fn validate_create_device_invite(
+    _action: EntryCreationAction,
+    device_invite: DeviceInvite,
+) -> ExternResult<ValidateCallbackResult> {
+    let record = must_get_valid_record(device_invite.keyset_root.clone())?;
+    let _keyset_root: crate::KeysetRoot = record
+        .entry()
+        .to_app_option()
+        .map_err(|e| wasm_error!(e))?
+        .ok_or(
+            wasm_error!(
+                WasmErrorInner::Guest(String::from("Dependant action must be accompanied by an entry"))
+            ),
+        )?;
+    Ok(ValidateCallbackResult::Valid)
+}
+pub fn validate_update_device_invite(
+    _action: Update,
+    _device_invite: DeviceInvite,
+    _original_action: EntryCreationAction,
+    _original_device_invite: DeviceInvite,
+) -> ExternResult<ValidateCallbackResult> {
+    Ok(ValidateCallbackResult::Invalid(String::from("Device Invites cannot be updated")))
+}
+pub fn validate_delete_device_invite(
+    _action: Delete,
+    _original_action: EntryCreationAction,
+    _original_device_invite: DeviceInvite,
+) -> ExternResult<ValidateCallbackResult> {
+    Ok(ValidateCallbackResult::Invalid(String::from("Device Invites cannot be deleted")))
+}
+pub fn validate_create_link_keyset_root_to_device_invites(
+    _action: CreateLink,
+    base_address: AnyLinkableHash,
+    target_address: AnyLinkableHash,
+    _tag: LinkTag,
+) -> ExternResult<ValidateCallbackResult> {
+    let action_hash = ActionHash::from(base_address);
+    let record = must_get_valid_record(action_hash)?;
+    let _keyset_root: crate::KeysetRoot = record
+        .entry()
+        .to_app_option()
+        .map_err(|e| wasm_error!(e))?
+        .ok_or(
+            wasm_error!(
+                WasmErrorInner::Guest(String::from("Linked action must reference an entry"))
+            ),
+        )?;
+    let action_hash = ActionHash::from(target_address);
+    let record = must_get_valid_record(action_hash)?;
+    let _device_invite: crate::DeviceInvite = record
+        .entry()
+        .to_app_option()
+        .map_err(|e| wasm_error!(e))?
+        .ok_or(
+            wasm_error!(
+                WasmErrorInner::Guest(String::from("Linked action must reference an entry"))
+            ),
+        )?;
+    Ok(ValidateCallbackResult::Valid)
+}
+pub fn validate_delete_link_keyset_root_to_device_invites(
+    _action: DeleteLink,
+    _original_action: CreateLink,
+    _base: AnyLinkableHash,
+    _target: AnyLinkableHash,
+    _tag: LinkTag,
+) -> ExternResult<ValidateCallbackResult> {
+    Ok(
+        ValidateCallbackResult::Invalid(
+            String::from("KeysetRootToDeviceInvites links cannot be deleted"),
+        ),
+    )
+}
+pub fn validate_create_link_invitee_to_device_invites(
+    _action: CreateLink,
+    _base_address: AnyLinkableHash,
+    target_address: AnyLinkableHash,
+    _tag: LinkTag,
+) -> ExternResult<ValidateCallbackResult> {
+    let action_hash = ActionHash::from(target_address);
+    let record = must_get_valid_record(action_hash)?;
+    let _device_invite: crate::DeviceInvite = record
+        .entry()
+        .to_app_option()
+        .map_err(|e| wasm_error!(e))?
+        .ok_or(
+            wasm_error!(
+                WasmErrorInner::Guest(String::from("Linked action must reference an entry"))
+            ),
+        )?;
+    Ok(ValidateCallbackResult::Valid)
+}
+pub fn validate_delete_link_invitee_to_device_invites(
+    _action: DeleteLink,
+    _original_action: CreateLink,
+    _base: AnyLinkableHash,
+    _target: AnyLinkableHash,
+    _tag: LinkTag,
+) -> ExternResult<ValidateCallbackResult> {
+    Ok(
+        ValidateCallbackResult::Invalid(
+            String::from("InviteeToDeviceInvites links cannot be deleted"),
+        ),
+    )
+}
+
+
+/*
 use crate::{
     device_invite_acceptance::DeviceInviteAcceptance, keyset_root::KeysetRoot, UnitEntryTypes,
 };
@@ -220,3 +337,4 @@ pub fn find_authoritative_root_from(
     }
     Ok(None)
 }
+*/

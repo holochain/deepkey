@@ -1,16 +1,15 @@
 {
   "name": "tests",
   "version": "0.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
   "scripts": {
     "test": "NODE_NO_WARNINGS=1 vitest"
   },
   "author": "",
   "license": "CAL-1.0",
   "dependencies": {
-    "@holochain/client": "^0.9.3",
-    "@holochain/tryorama": "^0.9.0",
+    "@holochain/client": "^0.12.0",
+    "@holochain/tryorama": "^0.11.0",
     "@msgpack/msgpack": "^2.7.0",
     "vitest": "^0.25.3"
   },

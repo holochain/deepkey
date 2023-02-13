@@ -1,4 +1,25 @@
 use hdk::prelude::*;
+use deepkey_integrity::*;
+#[hdk_extern]
+pub fn create_keyset_root(keyset_root: KeysetRoot) -> ExternResult<Record> {
+    let keyset_root_hash = create_entry(&EntryTypes::KeysetRoot(keyset_root.clone()))?;
+    let record = get(keyset_root_hash.clone(), GetOptions::default())?
+        .ok_or(
+            wasm_error!(
+                WasmErrorInner::Guest(String::from("Could not find the newly created KeysetRoot"))
+            ),
+        )?;
+    Ok(record)
+}
+#[hdk_extern]
+pub fn get_keyset_root(keyset_root_hash: ActionHash) -> ExternResult<Option<Record>> {
+    get(keyset_root_hash, GetOptions::default())
+}
+
+
+
+/*
+use hdk::prelude::*;
 
 use deepkey_integrity::{
     change_rule::{AuthoritySpec, AuthorizedSpecChange, ChangeRule},
@@ -52,3 +73,4 @@ pub fn create_keyset_root() -> ExternResult<(ActionHash, ActionHash)> {
 
     Ok((joining_proof_hash, change_rule_hash))
 }
+*/

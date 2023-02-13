@@ -1,4 +1,40 @@
 use hdi::prelude::*;
+#[hdk_entry_helper]
+#[derive(Clone)]
+pub struct KeysetRoot {
+    pub first_deepkey_agent: AgentPubKey,
+    pub root_pub_key: AgentPubKey,
+    pub fda_pubkey_signed_by_root_key: String,
+}
+pub fn validate_create_keyset_root(
+    _action: EntryCreationAction,
+    _keyset_root: KeysetRoot,
+) -> ExternResult<ValidateCallbackResult> {
+    Ok(ValidateCallbackResult::Valid)
+}
+pub fn validate_update_keyset_root(
+    _action: Update,
+    _keyset_root: KeysetRoot,
+    _original_action: EntryCreationAction,
+    _original_keyset_root: KeysetRoot,
+) -> ExternResult<ValidateCallbackResult> {
+    Ok(ValidateCallbackResult::Invalid(String::from(
+        "Keyset Roots cannot be updated",
+    )))
+}
+pub fn validate_delete_keyset_root(
+    _action: Delete,
+    _original_action: EntryCreationAction,
+    _original_keyset_root: KeysetRoot,
+) -> ExternResult<ValidateCallbackResult> {
+    Ok(ValidateCallbackResult::Invalid(String::from(
+        "Keyset Roots cannot be deleted",
+    )))
+}
+
+/*
+
+use hdi::prelude::*;
 // use hdk::prelude::*;
 // use crate::keyset_root::entry::KeysetRoot;
 // use crate::keyset_root::entry::KEYSET_ROOT_CHAIN_INDEX;
@@ -55,3 +91,4 @@ pub fn validate_create_keyset_root(
 
     return Ok(ValidateCallbackResult::Valid);
 }
+*/
