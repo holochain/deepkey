@@ -9,7 +9,7 @@ import {
 } from "@holochain/client"
 import { decode } from "@msgpack/msgpack"
 
-import { createKeysetRoot } from "./keyset-root.test.js"
+// import { createKeysetRoot } from "./keyset-root.test.js"
 
 async function sampleDeviceInvite(
   cell: CallableCell,
@@ -17,7 +17,7 @@ async function sampleDeviceInvite(
 ) {
   return {
     ...{
-      keyset_root: (await createKeysetRoot(cell)).signed_action.hashed.hash,
+      keyset_root: null, // (await createKeysetRoot(cell)).signed_action.hashed.hash,
       invitee: cell.cell_id[1],
     },
     ...partialDeviceInvite,

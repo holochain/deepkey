@@ -6,15 +6,13 @@
     "tests"
   ],
   "scripts": {
-    "start": "npm run network 2",
-    "network": "hc s clean && pnpm run build:happ && concurrently-repeat \"pnpm run start:agent\"",
-    "start:agent": "cross-env HC_PORT=$(port) concurrently -k \"pnpm run start:happ\" \"sleep 5 && pnpm run start -w ui\"",
+    "start": "AGENTS=2 pnpm run network",
+    "network": "hc s clean && pnpm run build:happ && UI_PORT=8888 concurrently \"pnpm start -w ui\" \"pnpm run launch:happ\" \"holochain-playground\"",
     "test": "pnpm run build:zomes && hc app pack workdir --recursive && pnpm test --filter tests",
-    "start:happ": "concurrently \"RUST_LOG=warn echo \"pass\" | hc s --piped generate workdir/new-app.happ --run=$HC_PORT -a new-app network mdns\" \"pnpm run playground\"",
+    "launch:happ": "echo \"pass\" | RUST_LOG=warn hc launch --piped -n $AGENTS workdir/deepkey.happ --ui-port $UI_PORT network mdns",
     "package": "pnpm run build:happ && pnpm run package -w ui && hc web-app pack workdir --recursive",
     "build:happ": "pnpm run build:zomes && hc app pack workdir --recursive",
-    "build:zomes": "CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
-    "playground": "run-singleton \"holochain-playground\"",
+    "build:zomes": "RUSTFLAGS='' CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
     "dev-build": "RUSTFLAGS=\"$RUSTFLAGS -A dead_code -A unused-imports\" pnpm build:zomes"
   },
   "devDependencies": {
