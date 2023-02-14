@@ -36,7 +36,8 @@ test("create KeysetRoot", async (t) => {
     // conductor of the scenario.
     await scenario.shareAllAgents()
 
-    // Alice creates a KeysetRoot
+    // TODO: Creating a Keyset Root manually should fail! Because the only KSR that can be created
+    // Should be created upon initialization.
     const records: Record[] = await createKeysetRoot(alice.cells[0])
     expect(records.length).toBe(2)
     expect(records[0]).toBeTruthy()

@@ -34,12 +34,22 @@ export async function createDeviceInvite(
     payload: deviceInvite || (await sampleDeviceInvite(cell)),
   })
 }
+export async function inviteAgent(
+  cell: CallableCell,
+  agentPubKey: Uint8Array
+): Promise<Record> {
+  return cell.callZome({
+    zome_name: "deepkey",
+    fn_name: "invite_agent",
+    payload: agentPubKey,
+  })
+}
 
-test.skip("create DeviceInvite", async (t) => {
+test("invite an agent", async (t) => {
   await runScenario(async (scenario) => {
     // Construct proper paths for your app.
     // This assumes app bundle created by the `hc app pack` command.
-    const testAppPath = process.cwd() + "/../workdir/dk-scaffold.happ"
+    const testAppPath = process.cwd() + "/../workdir/deepkey.happ"
 
     // Set up the app to be installed
     const appSource = { appBundleSource: { path: testAppPath } }
@@ -56,8 +66,18 @@ test.skip("create DeviceInvite", async (t) => {
     await scenario.shareAllAgents()
 
     // Alice creates a DeviceInvite
-    const record: Record = await createDeviceInvite(alice.cells[0])
-    expect(record).toBeTruthy()
+    const inviteAcceptance: Record = await inviteAgent(
+      alice.cells[0],
+      bob.agentPubKey
+    )
+
+    // Get an inviteAcceptance object from the invitor
+    // Pull & decode the invite from the inviteAcceptance
+    // Verify the signature is valid, the keyset_root_authority is the KSR of the invitor,
+    // and 
+    console.log(inviteAcceptance)
+    const inviteHash = (inviteAcceptance as any).invite
+    // console.log(invite)
   })
 })
 
@@ -65,7 +85,7 @@ test.skip("create and read DeviceInvite", async (t) => {
   await runScenario(async (scenario) => {
     // Construct proper paths for your app.
     // This assumes app bundle created by the `hc app pack` command.
-    const testAppPath = process.cwd() + "/../workdir/dk-scaffold.happ"
+    const testAppPath = process.cwd() + "/../workdir/deepkey.happ"
 
     // Set up the app to be installed
     const appSource = { appBundleSource: { path: testAppPath } }

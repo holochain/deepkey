@@ -6,8 +6,10 @@ pub mod authority_spec;
 pub mod keyset_root;
 use hdk::prelude::*;
 use deepkey_integrity::*;
+use keyset_root::create_keyset_root;
 #[hdk_extern]
 pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
+    create_keyset_root(())?;
     Ok(InitCallbackResult::Pass)
 }
 #[derive(Serialize, Deserialize, Debug)]

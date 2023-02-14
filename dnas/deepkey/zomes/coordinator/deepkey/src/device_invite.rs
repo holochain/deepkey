@@ -57,13 +57,6 @@ pub fn get_device_invites_for_invitee(invitee: AgentPubKey) -> ExternResult<Vec<
     Ok(records)
 }
 
-/*
-use hdk::prelude::*;
-
-use deepkey_integrity::{
-    device_invite::DeviceInvite, device_invite_acceptance::DeviceInviteAcceptance,
-    keyset_root::KEYSET_ROOT_INDEX, EntryTypes, UnitEntryTypes,
-};
 
 #[hdk_extern]
 /// Create a new device invitation for the given agent and return the acceptance.
@@ -76,19 +69,24 @@ pub fn invite_agent(agent_to_invite: AgentPubKey) -> ExternResult<DeviceInviteAc
     let (keyset_root, parent) = local_keyset_parent()?;
 
     let invite = DeviceInvite::new(keyset_root.clone(), parent, agent_to_invite.clone());
-    let invite_header = create_entry(EntryTypes::DeviceInvite(invite.clone()))?;
+    let invite_hash = create_entry(EntryTypes::DeviceInvite(invite.clone()))?;
 
-    // let linkable_ksr: AnyLinkableHash = keyset_root.clone().into();
-    // create_link(
-    //     linkable_ksr,
-    //     hash_entry(invite)?,
-    //     LinkTypes::KeysetRootToDeviceInvite,
-    //     (),
-    // )?;
+    create_link(
+        invite.keyset_root.clone(),
+        invite_hash.clone(),
+        LinkTypes::KeysetRootToDeviceInvites,
+        (),
+    )?;
+    create_link(
+        invite.invitee.clone(),
+        invite_hash.clone(),
+        LinkTypes::InviteeToDeviceInvites,
+        (),
+    )?;
 
     Ok(DeviceInviteAcceptance::new(
         keyset_root.clone(),
-        invite_header,
+        invite_hash,
     ))
 }
 
@@ -136,4 +134,3 @@ fn local_keyset_parent() -> ExternResult<(ActionHash, ActionHash)> {
         }
     }
 }
-*/

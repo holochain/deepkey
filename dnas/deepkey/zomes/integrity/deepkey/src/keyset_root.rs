@@ -1,5 +1,7 @@
 use hdi::prelude::*;
 
+pub const KEYSET_ROOT_INDEX: u32 = POST_GENESIS_SEQ_THRESHOLD + 1;
+
 #[hdk_entry_helper]
 #[derive(Clone)]
 pub struct KeysetRoot {
@@ -48,17 +50,15 @@ pub fn validate_delete_keyset_root(
     )))
 }
 
-
-
 /*
 ////////////////////////////////////////////////////////////////////////////////
 // Entry declarations
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
-// Entry struct definitions with necessary impls
-// pub const KEYSET_ROOT_INDEX: EntryDefIndex = EntryDefIndex(3);
-// pub const KEYSET_ROOT_INDEX: u32 = POST_GENESIS_SEQ_THRESHOLD + 1;
+Entry struct definitions with necessary impls
+pub const KEYSET_ROOT_INDEX: EntryDefIndex = EntryDefIndex(3);
+pub const KEYSET_ROOT_INDEX: u32 = POST_GENESIS_SEQ_THRESHOLD + 1;
 
 /// KeysetRoot must be the 4th entry on `FirstDeepkeyAgent`'s chain.
 // pub const KEYSET_ROOT_CHAIN_INDEX: u32 = 3;
