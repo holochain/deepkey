@@ -1,35 +1,26 @@
 import { LitElement, css, html } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import {
-  AppWebsocket,
+  AppAgentWebsocket,
   ActionHash,
-  InstalledAppInfo,
+  AppAgentClient,
 } from '@holochain/client';
-import { contextProvider } from '@lit-labs/context';
+import { provide } from '@lit-labs/context';
 import '@material/mwc-circular-progress';
 
-import { appWebsocketContext, appInfoContext } from './contexts';
+import { clientContext } from './contexts';
 
 @customElement('holochain-app')
 export class HolochainApp extends LitElement {
   @state() loading = true;
 
-  @contextProvider({ context: appWebsocketContext })
+  @provide({ context: clientContext })
   @property({ type: Object })
-  appWebsocket!: AppWebsocket;
-
-  @contextProvider({ context: appInfoContext })
-  @property({ type: Object })
-  appInfo!: InstalledAppInfo;
+  client!: AppAgentClient;
 
   async firstUpdated() {
-    this.appWebsocket = await AppWebsocket.connect(
-      `ws://localhost:${process.env.HC_PORT}`
-    );
-
-    this.appInfo = await this.appWebsocket.appInfo({
-      installed_app_id: 'new-app',
-    });
+    // We pass '' as url because it will dynamically be replaced in launcher environments
+    this.client = await AppAgentWebsocket.connect('', 'dk-scaffold');
 
     this.loading = false;
   }
@@ -42,7 +33,7 @@ export class HolochainApp extends LitElement {
 
     return html`
       <main>
-        <h1>my-app</h1>
+        <h1>dk-scaffold</h1>
 
         <div id="content"></div>
       </main>

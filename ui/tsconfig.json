@@ -4,17 +4,18 @@
     "module": "esnext",
     "moduleResolution": "node",
     "noEmitOnError": true,
+    "useDefineForClassFields": false,
     "lib": ["es2017", "dom"],
     "strict": true,
     "esModuleInterop": false,
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "outDir": "out-tsc",
+    "outDir": "dist",
     "sourceMap": true,
     "inlineSources": true,
-    "rootDir": "./src",
-    "incremental": true
+    "incremental": true,
+    "skipLibCheck": true
   },
-  "include": ["**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts"]
 }

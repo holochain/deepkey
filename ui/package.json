@@ -1,20 +1,16 @@
 {
   "name": "ui",
-  "description": "Webcomponent lit-element following open-wc recommendations",
-  "license": "MIT",
-  "author": "lit-element",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "scripts": {
+    "start": "vite --port $UI_PORT --clearScreen false",
+    "build": "vite build",
     "lint": "eslint --ext .ts,.html . --ignore-path .gitignore && prettier \"**/*.ts\" --check --ignore-path .gitignore",
     "format": "eslint --ext .ts,.html . --fix --ignore-path .gitignore && prettier \"**/*.ts\" --write --ignore-path .gitignore",
-    "build": "rimraf dist && tsc && rollup -c rollup.config.js",
-    "build:watch": "run-singleton \"tsc --watch --preserveWatchOutput\"",
-    "start": "tsc && concurrently -r \"npm run build:watch\" \"wds\"",
     "package": "npm run build && cd dist && bestzip ../dist.zip *"
   },
   "dependencies": {
-    "@holochain/client": "^0.9.3",
-    "@lit-labs/context": "^0.1.3",
+    "@holochain/client": "^0.12.0",
+    "@lit-labs/context": "^0.2.0",
     "@lit-labs/task": "^2.0.0",
     "@material/mwc-circular-progress": "^0.27.0",
     "@material/mwc-button": "^0.27.0",
@@ -27,35 +23,19 @@
     "@material/mwc-formfield": "^0.27.0",
     "@msgpack/msgpack": "^2.7.2",
     "@vaadin/date-time-picker": "^23.2.8",
-    "lit": "^2.0.2"
+    "lit": "^2.6.1"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.15.0",
-    "@open-wc/building-rollup": "^1.10.0",
     "@open-wc/eslint-config": "^4.3.0",
-    "@rollup/plugin-babel": "^5.3.0",
-    "@rollup/plugin-commonjs": "18.0.0",
-    "@rollup/plugin-node-resolve": "^13.0.4",
-    "@rollup/plugin-replace": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "@typescript-eslint/parser": "^5.43.0",
-    "@web/dev-server": "0.1.21",
-    "@web/dev-server-rollup": "^0.3.10",
-    "@web/rollup-plugin-html": "^1.9.1",
-    "@web/rollup-plugin-import-meta-assets": "^1.0.7",
-    "babel-plugin-template-html-minifier": "^4.1.0",
     "bestzip": "^2.2.0",
-    "concurrently": "^6.2.1",
-    "deepmerge": "^4.2.2",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
-    "lint-staged": "^10.5.4",
     "prettier": "^2.3.2",
     "rimraf": "^3.0.2",
-    "rollup": "^2.56.2",
-    "rollup-plugin-terser": "^7.0.2",
-    "run-singleton-cli": "^0.0.7",
-    "tslib": "^2.3.1",
+    "vite": "^4.0.0",
+    "vite-plugin-checker": "^0.5.3",
     "typescript": "^4.5.5"
   },
   "eslintConfig": {
@@ -79,11 +59,13 @@
       "class-methods-use-this": "off",
       "@typescript-eslint/no-unused-vars": "off",
       "import/no-unresolved": "off",
-      "import/extensions": "off"
+      "import/extensions": "off",
+      "no-use-before-define": "off"
     }
   },
   "prettier": {
     "singleQuote": true,
     "arrowParens": "avoid"
-  }
+  },
+  "type": "module"
 }
