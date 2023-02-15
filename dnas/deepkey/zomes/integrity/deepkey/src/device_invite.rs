@@ -1,5 +1,7 @@
 use hdi::prelude::*;
 
+use crate::*;
+
 #[hdk_entry_helper]
 #[derive(Clone)]
 pub struct DeviceInvite {
@@ -117,37 +119,8 @@ pub fn validate_delete_link_invitee_to_device_invites(
         "InviteeToDeviceInvites links cannot be deleted",
     )))
 }
-
-/*
-use crate::{
-    device_invite_acceptance::DeviceInviteAcceptance, keyset_root::KeysetRoot, UnitEntryTypes,
-};
-use hdi::prelude::*;
-
-/// Same as entry_def_index! but constant.
-/// Has test coverage in case entry_defs! ever changes.
-// pub const DEVICE_INVITE_INDEX: EntryDefIndex = EntryDefIndex(1);
-
-// impl TryFrom<&Record> for DeviceInvite {
-//     type Error = crate::error::Error;
-//     fn try_from(element: &Element) -> Result<Self, Self::Error> {
-//         match element.header() {
-//             // Only creates are allowed for a DeviceInvite.
-//             Header::Create(_) => {
-//                 Ok(match element.entry() {
-//                     ElementEntry::Present(serialized) => match Self::try_from(serialized) {
-//                         Ok(deserialized) => deserialized,
-//                         Err(e) => return Err(crate::error::Error::Wasm(e)),
-//                     }
-//                     __ => return Err(crate::error::Error::EntryMissing),
-//                 })
-//             },
-//             _ => Err(crate::error::Error::WrongHeader),
-//         }
-//     }
-// }
-
-pub fn validate_device_invite(
+/// TODO: Run this as a validation
+pub fn validate_device_invite_original(
     invite: DeviceInvite,
     invite_create_action: Create,
 ) -> ExternResult<ValidateCallbackResult> {
@@ -310,4 +283,3 @@ pub fn find_authoritative_root_from(
     }
     Ok(None)
 }
-*/
