@@ -249,37 +249,4 @@ pub fn validate_device_invite_original(
     Ok(ValidateCallbackResult::Valid)
 }
 
-pub enum AuthoritativeRoot {
-    KeysetRoot(KeysetRoot),
-    DeviceInviteAcceptance(DeviceInviteAcceptance),
-}
 
-// TODO: make extern
-// #[hdk_extern]
-pub fn find_authoritative_root_from(
-    (agent, from_action_hash): (AgentPubKey, ActionHash),
-) -> ExternResult<Option<AuthoritativeRoot>> {
-    let filter = ChainFilter::new(from_action_hash);
-    let activities = must_get_agent_activity(agent, filter)?;
-
-    let keyset_root_app_def = AppEntryDef::try_from(UnitEntryTypes::KeysetRoot).unwrap();
-    let device_invite_acceptance_app_def =
-        AppEntryDef::try_from(UnitEntryTypes::DeviceInviteAcceptance).unwrap();
-    for activity in activities.into_iter() {
-        if let Some(EntryType::App(app_entry_def)) = activity.action.action().entry_type() {
-            if *app_entry_def == keyset_root_app_def {
-                let entry_hashed =
-                    must_get_entry(activity.action.action().entry_hash().unwrap().clone())?;
-                let ksr = KeysetRoot::try_from(entry_hashed)?;
-                return Ok(Some(AuthoritativeRoot::KeysetRoot(ksr)));
-            }
-            if *app_entry_def == device_invite_acceptance_app_def {
-                let entry_hashed =
-                    must_get_entry(activity.action.action().entry_hash().unwrap().clone())?;
-                let dia = DeviceInviteAcceptance::try_from(entry_hashed)?;
-                return Ok(Some(AuthoritativeRoot::DeviceInviteAcceptance(dia)));
-            }
-        };
-    }
-    Ok(None)
-}

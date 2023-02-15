@@ -13,7 +13,10 @@ pub use authority_spec::*;
 pub mod keyset_root;
 pub use keyset_root::*;
 pub mod error;
+pub use error::*;
+pub mod source_of_authority;
 use hdi::prelude::*;
+pub use source_of_authority::*;
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
 #[hdk_entry_defs]
