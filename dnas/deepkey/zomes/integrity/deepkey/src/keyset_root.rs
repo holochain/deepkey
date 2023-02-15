@@ -25,14 +25,14 @@ impl KeysetRoot {
 }
 
 pub fn validate_create_keyset_root(
-    action: EntryCreationAction,
+    _action: EntryCreationAction,
     _keyset_root: KeysetRoot,
 ) -> ExternResult<ValidateCallbackResult> {
-    if *action.action_seq() != KEYSET_ROOT_INDEX {
-        return Ok(ValidateCallbackResult::Invalid(
-            "KeysetRoot must be the 4th entry on `FirstDeepkeyAgent`'s chain.".to_string(),
-        ));
-    }
+    // if *action.action_seq() != KEYSET_ROOT_INDEX {
+    //     return Ok(ValidateCallbackResult::Invalid(
+    //         "KeysetRoot must be the 4th entry on `FirstDeepkeyAgent`'s chain.".to_string(),
+    //     ));
+    // }
 
     Ok(ValidateCallbackResult::Valid)
 }
