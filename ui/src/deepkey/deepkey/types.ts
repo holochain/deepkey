@@ -36,6 +36,7 @@ export type DeepkeySignal = {
 
 export type EntryTypes =
  | ({ type: 'JoiningProof'; } & JoiningProof)
+ | ({ type: 'JoiningProof'; } & JoiningProof)
  | ({ type: 'DeviceInviteAcceptance'; } & DeviceInviteAcceptance)
  | ({ type: 'DeviceInvite'; } & DeviceInvite)
  | ({ type: 'ChangeRule'; } & ChangeRule)
@@ -99,6 +100,16 @@ export interface DeviceInviteAcceptance {
   keyset_root_authority: ActionHash;
 
   invite: ActionHash;
+}
+
+
+
+
+
+export interface JoiningProof { 
+  keyset_proof: string;
+
+  membrane_proof: string;
 }
 
 

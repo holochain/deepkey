@@ -1,3 +1,5 @@
+pub mod joining_proof;
+pub use joining_proof::*;
 pub mod device_invite_acceptance;
 pub use device_invite_acceptance::*;
 pub mod device_invite;
@@ -23,6 +25,7 @@ pub enum EntryTypes {
     ChangeRule(ChangeRule),
     DeviceInvite(DeviceInvite),
     DeviceInviteAcceptance(DeviceInviteAcceptance),
+    JoiningProof(JoiningProof),
 }
 #[derive(Serialize, Deserialize)]
 #[hdk_link_types]
@@ -35,7 +38,6 @@ pub enum LinkTypes {
 }
 #[hdk_extern]
 pub fn genesis_self_check(_data: GenesisSelfCheckData) -> ExternResult<ValidateCallbackResult> {
-    //     is_membrane_proof_valid(data.agent_key, data.membrane_proof)
     Ok(ValidateCallbackResult::Valid)
 }
 pub fn validate_agent_joining(
@@ -75,6 +77,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         device_invite_acceptance,
                     )
                 }
+                EntryTypes::JoiningProof(joining_proof) => validate_create_joining_proof(
+                    EntryCreationAction::Create(action),
+                    joining_proof,
+                ),
             },
             OpEntry::UpdateEntry {
                 app_entry, action, ..
@@ -105,6 +111,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         device_invite_acceptance,
                     )
                 }
+                EntryTypes::JoiningProof(joining_proof) => validate_create_joining_proof(
+                    EntryCreationAction::Update(action),
+                    joining_proof,
+                ),
             },
             _ => Ok(ValidateCallbackResult::Valid),
         },
@@ -115,6 +125,15 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 app_entry,
                 action,
             } => match (app_entry, original_app_entry) {
+                (
+                    EntryTypes::JoiningProof(joining_proof),
+                    EntryTypes::JoiningProof(original_joining_proof),
+                ) => validate_update_joining_proof(
+                    action,
+                    joining_proof,
+                    original_action,
+                    original_joining_proof,
+                ),
                 (
                     EntryTypes::DeviceInviteAcceptance(device_invite_acceptance),
                     EntryTypes::DeviceInviteAcceptance(original_device_invite_acceptance),
@@ -206,6 +225,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         original_action,
                         device_invite_acceptance,
                     )
+                }
+                EntryTypes::JoiningProof(joining_proof) => {
+                    validate_delete_joining_proof(action, original_action, joining_proof)
                 }
             },
             _ => Ok(ValidateCallbackResult::Valid),
@@ -325,6 +347,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         device_invite_acceptance,
                     )
                 }
+                EntryTypes::JoiningProof(joining_proof) => validate_create_joining_proof(
+                    EntryCreationAction::Create(action),
+                    joining_proof,
+                ),
             },
             OpRecord::UpdateEntry {
                 original_action_hash,
@@ -535,6 +561,37 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                             Ok(result)
                         }
                     }
+                    EntryTypes::JoiningProof(joining_proof) => {
+                        let result = validate_create_joining_proof(
+                            EntryCreationAction::Update(action.clone()),
+                            joining_proof.clone(),
+                        )?;
+                        if let ValidateCallbackResult::Valid = result {
+                            let original_joining_proof: Option<JoiningProof> = original_record
+                                .entry()
+                                .to_app_option()
+                                .map_err(|e| wasm_error!(e))?;
+                            let original_joining_proof = match original_joining_proof {
+                                Some(joining_proof) => joining_proof,
+                                None => {
+                                    return Ok(
+                                            ValidateCallbackResult::Invalid(
+                                                "The updated entry type must be the same as the original entry type"
+                                                    .to_string(),
+                                            ),
+                                        );
+                                }
+                            };
+                            validate_update_joining_proof(
+                                action,
+                                joining_proof,
+                                original_action,
+                                original_joining_proof,
+                            )
+                        } else {
+                            Ok(result)
+                        }
+                    }
                 }
             }
             OpRecord::DeleteEntry {
@@ -623,6 +680,13 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                             action,
                             original_action,
                             original_device_invite_acceptance,
+                        )
+                    }
+                    EntryTypes::JoiningProof(original_joining_proof) => {
+                        validate_delete_joining_proof(
+                            action,
+                            original_action,
+                            original_joining_proof,
                         )
                     }
                 }

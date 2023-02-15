@@ -3,6 +3,7 @@ pub mod authorized_spec_change;
 pub mod change_rule;
 pub mod device_invite;
 pub mod device_invite_acceptance;
+pub mod joining_proof;
 pub mod keyset_root;
 use deepkey_integrity::*;
 use hdk::prelude::*;
