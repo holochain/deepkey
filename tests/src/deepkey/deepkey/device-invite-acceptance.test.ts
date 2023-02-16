@@ -9,38 +9,25 @@ import {
 } from "@holochain/client"
 import { decode } from "@msgpack/msgpack"
 
-import { createDeviceInvite } from "./device-invite.test.js"
+import { inviteAgent } from "./device-invite.test.js"
 
-async function sampleDeviceInviteAcceptance(
+export async function acceptInvitation(
   cell: CallableCell,
-  partialDeviceInviteAcceptance = {}
-) {
-  return {
-    ...{
-      // keyset_root_authority: ,
-      invite: (await createDeviceInvite(cell)).signed_action.hashed.hash,
-    },
-    ...partialDeviceInviteAcceptance,
-  }
-}
-
-export async function createDeviceInviteAcceptance(
-  cell: CallableCell,
-  deviceInviteAcceptance = undefined
+  invitation: Uint8Array
 ): Promise<Record> {
   return cell.callZome({
     zome_name: "deepkey",
-    fn_name: "create_device_invite_acceptance",
-    payload:
-      deviceInviteAcceptance || (await sampleDeviceInviteAcceptance(cell)),
+    fn_name: "accept_invitation",
+    payload: invitation,
   })
 }
 
-test.skip("create DeviceInviteAcceptance", async (t) => {
+
+test("invite an agent, and have them accept the invite", async (t) => {
   await runScenario(async (scenario) => {
     // Construct proper paths for your app.
     // This assumes app bundle created by the `hc app pack` command.
-    const testAppPath = process.cwd() + "/../workdir/dk-scaffold.happ"
+    const testAppPath = process.cwd() + "/../workdir/deepkey.happ"
 
     // Set up the app to be installed
     const appSource = { appBundleSource: { path: testAppPath } }
@@ -56,9 +43,8 @@ test.skip("create DeviceInviteAcceptance", async (t) => {
     // conductor of the scenario.
     await scenario.shareAllAgents()
 
-    // Alice creates a DeviceInviteAcceptance
-    const record: Record = await createDeviceInviteAcceptance(alice.cells[0])
-    expect(record).toBeTruthy()
+    const inviteRecord = await inviteAgent(alice.cells[0], bob.agentPubKey)
+    
   })
 })
 

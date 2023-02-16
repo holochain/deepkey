@@ -8,11 +8,9 @@ pub fn create_keyset_root(_: ()) -> ExternResult<(Record, Record)> {
     // There is only one authorized signer: the first deepkey agent (fda)
     let new_authority_spec = AuthoritySpec::new(1, vec![first_deepkey_agent.clone()]);
 
-    let fda_bytes_result: Result<SerializedBytes, _> = first_deepkey_agent.clone().try_into();
-    let fda_bytes = fda_bytes_result.map_err(|e| wasm_error!(WasmErrorInner::Guest(e.into())))?;
-    let new_authority_spec_bytes_result: Result<SerializedBytes, _> =
-        new_authority_spec.clone().try_into();
-    let new_authority_spec_bytes = new_authority_spec_bytes_result
+    let fda_bytes = SerializedBytes::try_from(first_deepkey_agent.clone())
+        .map_err(|e| wasm_error!(WasmErrorInner::Guest(e.into())))?;
+    let new_authority_spec_bytes = SerializedBytes::try_from(new_authority_spec.clone())
         .map_err(|e| wasm_error!(WasmErrorInner::Guest(e.into())))?;
 
     let sigs = sign_ephemeral::<SerializedBytes>(vec![fda_bytes, new_authority_spec_bytes])?;
@@ -27,16 +25,12 @@ pub fn create_keyset_root(_: ()) -> ExternResult<(Record, Record)> {
     let fda_signature = sig_iter.next().ok_or_else(sig_error_closure)?;
     let auth_spec_signature = sig_iter.next().ok_or_else(sig_error_closure)?;
 
-    // TODO: Should we make JoiningProof its own struct, or use holochain's joining proof functionality directly?
+    let keyset_root = KeysetRoot::new(first_deepkey_agent.clone(), root_pub_key, fda_signature);
+    let keyset_root_hash = create_entry(EntryTypes::KeysetRoot(keyset_root))?;
     // let joining_proof = JoiningProof::new(
-    //     MembraneProof::None,
-    // );
+    //     SourceOfAuthority::KeysetRoot(keyset_root.clone()),
+    //     MembraneProof::None);
     // let joining_proof_hash = create_entry(EntryTypes::JoiningProof(joining_proof))?;
-    let keyset_root_hash = create_entry(EntryTypes::KeysetRoot(KeysetRoot::new(
-        first_deepkey_agent.clone(),
-        root_pub_key,
-        fda_signature,
-    )))?;
 
     let spec_change = AuthorizedSpecChange::new(new_authority_spec, vec![(0, auth_spec_signature)]);
     let change_rule_hash = create_entry(EntryTypes::ChangeRule(ChangeRule::new(
@@ -44,6 +38,8 @@ pub fn create_keyset_root(_: ()) -> ExternResult<(Record, Record)> {
         keyset_root_hash.clone(),
         spec_change,
     )))?;
+
+    // TODO: Create a link from the AgentPubKey to the KeysetRoot (as a SourceOfAuthority)
 
     let keyset_root_record =
         get(keyset_root_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(

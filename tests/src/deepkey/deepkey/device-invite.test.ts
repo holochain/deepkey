@@ -9,31 +9,6 @@ import {
 } from "@holochain/client"
 import { decode } from "@msgpack/msgpack"
 
-// import { createKeysetRoot } from "./keyset-root.test.js"
-
-async function sampleDeviceInvite(
-  cell: CallableCell,
-  partialDeviceInvite = {}
-) {
-  return {
-    ...{
-      keyset_root: null, // (await createKeysetRoot(cell)).signed_action.hashed.hash,
-      invitee: cell.cell_id[1],
-    },
-    ...partialDeviceInvite,
-  }
-}
-
-export async function createDeviceInvite(
-  cell: CallableCell,
-  deviceInvite = undefined
-): Promise<Record> {
-  return cell.callZome({
-    zome_name: "deepkey",
-    fn_name: "create_device_invite",
-    payload: deviceInvite || (await sampleDeviceInvite(cell)),
-  })
-}
 export async function inviteAgent(
   cell: CallableCell,
   agentPubKey: Uint8Array
@@ -74,10 +49,10 @@ test("invite an agent", async (t) => {
     // Get an inviteAcceptance object from the invitor
     // Pull & decode the invite from the inviteAcceptance
     // Verify the signature is valid, the keyset_root_authority is the KSR of the invitor,
-    // and 
-    console.log(inviteAcceptance)
+    // and
+    // console.log(inviteAcceptance)
     const inviteHash = (inviteAcceptance as any).invite
-    // console.log(invite)
+    console.log(inviteHash)
   })
 })
 

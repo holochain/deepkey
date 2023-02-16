@@ -36,6 +36,16 @@ pub struct JoiningProof {
     pub source_of_authority: SourceOfAuthority,
     pub membrane_proof: MembraneProof,
 }
+
+impl JoiningProof {
+    pub fn new(source_of_authority: SourceOfAuthority, membrane_proof: MembraneProof) -> Self {
+        Self {
+            source_of_authority,
+            membrane_proof,
+        }
+    }
+}
+
 pub fn validate_create_joining_proof(
     _action: EntryCreationAction,
     _joining_proof: JoiningProof,

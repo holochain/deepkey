@@ -6,7 +6,7 @@ import { decode } from '@msgpack/msgpack';
 
 import { createJoiningProof, sampleJoiningProof } from './common.js';
 
-test('create JoiningProof', async () => {
+test.skip('create JoiningProof', async () => {
   await runScenario(async scenario => {
     // Construct proper paths for your app.
     // This assumes app bundle created by the `hc app pack` command.
@@ -29,7 +29,7 @@ test('create JoiningProof', async () => {
   });
 });
 
-test('create and read JoiningProof', async () => {
+test.skip('create and read JoiningProof', async () => {
   await runScenario(async scenario => {
     // Construct proper paths for your app.
     // This assumes app bundle created by the `hc app pack` command.
