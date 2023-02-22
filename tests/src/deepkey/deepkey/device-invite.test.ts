@@ -20,6 +20,17 @@ export async function inviteAgent(
   })
 }
 
+export async function getDeviceInvite(
+  cell: CallableCell,
+  deviceInviteHash: ActionHash
+): Promise<Record> {
+  return cell.callZome({
+    zome_name: "deepkey",
+    fn_name: "get_device_invite",
+    payload: deviceInviteHash,
+  })
+}
+
 test("invite an agent", async (t) => {
   await runScenario(async (scenario) => {
     // Construct proper paths for your app.
@@ -46,13 +57,15 @@ test("invite an agent", async (t) => {
       bob.agentPubKey
     )
 
-    // Get an inviteAcceptance object from the invitor
-    // Pull & decode the invite from the inviteAcceptance
-    // Verify the signature is valid, the keyset_root_authority is the KSR of the invitor,
-    // and
-    // console.log(inviteAcceptance)
+    await pause(1200)
+
     const inviteHash = (inviteAcceptance as any).invite
-    console.log(inviteHash)
+    const inviteRecord = await getDeviceInvite(alice.cells[0], inviteHash)
+    const invite = decode((inviteRecord.entry as any).Present.entry) as any
+    // console.log(invite)
+    expect(invite.invitee).toEqual(bob.agentPubKey)
+    // Verify the signature is valid, the keyset_root_authority is the KSR of the invitor
+    // TODO: How to get the KSR of the invitor?
   })
 })
 

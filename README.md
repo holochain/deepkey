@@ -268,7 +268,7 @@ In the default Deepkey instance (the one that needs to be installed into a condu
 
 The `KeyRegistration` entry is the start of the process to manage a public key. There are other entry types that track and control how key registrations can work, i.e. which rules apply, which authority keys are registered under.
 
-The `KeyAnchor` entry contains only the core 32 bytes of the registered key, stripped of the 3 byte multihash prefix and 4 byte DHT location suffix. Using this `KeyAnchor` entry, the status (valid, revoked, replaced, etc.) of a key can be looked up in a single `get` call, without needing to first lookup the corresponding `KeyRegistration`.
+The `KeyAnchor` entry contains only the core 32 bytes of the registered key, stripped of the 3 byte multihash prefix and 4 byte DHT location suffix. Using this `KeyAnchor` entry, the status (valid, revoked, replaced, etc.) of a key can be looked up in a single `get_details` call, without needing to first lookup the corresponding `KeyRegistration`.
 
 By default, Deepkey change rules support multisignature logic. This is through collecting multiple signatures and applying Holochain validation, not via a cryptographic threshold signature scheme. The `ChangeRule` defines the multisig rules that apply to all keys under the management of a `KeysetRoot`.
 

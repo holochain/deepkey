@@ -27,19 +27,14 @@ pub fn create_keyset_root(_: ()) -> ExternResult<(Record, Record)> {
 
     let keyset_root = KeysetRoot::new(first_deepkey_agent.clone(), root_pub_key, fda_signature);
     let keyset_root_hash = create_entry(EntryTypes::KeysetRoot(keyset_root))?;
-    // let joining_proof = JoiningProof::new(
-    //     SourceOfAuthority::KeysetRoot(keyset_root.clone()),
-    //     MembraneProof::None);
-    // let joining_proof_hash = create_entry(EntryTypes::JoiningProof(joining_proof))?;
 
     let spec_change = AuthorizedSpecChange::new(new_authority_spec, vec![(0, auth_spec_signature)]);
+    // TODO: Should the keyset_leaf here be a SourceOfAuthority::KeysetRoot hash?
     let change_rule_hash = create_entry(EntryTypes::ChangeRule(ChangeRule::new(
         keyset_root_hash.clone(),
         keyset_root_hash.clone(),
         spec_change,
     )))?;
-
-    // TODO: Create a link from the AgentPubKey to the KeysetRoot (as a SourceOfAuthority)
 
     let keyset_root_record =
         get(keyset_root_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
@@ -53,6 +48,7 @@ pub fn create_keyset_root(_: ()) -> ExternResult<(Record, Record)> {
 
     Ok((keyset_root_record, change_rule_record))
 }
+
 #[hdk_extern]
 pub fn get_keyset_root(keyset_root_hash: ActionHash) -> ExternResult<Option<Record>> {
     get(keyset_root_hash, GetOptions::default())
