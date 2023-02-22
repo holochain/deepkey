@@ -5,6 +5,7 @@ pub mod device_invite;
 pub mod device_invite_acceptance;
 pub mod joining_proof;
 pub mod keyset_root;
+pub mod source_of_authority;
 use deepkey_integrity::*;
 use hdk::prelude::*;
 use keyset_root::create_keyset_root;
