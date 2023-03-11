@@ -16,9 +16,24 @@ Deepkey provides the ability to:
 - Store private instructions to rebuild app keys from a master seed to reestablish authority after data loss.
 - Deepkey provides the ability to do social management of keys through m of n signatures (the initial default is a 1 of 1 signature using a revocation key).
 
-Deepkey is a foundational app for all other Holochain app keys. Therefore, it is the first happ every conductor must install, and all other happs rely on it to query the status of keys.
+Deepkey is a foundational app for all other Holochain app keys. Therefore, it is the first happ every conductor must install, and all other happs rely on it to query the status of keys.  It is designed to work hand in hand with holochain's secure keystore, [Lair](https://github.com/holochain/lair).
 
 The most common call to Deepkey is `key_state((Key, Timestamp))` to query the validity of a key at a particular time.
+
+## Interations with Lair
+
+Lair is designed to generate new keys from randomness, or generate new keys from a seed with derivation instructions.  In order for DeepKey to accomplish it's purpose of being able to regenerate your app keys from a device seed or a master seed for all of your devices, DeepKey must store the derivation patterns and instruct Lair to produce keys using them.  
+
+### Workflows
+
+- When you install holochain, DeepKey needs to inject seeds (master, revocation, device) and provide a UI for password encrypting and [exporting your seeds](https://docs.rs/hc_seed_bundle/latest/hc_seed_bundle/) for off device storage.
+- Every time a new holochain app is installed, DeepKey must specify the derivation to generate the new agent keys in Lair, and store in a private entry the derivation and app DNA it was used with.
+- Replacing compromised keys
+- Deleting or revoking keys which have been abaonadoned
+- generating an invitation for a new device to join your keyspace
+- accepting an invitation for a new device
+- changing the rules for managing your keys
+- approve a key change or deletion, whether doing that locally with a revocation key or receiving that remotely as a social signing request
 
 ## Joining the DHT
 
