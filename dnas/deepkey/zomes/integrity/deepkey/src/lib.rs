@@ -1,5 +1,11 @@
 pub mod joining_proof;
 pub use joining_proof::*;
+pub mod key_registration;
+pub use key_registration::*;
+pub mod key_revocation;
+pub use key_revocation::*;
+pub mod key_generation;
+pub use key_generation::*;
 pub mod device_invite_acceptance;
 pub use device_invite_acceptance::*;
 pub mod device_invite;
@@ -10,9 +16,9 @@ pub mod authorized_spec_change;
 pub use authorized_spec_change::*;
 pub mod authority_spec;
 pub use authority_spec::*;
-pub mod keyset_root;
 pub use keyset_root::*;
 pub mod error;
+pub mod keyset_root;
 pub use error::*;
 pub mod source_of_authority;
 use hdi::prelude::*;
@@ -28,7 +34,9 @@ pub enum EntryTypes {
     ChangeRule(ChangeRule),
     DeviceInvite(DeviceInvite),
     DeviceInviteAcceptance(DeviceInviteAcceptance),
-    JoiningProof(JoiningProof),
+    // JoiningProof(JoiningProof),
+    KeyGeneration(KeyGeneration),
+    KeyRevocation(KeyRevocation),
 }
 #[derive(Serialize, Deserialize)]
 #[hdk_link_types]
@@ -80,10 +88,18 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         device_invite_acceptance,
                     )
                 }
-                EntryTypes::JoiningProof(joining_proof) => validate_create_joining_proof(
+                EntryTypes::KeyGeneration(key_generation) => validate_create_key_generation(
                     EntryCreationAction::Create(action),
-                    joining_proof,
+                    key_generation,
                 ),
+                EntryTypes::KeyRevocation(key_revocation) => validate_create_key_revocation(
+                    EntryCreationAction::Create(action),
+                    key_revocation,
+                ),
+                // EntryTypes::KeyRegistration(key_registration) => validate_create_key_registration(
+                //     EntryCreationAction::Create(action),
+                //     key_registration,
+                // ),
             },
             OpEntry::UpdateEntry {
                 app_entry, action, ..
@@ -114,10 +130,18 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         device_invite_acceptance,
                     )
                 }
-                EntryTypes::JoiningProof(joining_proof) => validate_create_joining_proof(
+                EntryTypes::KeyGeneration(key_generation) => validate_create_key_generation(
                     EntryCreationAction::Update(action),
-                    joining_proof,
+                    key_generation,
                 ),
+                EntryTypes::KeyRevocation(key_revocation) => validate_create_key_revocation(
+                    EntryCreationAction::Update(action),
+                    key_revocation,
+                ),
+                // EntryTypes::KeyRegistration(key_registration) => validate_create_key_registration(
+                //     EntryCreationAction::Update(action),
+                //     key_registration,
+                // ),
             },
             _ => Ok(ValidateCallbackResult::Valid),
         },
@@ -128,14 +152,32 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 app_entry,
                 action,
             } => match (app_entry, original_app_entry) {
+                // (
+                //     EntryTypes::KeyRegistration(key_registration),
+                //     EntryTypes::KeyRegistration(original_key_registration),
+                // ) => validate_update_key_registration(
+                //     action,
+                //     key_registration,
+                //     original_action,
+                //     original_key_registration,
+                // ),
                 (
-                    EntryTypes::JoiningProof(joining_proof),
-                    EntryTypes::JoiningProof(original_joining_proof),
-                ) => validate_update_joining_proof(
+                    EntryTypes::KeyRevocation(key_revocation),
+                    EntryTypes::KeyRevocation(original_key_revocation),
+                ) => validate_update_key_revocation(
                     action,
-                    joining_proof,
+                    key_revocation,
                     original_action,
-                    original_joining_proof,
+                    original_key_revocation,
+                ),
+                (
+                    EntryTypes::KeyGeneration(key_generation),
+                    EntryTypes::KeyGeneration(original_key_generation),
+                ) => validate_update_key_generation(
+                    action,
+                    key_generation,
+                    original_action,
+                    original_key_generation,
                 ),
                 (
                     EntryTypes::DeviceInviteAcceptance(device_invite_acceptance),
@@ -229,9 +271,15 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         device_invite_acceptance,
                     )
                 }
-                EntryTypes::JoiningProof(joining_proof) => {
-                    validate_delete_joining_proof(action, original_action, joining_proof)
+                EntryTypes::KeyGeneration(key_generation) => {
+                    validate_delete_key_generation(action, original_action, key_generation)
                 }
+                EntryTypes::KeyRevocation(key_revocation) => {
+                    validate_delete_key_revocation(action, original_action, key_revocation)
+                }
+                // EntryTypes::KeyRegistration(key_registration) => {
+                //     validate_delete_key_registration(action, original_action, key_registration)
+                // }
             },
             _ => Ok(ValidateCallbackResult::Valid),
         },
@@ -350,10 +398,18 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         device_invite_acceptance,
                     )
                 }
-                EntryTypes::JoiningProof(joining_proof) => validate_create_joining_proof(
+                EntryTypes::KeyGeneration(key_generation) => validate_create_key_generation(
                     EntryCreationAction::Create(action),
-                    joining_proof,
+                    key_generation,
                 ),
+                EntryTypes::KeyRevocation(key_revocation) => validate_create_key_revocation(
+                    EntryCreationAction::Create(action),
+                    key_revocation,
+                ),
+                // EntryTypes::KeyRegistration(key_registration) => validate_create_key_registration(
+                //     EntryCreationAction::Create(action),
+                //     key_registration,
+                // ),
             },
             OpRecord::UpdateEntry {
                 original_action_hash,
@@ -564,18 +620,18 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                             Ok(result)
                         }
                     }
-                    EntryTypes::JoiningProof(joining_proof) => {
-                        let result = validate_create_joining_proof(
+                    EntryTypes::KeyGeneration(key_generation) => {
+                        let result = validate_create_key_generation(
                             EntryCreationAction::Update(action.clone()),
-                            joining_proof.clone(),
+                            key_generation.clone(),
                         )?;
                         if let ValidateCallbackResult::Valid = result {
-                            let original_joining_proof: Option<JoiningProof> = original_record
+                            let original_key_generation: Option<KeyGeneration> = original_record
                                 .entry()
                                 .to_app_option()
                                 .map_err(|e| wasm_error!(e))?;
-                            let original_joining_proof = match original_joining_proof {
-                                Some(joining_proof) => joining_proof,
+                            let original_key_generation = match original_key_generation {
+                                Some(key_generation) => key_generation,
                                 None => {
                                     return Ok(
                                             ValidateCallbackResult::Invalid(
@@ -585,16 +641,79 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                                         );
                                 }
                             };
-                            validate_update_joining_proof(
+                            validate_update_key_generation(
                                 action,
-                                joining_proof,
+                                key_generation,
                                 original_action,
-                                original_joining_proof,
+                                original_key_generation,
                             )
                         } else {
                             Ok(result)
                         }
                     }
+                    EntryTypes::KeyRevocation(key_revocation) => {
+                        let result = validate_create_key_revocation(
+                            EntryCreationAction::Update(action.clone()),
+                            key_revocation.clone(),
+                        )?;
+                        if let ValidateCallbackResult::Valid = result {
+                            let original_key_revocation: Option<KeyRevocation> = original_record
+                                .entry()
+                                .to_app_option()
+                                .map_err(|e| wasm_error!(e))?;
+                            let original_key_revocation = match original_key_revocation {
+                                Some(key_revocation) => key_revocation,
+                                None => {
+                                    return Ok(
+                                            ValidateCallbackResult::Invalid(
+                                                "The updated entry type must be the same as the original entry type"
+                                                    .to_string(),
+                                            ),
+                                        );
+                                }
+                            };
+                            validate_update_key_revocation(
+                                action,
+                                key_revocation,
+                                original_action,
+                                original_key_revocation,
+                            )
+                        } else {
+                            Ok(result)
+                        }
+                    }
+                    // EntryTypes::KeyRegistration(key_registration) => {
+                    //     let result = validate_create_key_registration(
+                    //         EntryCreationAction::Update(action.clone()),
+                    //         key_registration.clone(),
+                    //     )?;
+                    //     if let ValidateCallbackResult::Valid = result {
+                    //         let original_key_registration: Option<KeyRegistration> =
+                    //             original_record
+                    //                 .entry()
+                    //                 .to_app_option()
+                    //                 .map_err(|e| wasm_error!(e))?;
+                    //         let original_key_registration = match original_key_registration {
+                    //             Some(key_registration) => key_registration,
+                    //             None => {
+                    //                 return Ok(
+                    //                         ValidateCallbackResult::Invalid(
+                    //                             "The updated entry type must be the same as the original entry type"
+                    //                                 .to_string(),
+                    //                         ),
+                    //                     );
+                    //             }
+                    //         };
+                    //         validate_update_key_registration(
+                    //             action,
+                    //             key_registration,
+                    //             original_action,
+                    //             original_key_registration,
+                    //         )
+                    //     } else {
+                    //         Ok(result)
+                    //     }
+                    // }
                 }
             }
             OpRecord::DeleteEntry {
@@ -685,13 +804,27 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                             original_device_invite_acceptance,
                         )
                     }
-                    EntryTypes::JoiningProof(original_joining_proof) => {
-                        validate_delete_joining_proof(
+                    EntryTypes::KeyGeneration(original_key_generation) => {
+                        validate_delete_key_generation(
                             action,
                             original_action,
-                            original_joining_proof,
+                            original_key_generation,
                         )
                     }
+                    EntryTypes::KeyRevocation(original_key_revocation) => {
+                        validate_delete_key_revocation(
+                            action,
+                            original_action,
+                            original_key_revocation,
+                        )
+                    }
+                    // EntryTypes::KeyRegistration(original_key_registration) => {
+                    //     validate_delete_key_registration(
+                    //         action,
+                    //         original_action,
+                    //         original_key_registration,
+                    //     )
+                    // }
                 }
             }
             OpRecord::CreateLink {

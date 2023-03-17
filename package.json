@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@holochain-playground/cli": "^0.0.11",
-    "concurrently": "^6.2.1",
+    "concurrently": "^6.5.1",
     "concurrently-repeat": "^0.0.1",
     "cross-env": "^7.0.3",
     "new-port-cli": "^1.0.0",

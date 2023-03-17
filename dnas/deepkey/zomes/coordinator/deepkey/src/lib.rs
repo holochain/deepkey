@@ -3,15 +3,18 @@ pub mod authorized_spec_change;
 pub mod change_rule;
 pub mod device_invite;
 pub mod device_invite_acceptance;
-pub mod joining_proof;
+pub mod key_generation;
+pub mod key_registration;
+pub mod key_revocation;
 pub mod keyset_root;
 pub mod source_of_authority;
 use deepkey_integrity::*;
 use hdk::prelude::*;
+#[allow(unused_imports)]
 use keyset_root::create_keyset_root;
 #[hdk_extern]
 pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
-    create_keyset_root(())?;
+    // create_keyset_root(())?;
     Ok(InitCallbackResult::Pass)
 }
 #[derive(Serialize, Deserialize, Debug)]

@@ -1,51 +1,63 @@
 import { describe, expect, test } from "vitest"
 
-import { runScenario, pause, CallableCell } from "@holochain/tryorama"
+import { runScenario, pause, CallableCell, Player } from "@holochain/tryorama"
 import {
   NewEntryAction,
   ActionHash,
   Record,
   AppBundleSource,
 } from "@holochain/client"
-import { decode } from "@msgpack/msgpack"
+import { decode, encode } from "@msgpack/msgpack"
 
 import { inviteAgent } from "./device-invite.test.js"
 
-export async function acceptInvitation(
-  cell: CallableCell,
-  invitation: Uint8Array
-): Promise<Record> {
-  return cell.callZome({
-    zome_name: "deepkey",
-    fn_name: "accept_invitation",
-    payload: invitation,
-  })
+const DNA_PATH = process.cwd() + "/../workdir/deepkey.happ"
+
+function zomeCall(actor: Player) {
+  return (fn_name, payload = null): Promise<Record> =>
+    actor.cells[0].callZome({
+      zome_name: "deepkey",
+      fn_name,
+      payload,
+    })
 }
 
-
 test("invite an agent, and have them accept the invite", async (t) => {
-  await runScenario(async (scenario) => {
-    // Construct proper paths for your app.
-    // This assumes app bundle created by the `hc app pack` command.
-    const testAppPath = process.cwd() + "/../workdir/deepkey.happ"
+  try {
+    await runScenario(async (scenario) => {
+      const appSource = { appBundleSource: { path: DNA_PATH } }
 
-    // Set up the app to be installed
-    const appSource = { appBundleSource: { path: testAppPath } }
+      const [alice, bob] = await scenario.addPlayersWithApps([
+        appSource,
+        appSource,
+      ])
 
-    // Add 2 players with the test app to the Scenario. The returned players
-    // can be destructured.
-    const [alice, bob] = await scenario.addPlayersWithApps([
-      appSource,
-      appSource,
-    ])
+      await Promise.all([
+        zomeCall(alice)("create_keyset_root"),
+        zomeCall(bob)("create_keyset_root"),
+      ])
 
-    // Shortcut peer discovery through gossip and register all agents in every
-    // conductor of the scenario.
-    await scenario.shareAllAgents()
+      await scenario.shareAllAgents()
 
-    const inviteRecord = await inviteAgent(alice.cells[0], bob.agentPubKey)
-    
-  })
+      const inviteAcceptance = await zomeCall(alice)(
+        "invite_agent",
+        bob.agentPubKey
+      )
+
+      console.log(inviteAcceptance)
+
+      const acceptanceHash = await zomeCall(bob)(
+        "accept_invite",
+        inviteAcceptance
+      )
+      const acceptanceRecord = await zomeCall(bob)("get_device_invite_acceptance", acceptanceHash)
+      const storedAcceptance = decode((acceptanceRecord.entry as any).Present.entry)
+
+      expect(storedAcceptance).toEqual(inviteAcceptance)
+    })
+  } catch (e) {
+    console.log(e)
+  }
 })
 
 test.skip("create and read DeviceInviteAcceptance", async (t) => {

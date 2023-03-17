@@ -395,9 +395,13 @@ CRUD operations for a `KeyRegistration` must always be performed in the correct 
 ### KeyRevocation API
 
 The structure of a `KeyRevocation` is:
-
-- The `prior_key_registration` being revoked
-- The `revocation_authorization` as a `Vec<Authorization>`
+```rust
+pub struct KeyRevocation {
+    prior_key_registration: ActionHash,
+    // To be validated according to the change rule of the generator of the prior key.
+    revocation_authorization: Vec<Authorization>,
+}
+```
 
 #### Validation
 

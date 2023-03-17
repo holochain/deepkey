@@ -2,7 +2,7 @@ use deepkey_integrity::*;
 use hdk::prelude::*;
 
 #[hdk_extern]
-pub fn create_keyset_root(_: ()) -> ExternResult<(Record, Record)> {
+pub fn create_keyset_root(_: ()) -> ExternResult<(ActionHash, ActionHash)> {
     let first_deepkey_agent: AgentPubKey = agent_info()?.agent_latest_pubkey;
 
     // There is only one authorized signer: the first deepkey agent (fda)
@@ -36,17 +36,21 @@ pub fn create_keyset_root(_: ()) -> ExternResult<(Record, Record)> {
         spec_change,
     )))?;
 
-    let keyset_root_record =
-        get(keyset_root_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
-            WasmErrorInner::Guest(String::from("Could not find the newly created Keyset Root"))
-        ))?;
+    // let keyset_root_record =
+    //     get(keyset_root_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
+    //         WasmErrorInner::Guest(String::from("Could not find the newly created Keyset Root"))
+    //     ))?;
 
-    let change_rule_record =
-        get(change_rule_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
-            WasmErrorInner::Guest(String::from("Could not find the newly created Change Rule"))
-        ))?;
+    // let change_rule_record =
+    //     get(change_rule_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
+    //         WasmErrorInner::Guest(String::from("Could not find the newly created Change Rule"))
+    //     ))?;
+    // Ok((keyset_root_record, change_rule_record))
 
-    Ok((keyset_root_record, change_rule_record))
+    // Err(wasm_error!(WasmErrorInner::Guest(String::from(
+    //     "Testing an error message here"
+    // ))))
+    Ok((keyset_root_hash, change_rule_hash))
 }
 
 #[hdk_extern]

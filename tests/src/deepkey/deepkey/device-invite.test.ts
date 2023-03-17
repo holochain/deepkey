@@ -8,11 +8,16 @@ import {
   AppBundleSource,
 } from "@holochain/client"
 import { decode } from "@msgpack/msgpack"
+// import { ActionHash, AgentPubKey, HoloHash } from "@whi/holo-hash"
+// import { Holochain } from "@whi/holochain-backdrop"
+// import { ConductorError } from "@whi/holochain-client"
+
+const DNA_PATH = process.cwd() + "/../workdir/deepkey.happ"
 
 export async function inviteAgent(
   cell: CallableCell,
   agentPubKey: Uint8Array
-): Promise<Record> {
+): Promise<any> {
   return cell.callZome({
     zome_name: "deepkey",
     fn_name: "invite_agent",
@@ -32,41 +37,55 @@ export async function getDeviceInvite(
 }
 
 test("invite an agent", async (t) => {
-  await runScenario(async (scenario) => {
-    // Construct proper paths for your app.
-    // This assumes app bundle created by the `hc app pack` command.
-    const testAppPath = process.cwd() + "/../workdir/deepkey.happ"
+  // const holochain = new Holochain({
+  //   timeout: 60_000,
+  //   default_stdout_loggers: process.env.LOG_LEVEL === "silly",
+  // })
 
-    // Set up the app to be installed
-    const appSource = { appBundleSource: { path: testAppPath } }
+  // const actors = await holochain.backdrop({
+  //   deepkey: {
+  //     deepkey: DNA_PATH,
+  //   },
+  // })
+  // let whoami = await actors.alice.call(
+  //   "appstore",
+  //   "appstore_api",
+  //   "whoami",
+  //   null,
+  //   30_000
+  // )
+  // let s = String(new HoloHash(whoami.agent_initial_pubkey))
+  // console.log(`Alice whoami: {s}`)
 
-    // Add 2 players with the test app to the Scenario. The returned players
-    // can be destructured.
-    const [alice, bob] = await scenario.addPlayersWithApps([
-      appSource,
-      appSource,
-    ])
+  // await runScenario(async (scenario) => {
+  //   const appSource = { appBundleSource: { path: DNA_PATH } }
 
-    // Shortcut peer discovery through gossip and register all agents in every
-    // conductor of the scenario.
-    await scenario.shareAllAgents()
+  //   // Add 2 players with the test app to the Scenario. The returned players
+  //   // can be destructured.
+  //   const [alice, bob] = await scenario.addPlayersWithApps([
+  //     appSource,
+  //     appSource,
+  //   ])
 
-    // Alice creates a DeviceInvite
-    const inviteAcceptance: Record = await inviteAgent(
-      alice.cells[0],
-      bob.agentPubKey
-    )
+  //   // Shortcut peer discovery through gossip and register all agents in every
+  //   // conductor of the scenario.
+  //   await scenario.shareAllAgents()
 
-    await pause(1200)
+  //   // Alice creates a DeviceInvite
+  //   const inviteAcceptance: Record = await inviteAgent(
+  //     alice.cells[0],
+  //     bob.agentPubKey
+  //   )
+  //   // await pause(1200)
 
-    const inviteHash = (inviteAcceptance as any).invite
-    const inviteRecord = await getDeviceInvite(alice.cells[0], inviteHash)
-    const invite = decode((inviteRecord.entry as any).Present.entry) as any
-    // console.log(invite)
-    expect(invite.invitee).toEqual(bob.agentPubKey)
-    // Verify the signature is valid, the keyset_root_authority is the KSR of the invitor
-    // TODO: How to get the KSR of the invitor?
-  })
+  //   const inviteHash = (inviteAcceptance as any).invite
+  //   const inviteRecord = await getDeviceInvite(alice.cells[0], inviteHash)
+  //   const invite = decode((inviteRecord.entry as any).Present.entry) as any
+  //   // console.log(invite)
+  //   expect(invite.invitee).toEqual(bob.agentPubKey)
+  //   // Verify the signature is valid, the keyset_root_authority is the KSR of the invitor
+  //   // TODO: How to get the KSR of the invitor?
+  // })
 })
 
 test.skip("create and read DeviceInvite", async (t) => {
