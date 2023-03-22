@@ -1,10 +1,9 @@
 use hdi::prelude::*;
 
 use crate::{KeyGeneration, KeyRevocation};
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-// #[serde(tag = "type")]
-// #[hdk_entry_helper]
-// #[derive(Clone, PartialEq)]
+
+#[hdk_entry_helper]
+#[derive(Clone, PartialEq)]
 pub enum KeyRegistration {
     Create(KeyGeneration), // Creates a key under management of current KSR on this chain
     CreateOnly(KeyGeneration), // Keys for hosted web users may be of this type, cannot replace/revoke

@@ -37,6 +37,7 @@ pub enum EntryTypes {
     // JoiningProof(JoiningProof),
     KeyGeneration(KeyGeneration),
     KeyRevocation(KeyRevocation),
+    KeyRegistration(KeyRegistration),
 }
 #[derive(Serialize, Deserialize)]
 #[hdk_link_types]
@@ -96,10 +97,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     EntryCreationAction::Create(action),
                     key_revocation,
                 ),
-                // EntryTypes::KeyRegistration(key_registration) => validate_create_key_registration(
-                //     EntryCreationAction::Create(action),
-                //     key_registration,
-                // ),
+                EntryTypes::KeyRegistration(key_registration) => validate_create_key_registration(
+                    EntryCreationAction::Create(action),
+                    key_registration,
+                ),
             },
             OpEntry::UpdateEntry {
                 app_entry, action, ..
@@ -138,10 +139,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     EntryCreationAction::Update(action),
                     key_revocation,
                 ),
-                // EntryTypes::KeyRegistration(key_registration) => validate_create_key_registration(
-                //     EntryCreationAction::Update(action),
-                //     key_registration,
-                // ),
+                EntryTypes::KeyRegistration(key_registration) => validate_create_key_registration(
+                    EntryCreationAction::Update(action),
+                    key_registration,
+                ),
             },
             _ => Ok(ValidateCallbackResult::Valid),
         },
@@ -152,15 +153,15 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 app_entry,
                 action,
             } => match (app_entry, original_app_entry) {
-                // (
-                //     EntryTypes::KeyRegistration(key_registration),
-                //     EntryTypes::KeyRegistration(original_key_registration),
-                // ) => validate_update_key_registration(
-                //     action,
-                //     key_registration,
-                //     original_action,
-                //     original_key_registration,
-                // ),
+                (
+                    EntryTypes::KeyRegistration(key_registration),
+                    EntryTypes::KeyRegistration(original_key_registration),
+                ) => validate_update_key_registration(
+                    action,
+                    key_registration,
+                    original_action,
+                    original_key_registration,
+                ),
                 (
                     EntryTypes::KeyRevocation(key_revocation),
                     EntryTypes::KeyRevocation(original_key_revocation),
@@ -277,9 +278,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 EntryTypes::KeyRevocation(key_revocation) => {
                     validate_delete_key_revocation(action, original_action, key_revocation)
                 }
-                // EntryTypes::KeyRegistration(key_registration) => {
-                //     validate_delete_key_registration(action, original_action, key_registration)
-                // }
+                EntryTypes::KeyRegistration(key_registration) => {
+                    validate_delete_key_registration(action, original_action, key_registration)
+                }
             },
             _ => Ok(ValidateCallbackResult::Valid),
         },
@@ -406,10 +407,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     EntryCreationAction::Create(action),
                     key_revocation,
                 ),
-                // EntryTypes::KeyRegistration(key_registration) => validate_create_key_registration(
-                //     EntryCreationAction::Create(action),
-                //     key_registration,
-                // ),
+                EntryTypes::KeyRegistration(key_registration) => validate_create_key_registration(
+                    EntryCreationAction::Create(action),
+                    key_registration,
+                ),
             },
             OpRecord::UpdateEntry {
                 original_action_hash,
@@ -682,38 +683,38 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                             Ok(result)
                         }
                     }
-                    // EntryTypes::KeyRegistration(key_registration) => {
-                    //     let result = validate_create_key_registration(
-                    //         EntryCreationAction::Update(action.clone()),
-                    //         key_registration.clone(),
-                    //     )?;
-                    //     if let ValidateCallbackResult::Valid = result {
-                    //         let original_key_registration: Option<KeyRegistration> =
-                    //             original_record
-                    //                 .entry()
-                    //                 .to_app_option()
-                    //                 .map_err(|e| wasm_error!(e))?;
-                    //         let original_key_registration = match original_key_registration {
-                    //             Some(key_registration) => key_registration,
-                    //             None => {
-                    //                 return Ok(
-                    //                         ValidateCallbackResult::Invalid(
-                    //                             "The updated entry type must be the same as the original entry type"
-                    //                                 .to_string(),
-                    //                         ),
-                    //                     );
-                    //             }
-                    //         };
-                    //         validate_update_key_registration(
-                    //             action,
-                    //             key_registration,
-                    //             original_action,
-                    //             original_key_registration,
-                    //         )
-                    //     } else {
-                    //         Ok(result)
-                    //     }
-                    // }
+                    EntryTypes::KeyRegistration(key_registration) => {
+                        let result = validate_create_key_registration(
+                            EntryCreationAction::Update(action.clone()),
+                            key_registration.clone(),
+                        )?;
+                        if let ValidateCallbackResult::Valid = result {
+                            let original_key_registration: Option<KeyRegistration> =
+                                original_record
+                                    .entry()
+                                    .to_app_option()
+                                    .map_err(|e| wasm_error!(e))?;
+                            let original_key_registration = match original_key_registration {
+                                Some(key_registration) => key_registration,
+                                None => {
+                                    return Ok(
+                                            ValidateCallbackResult::Invalid(
+                                                "The updated entry type must be the same as the original entry type"
+                                                    .to_string(),
+                                            ),
+                                        );
+                                }
+                            };
+                            validate_update_key_registration(
+                                action,
+                                key_registration,
+                                original_action,
+                                original_key_registration,
+                            )
+                        } else {
+                            Ok(result)
+                        }
+                    }
                 }
             }
             OpRecord::DeleteEntry {
@@ -818,13 +819,13 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                             original_key_revocation,
                         )
                     }
-                    // EntryTypes::KeyRegistration(original_key_registration) => {
-                    //     validate_delete_key_registration(
-                    //         action,
-                    //         original_action,
-                    //         original_key_registration,
-                    //     )
-                    // }
+                    EntryTypes::KeyRegistration(original_key_registration) => {
+                        validate_delete_key_registration(
+                            action,
+                            original_action,
+                            original_key_registration,
+                        )
+                    }
                 }
             }
             OpRecord::CreateLink {

@@ -3,7 +3,10 @@ use hdi::prelude::*;
 #[derive(Clone, PartialEq)]
 pub struct KeyGeneration {
     pub new_key: AgentPubKey,
-    pub new_key_signing_of_author: ActionHash,
+    pub new_key_signing_of_author: Signature,
+    // TODO
+    // generator: ActionHash, // This is the key authorized to generate new keys on this chain
+    // generator_signature: Signature, // The generator key signing the new key
 }
 pub fn validate_create_key_generation(
     _action: EntryCreationAction,

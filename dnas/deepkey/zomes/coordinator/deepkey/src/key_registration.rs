@@ -1,20 +1,23 @@
-// use hdk::prelude::*;
-// use deepkey_integrity::*;
-// #[hdk_extern]
-// pub fn create_key_registration(
-//     key_registration: KeyRegistration,
-// ) -> ExternResult<Record> {
-//     let key_registration_hash = create_entry(
-//         &EntryTypes::KeyRegistration(key_registration.clone()),
-//     )?;
-//     let record = get(key_registration_hash.clone(), GetOptions::default())?
-//         .ok_or(
-//             wasm_error!(
-//                 WasmErrorInner::Guest(String::from("Could not find the newly created KeyRegistration"))
-//             ),
-//         )?;
-//     Ok(record)
-// }
+use deepkey_integrity::*;
+use hdk::prelude::*;
+
+#[hdk_extern]
+pub fn register_key(new_key: AgentPubKey) -> ExternResult<()> {
+    let my_pubkey = agent_info()?.agent_latest_pubkey;
+    let author_signature = sign(my_pubkey, new_key.clone())?;
+    let key_generation = KeyGeneration {
+        new_key: new_key.clone(),
+        new_key_signing_of_author: author_signature,
+    };
+
+    let key_registration = KeyRegistration::Create(key_generation);
+
+    // write the key registration to the chain
+    create_entry(EntryTypes::KeyRegistration(key_registration))?;
+    // now write the key anchor
+    // create_entry(EntryTypes::KeyAnchor(KeyAnchor::new(new_key)))?;
+    Ok(())
+}
 // #[hdk_extern]
 // pub fn get_key_registration(
 //     original_key_registration_hash: ActionHash,
