@@ -24,9 +24,13 @@ jobs:
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
-          target: wasm32-unknown-unknown
-
+          profile: minimal
+          toolchain: stable
+          components: rust-src
+          override: true
+      
+      - name: Install wasm32-unknown-unknown target
+        run: rustup target add wasm32-unknown-unknown
 
       - name: Cache node modules
         uses: actions/cache@v2
