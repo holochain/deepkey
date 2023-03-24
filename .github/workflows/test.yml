@@ -1,15 +1,56 @@
-name: Cargo tests
+name: Automated Tests
 
-on: [ push, pull_request ]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  cargo_test:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-     - uses: actions/checkout@v2
-     - uses: actions-rs/toolchain@v1
-       with:
-         toolchain: nightly
-         target: wasm32-unknown-unknown
-     - run: ./test.sh
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          components: rust-src
+          override: true
+      
+      - name: Install wasm32-unknown-unknown target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install hc
+        uses: taiki-e/install-action@v2
+        with:
+          tool: holochain_cli
+      
+      - name: Cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests
+        run: pnpm test

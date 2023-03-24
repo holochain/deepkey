@@ -1,0 +1,30 @@
+{
+  "name": "@holochain/deepkey",
+  "private": true,
+  "workspaces": [
+    "ui",
+    "tests"
+  ],
+  "scripts": {
+    "start": "AGENTS=2 pnpm run network",
+    "network": "hc s clean && pnpm run build:happ && UI_PORT=8888 concurrently \"pnpm start -w ui\" \"pnpm run launch:happ\" \"holochain-playground\"",
+    "test": "pnpm run build:zomes && hc app pack workdir --recursive && pnpm test --filter tests",
+    "launch:happ": "echo \"pass\" | RUST_LOG=warn hc launch --piped -n $AGENTS workdir/deepkey.happ --ui-port $UI_PORT network mdns",
+    "package": "pnpm run build:happ && pnpm run package -w ui && hc web-app pack workdir --recursive",
+    "build:happ": "pnpm run build:zomes && hc app pack workdir --recursive",
+    "build:zomes": "RUSTFLAGS='' CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
+    "dev-build": "RUSTFLAGS=\"$RUSTFLAGS -A dead_code -A unused-imports\" pnpm build:zomes"
+  },
+  "devDependencies": {
+    "@holochain-playground/cli": "^0.0.11",
+    "concurrently": "^6.5.1",
+    "concurrently-repeat": "^0.0.1",
+    "cross-env": "^7.0.3",
+    "new-port-cli": "^1.0.0",
+    "rimraf": "^3.0.2",
+    "run-singleton-cli": "^0.0.5"
+  },
+  "engines": {
+    "pnpm": ">=7.0.0"
+  }
+}

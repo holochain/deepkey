@@ -1,0 +1,19 @@
+---
+manifest_version: "1"
+name: deepkey
+integrity:
+  network_seed: ~
+  properties: ~
+  origin_time: 1669408001130688
+  zomes:
+    - name: deepkey_integrity
+      hash: ~
+      bundled: "../../../target/wasm32-unknown-unknown/release/deepkey_integrity.wasm"
+      dependencies: ~
+coordinator:
+  zomes:
+    - name: deepkey
+      hash: ~
+      bundled: "../../../target/wasm32-unknown-unknown/release/deepkey.wasm"
+      dependencies:
+        - name: deepkey_integrity
