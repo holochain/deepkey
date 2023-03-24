@@ -34,7 +34,9 @@ jobs:
         run: rustup target add wasm32-unknown-unknown
 
       - name: Install hc
-        uses: taiki-e/install-action@holochain_cli
+        uses: taiki-e/install-action@v2
+        with:
+          tool: holochain_cli
       
       - name: Cache node modules
         uses: actions/cache@v2
