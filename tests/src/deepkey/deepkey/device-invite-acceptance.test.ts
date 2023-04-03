@@ -1,6 +1,12 @@
 import { describe, expect, test } from "vitest"
 
-import { runScenario, pause, CallableCell, Player } from "@holochain/tryorama"
+import {
+  runScenario,
+  pause,
+  CallableCell,
+  Player,
+  getZomeCaller,
+} from "@holochain/tryorama"
 import {
   NewEntryAction,
   ActionHash,
@@ -10,17 +16,9 @@ import {
 import { decode, encode } from "@msgpack/msgpack"
 
 import { inviteAgent } from "./device-invite.test.js"
+import { deepkeyZomeCall } from "../../utils.js"
 
 const DNA_PATH = process.cwd() + "/../workdir/deepkey.happ"
-
-function zomeCall(actor: Player) {
-  return (fn_name, payload = null): Promise<Record> =>
-    actor.cells[0].callZome({
-      zome_name: "deepkey",
-      fn_name,
-      payload,
-    })
-}
 
 test("invite an agent, and have them accept the invite", async (t) => {
   try {
@@ -33,25 +31,30 @@ test("invite an agent, and have them accept the invite", async (t) => {
       ])
 
       await Promise.all([
-        zomeCall(alice)("create_keyset_root"),
-        zomeCall(bob)("create_keyset_root"),
+        deepkeyZomeCall(alice)("create_keyset_root"),
+        deepkeyZomeCall(bob)("create_keyset_root"),
       ])
 
       await scenario.shareAllAgents()
 
-      const inviteAcceptance = await zomeCall(alice)(
+      const inviteAcceptance = await deepkeyZomeCall(alice)(
         "invite_agent",
         bob.agentPubKey
       )
 
       console.log(inviteAcceptance)
 
-      const acceptanceHash = await zomeCall(bob)(
+      const acceptanceHash = await deepkeyZomeCall(bob)(
         "accept_invite",
         inviteAcceptance
       )
-      const acceptanceRecord = await zomeCall(bob)("get_device_invite_acceptance", acceptanceHash)
-      const storedAcceptance = decode((acceptanceRecord.entry as any).Present.entry)
+      const acceptanceRecord = await deepkeyZomeCall(bob)(
+        "get_device_invite_acceptance",
+        acceptanceHash
+      )
+      const storedAcceptance = decode(
+        (acceptanceRecord.entry as any).Present.entry
+      )
 
       expect(storedAcceptance).toEqual(inviteAcceptance)
     })

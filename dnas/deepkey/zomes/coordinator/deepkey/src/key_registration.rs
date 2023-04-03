@@ -1,6 +1,41 @@
 use deepkey_integrity::*;
 use hdk::prelude::*;
 
+
+#[hdk_extern]
+pub fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<()> {
+    // key anchor must be created from the key being registered
+    // so we need to get the new key from the key registration
+    let new_key = match key_registration.clone() {
+        KeyRegistration::Create(key_generation) => key_generation.new_key,
+        KeyRegistration::CreateOnly(key_generation) => key_generation.new_key,
+        KeyRegistration::Update(_, key_generation) => key_generation.new_key,
+        KeyRegistration::Delete(key_revocation) => {
+            let old_keyreg_action = key_revocation.prior_key_registration;
+            let old_keyreg = get(old_keyreg_action, GetOptions::default())?
+                .ok_or(wasm_error!(WasmErrorInner::Guest("KeyRegistration not found".into())))?;
+            let key_registration = KeyRegistration::try_from(old_keyreg)?;
+            match key_registration {
+                KeyRegistration::Create(key_generation) => key_generation.new_key,
+                KeyRegistration::CreateOnly(key_generation) => key_generation.new_key,
+                KeyRegistration::Update(_, key_generation) => {
+                    key_generation.new_key
+                }
+                KeyRegistration::Delete(_) => {
+                    return Err(wasm_error!(WasmErrorInner::Guest("Invalid KeyRevocation: attempted to revoke a revocation".into())))
+                }
+            }
+        }
+    };
+
+    create_entry(EntryTypes::KeyRegistration(key_registration))?;
+    create_entry(EntryTypes::KeyAnchor(KeyAnchor::from_agent_key(new_key)))?;
+    Ok(())
+}
+
+// This writes a KeyRegistration::Create from a new AgentPubKey
+// But the README has a more modular set of functions
+// Consider scrapping this in favor of generating a KeyRegistration separately
 #[hdk_extern]
 pub fn register_key(new_key: AgentPubKey) -> ExternResult<()> {
     let my_pubkey = agent_info()?.agent_latest_pubkey;

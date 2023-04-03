@@ -35,8 +35,10 @@ export type DeepkeySignal = {
 };
 
 export type EntryTypes =
- | ({ type: 'JoiningProof'; } & JoiningProof)
- | ({ type: 'JoiningProof'; } & JoiningProof)
+ | ({ type: 'KeyAnchor'; } & KeyAnchor)
+ | ({ type: 'KeyRegistration'; } & KeyRegistration)
+ | ({ type: 'KeyRevocation'; } & KeyRevocation)
+ | ({ type: 'KeyGeneration'; } & KeyGeneration)
  | ({ type: 'DeviceInviteAcceptance'; } & DeviceInviteAcceptance)
  | ({ type: 'DeviceInvite'; } & DeviceInvite)
  | ({ type: 'ChangeRule'; } & ChangeRule)
@@ -106,20 +108,42 @@ export interface DeviceInviteAcceptance {
 
 
 
-export interface JoiningProof { 
-  keyset_proof: string;
+export interface KeyGeneration { 
+  new_key: AgentPubKey;
 
-  membrane_proof: string;
+  new_key_signing_of_author: ActionHash;
 }
 
 
 
 
 
-export interface JoiningProof { 
-  keyset_proof: string;
+export interface KeyRevocation { 
+  prior_key_registration: ActionHash;
 
-  membrane_proof: string;
+  revocation_authorization: Array<ActionHash>;
+}
+
+
+
+
+export interface Create {
+  type:  
+    | 'Update'
+        | 'Delete'
+    ;
+}
+
+export interface KeyRegistration { 
+  key_registration: Create;
+}
+
+
+
+
+
+export interface KeyAnchor { 
+  bytes: Array<number>;
 }
 
 
