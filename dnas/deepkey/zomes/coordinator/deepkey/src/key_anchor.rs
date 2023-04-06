@@ -47,6 +47,13 @@ pub fn key_state((key_anchor_bytes, _timestamp): ([u8; 32], Timestamp)) -> Exter
     Ok(KeyState::Valid)
 }
 
+#[hdk_extern]
+pub fn get_agent_pubkey_key_anchor(agent_pubkey: AgentPubKey) -> ExternResult<Option<Record>> {
+    let key_anchor = KeyAnchor::from_agent_key(agent_pubkey);
+    let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(key_anchor.clone()))?;
+    get(key_anchor_hash, GetOptions::default())
+}
+
 // #[hdk_extern]
 // pub fn create_key_anchor(key_anchor: KeyAnchor) -> ExternResult<Record> {
 //     let key_anchor_hash = create_entry(&EntryTypes::KeyAnchor(key_anchor.clone()))?;

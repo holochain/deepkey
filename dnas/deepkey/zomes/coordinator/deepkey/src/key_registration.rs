@@ -1,7 +1,6 @@
 use deepkey_integrity::*;
 use hdk::prelude::*;
 
-
 #[hdk_extern]
 pub fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<()> {
     // key anchor must be created from the key being registered
@@ -12,17 +11,18 @@ pub fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<(
         KeyRegistration::Update(_, key_generation) => key_generation.new_key,
         KeyRegistration::Delete(key_revocation) => {
             let old_keyreg_action = key_revocation.prior_key_registration;
-            let old_keyreg = get(old_keyreg_action, GetOptions::default())?
-                .ok_or(wasm_error!(WasmErrorInner::Guest("KeyRegistration not found".into())))?;
+            let old_keyreg = get(old_keyreg_action, GetOptions::default())?.ok_or(wasm_error!(
+                WasmErrorInner::Guest("KeyRegistration not found".into())
+            ))?;
             let key_registration = KeyRegistration::try_from(old_keyreg)?;
             match key_registration {
                 KeyRegistration::Create(key_generation) => key_generation.new_key,
                 KeyRegistration::CreateOnly(key_generation) => key_generation.new_key,
-                KeyRegistration::Update(_, key_generation) => {
-                    key_generation.new_key
-                }
+                KeyRegistration::Update(_, key_generation) => key_generation.new_key,
                 KeyRegistration::Delete(_) => {
-                    return Err(wasm_error!(WasmErrorInner::Guest("Invalid KeyRevocation: attempted to revoke a revocation".into())))
+                    return Err(wasm_error!(WasmErrorInner::Guest(
+                        "Invalid KeyRevocation: attempted to revoke a revocation".into()
+                    )))
                 }
             }
         }
@@ -53,6 +53,27 @@ pub fn register_key(new_key: AgentPubKey) -> ExternResult<()> {
     // create_entry(EntryTypes::KeyAnchor(KeyAnchor::new(new_key)))?;
     Ok(())
 }
+#[hdk_extern]
+pub fn get_key_registration_from_agent_pubkey_key_anchor(
+    agent_pubkey: AgentPubKey,
+) -> ExternResult<Option<Record>> {
+    let key_anchor = KeyAnchor::from_agent_key(agent_pubkey);
+    let key_anchor_clone = key_anchor.clone(); // Clone the key_anchor
+    let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(key_anchor_clone))?;
+    let key_registration_record = get(key_anchor_hash, GetOptions::default())?
+        .map(|key_anchor_element| {
+            key_anchor_element.action().prev_action().map(|action| action.to_owned())
+        })
+        .flatten()
+        .map(|key_registration_action| {
+            get(key_registration_action.clone(), GetOptions::default())
+        })
+        .transpose()?
+        .flatten();
+    Ok(key_registration_record)
+}
+
+
 // #[hdk_extern]
 // pub fn get_key_registration(
 //     original_key_registration_hash: ActionHash,
