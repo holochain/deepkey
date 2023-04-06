@@ -42,8 +42,7 @@ jobs:
             ${{ runner.os }}-pnpm-
 
       - name: Install dependencies
-        run: pnpm install
-
+        run: nix develop -c $SHELL -c "pnpm install"
 
       - name: Test 
         run: nix develop -c $SHELL -c "pnpm test"
