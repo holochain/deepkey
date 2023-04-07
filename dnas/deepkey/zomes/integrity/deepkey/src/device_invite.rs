@@ -119,7 +119,7 @@ pub fn validate_delete_link_invitee_to_device_invites(
         "InviteeToDeviceInvites links cannot be deleted",
     )))
 }
-/// TODO: Run this as a validation
+/// TODO: Run this in the validations (lib.rs)
 pub fn validate_device_invite_original(
     invite: DeviceInvite,
     invite_create_action: Create,

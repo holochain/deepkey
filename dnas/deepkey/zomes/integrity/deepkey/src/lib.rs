@@ -1,3 +1,5 @@
+pub mod key_anchor;
+pub use key_anchor::*;
 pub mod joining_proof;
 pub use joining_proof::*;
 pub mod key_registration;
@@ -38,6 +40,7 @@ pub enum EntryTypes {
     KeyGeneration(KeyGeneration),
     KeyRevocation(KeyRevocation),
     KeyRegistration(KeyRegistration),
+    KeyAnchor(KeyAnchor),
 }
 #[derive(Serialize, Deserialize)]
 #[hdk_link_types]
@@ -101,6 +104,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     EntryCreationAction::Create(action),
                     key_registration,
                 ),
+                EntryTypes::KeyAnchor(key_anchor) => {
+                    validate_create_key_anchor(EntryCreationAction::Create(action), key_anchor)
+                }
             },
             OpEntry::UpdateEntry {
                 app_entry, action, ..
@@ -143,6 +149,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     EntryCreationAction::Update(action),
                     key_registration,
                 ),
+                EntryTypes::KeyAnchor(key_anchor) => {
+                    validate_create_key_anchor(EntryCreationAction::Update(action), key_anchor)
+                }
             },
             _ => Ok(ValidateCallbackResult::Valid),
         },
@@ -153,6 +162,14 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 app_entry,
                 action,
             } => match (app_entry, original_app_entry) {
+                (EntryTypes::KeyAnchor(key_anchor), EntryTypes::KeyAnchor(original_key_anchor)) => {
+                    validate_update_key_anchor(
+                        action,
+                        key_anchor,
+                        original_action,
+                        original_key_anchor,
+                    )
+                }
                 (
                     EntryTypes::KeyRegistration(key_registration),
                     EntryTypes::KeyRegistration(original_key_registration),
@@ -280,6 +297,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 }
                 EntryTypes::KeyRegistration(key_registration) => {
                     validate_delete_key_registration(action, original_action, key_registration)
+                }
+                EntryTypes::KeyAnchor(key_anchor) => {
+                    validate_delete_key_anchor(action, original_action, key_anchor)
                 }
             },
             _ => Ok(ValidateCallbackResult::Valid),
@@ -411,6 +431,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     EntryCreationAction::Create(action),
                     key_registration,
                 ),
+                EntryTypes::KeyAnchor(key_anchor) => {
+                    validate_create_key_anchor(EntryCreationAction::Create(action), key_anchor)
+                }
             },
             OpRecord::UpdateEntry {
                 original_action_hash,
@@ -715,6 +738,37 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                             Ok(result)
                         }
                     }
+                    EntryTypes::KeyAnchor(key_anchor) => {
+                        let result = validate_create_key_anchor(
+                            EntryCreationAction::Update(action.clone()),
+                            key_anchor.clone(),
+                        )?;
+                        if let ValidateCallbackResult::Valid = result {
+                            let original_key_anchor: Option<KeyAnchor> = original_record
+                                .entry()
+                                .to_app_option()
+                                .map_err(|e| wasm_error!(e))?;
+                            let original_key_anchor = match original_key_anchor {
+                                Some(key_anchor) => key_anchor,
+                                None => {
+                                    return Ok(
+                                        ValidateCallbackResult::Invalid(
+                                            "The updated entry type must be the same as the original entry type"
+                                                .to_string(),
+                                        ),
+                                    );
+                                }
+                            };
+                            validate_update_key_anchor(
+                                action,
+                                key_anchor,
+                                original_action,
+                                original_key_anchor,
+                            )
+                        } else {
+                            Ok(result)
+                        }
+                    }
                 }
             }
             OpRecord::DeleteEntry {
@@ -825,6 +879,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                             original_action,
                             original_key_registration,
                         )
+                    }
+                    EntryTypes::KeyAnchor(original_key_anchor) => {
+                        validate_delete_key_anchor(action, original_action, original_key_anchor)
                     }
                 }
             }
