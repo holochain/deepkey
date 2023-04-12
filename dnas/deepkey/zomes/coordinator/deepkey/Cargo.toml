@@ -12,4 +12,9 @@ hdk = { workspace = true }
 
 serde = { workspace = true }
 
-deepkey_integrity = { workspace = true } 
+deepkey_integrity = { workspace = true }
+
+[dev-dependencies]
+holochain = { version = "=0.1.3", default-features = false, features = [ "test_utils" ] }
+tokio = { version = "1.3", features = ["full"] }
+futures = { version = "0.3.1", default-features = false }
