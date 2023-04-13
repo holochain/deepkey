@@ -21,6 +21,7 @@
               nodejs-18_x 
               nodePackages.pnpm
               cargo-watch
+              sqlite
             ];
           };
         };
