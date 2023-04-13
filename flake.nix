@@ -18,8 +18,9 @@
             inputsFrom = [ holonix.devShells.${system}.holonix ];
             packages = with pkgs; [
               # add further packages from nixpkgs
+              nodejs-18_x 
+              nodePackages.pnpm
               cargo-watch
-              nodejs
             ];
           };
         };
