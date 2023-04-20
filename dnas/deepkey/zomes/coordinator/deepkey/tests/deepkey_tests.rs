@@ -13,66 +13,30 @@ const DNA_FILEPATH: &str = "../../../workdir/deepkey.dna";
 const ZOME_NAME: &str = "deepkey";
 
 #[tokio::test(flavor = "multi_thread")]
-async fn trusted_feed_is_based_on_follow_topics() {
+async fn create_and_retrieve_key_registration() {
     let mut agent_group = setup().await;
     let agents = agent_group.create_agents().await;
     let ann = &agents[0];
     let bob = &agents[1];
     let cat = &agents[2];
 
-    // ann.follow(FollowInput {
-    //     agent: bob.pubkey.clone(),
-    //     follow_topics: vec![FollowTopicInput {
-    //         topic: String::from("holochain"),
-    //         weight: String::from("1.0"),
-    //     }],
-    //     follow_other: false,
-    // })
-    // .await;
+    let key_generation: KeyGeneration = ann
+        .call("instantiate_key_generation", bob.pubkey.clone())
+        .await;
 
-    // ann.follow(FollowInput {
-    //     agent: cat.pubkey.clone(),
-    //     follow_topics: vec![FollowTopicInput {
-    //         topic: String::from("blockchain"),
-    //         weight: String::from("1.0"),
-    //     }],
-    //     follow_other: false,
-    // })
-    // .await;
-
-    // bob.create_mew(CreateMewInput {
-    //     mew_type: MewType::Original,
-    //     text: Some(String::from("Wow #holochain is cool!")),
-    //     links: None,
-    // })
-    // .await;
-
-    // cat.create_mew(CreateMewInput {
-    //     mew_type: MewType::Original,
-    //     text: Some(String::from("Doh #holochain when moon?")),
-    //     links: None,
-    // })
-    // .await;
-
-    let key_generation: KeyGeneration = ann.call(
-      "instantiate_key_generation",
-      bob.pubkey.clone(),
-    ).await;
-
-    // The enum Create option from the KeyRegistration options.
     let key_registration = KeyRegistration::Create(key_generation);
 
-
     // Register the new key
-    let _unit: () = ann.call(
-        "new_key_registration",
-        key_registration,
-    ).await;
+    let _unit: () = ann
+        .call("new_key_registration", key_registration.clone())
+        .await;
 
-    let key_registration_record: Record = ann.call(
-        "get_key_registration_from_agent_pubkey_key_anchor",
-        bob.pubkey.clone(),
-    ).await;
+    let key_registration_record: Record = ann
+        .call(
+            "get_key_registration_from_agent_pubkey_key_anchor",
+            bob.pubkey.clone(),
+        )
+        .await;
 
     consistency_10s([
         &(ann.cell.clone()),
@@ -80,57 +44,14 @@ async fn trusted_feed_is_based_on_follow_topics() {
         &(cat.cell.clone()),
     ])
     .await;
+
+    let key_registration2: KeyRegistration = key_registration_record
+        .entry
+        .to_app_option::<KeyRegistration>()
+        .unwrap()
+        .unwrap();
+    assert_eq!(key_registration, key_registration2);
 }
-
-// #[tokio::test(flavor = "multi_thread")]
-// async fn trusted_feed_is_ordered_by_topic_weights_and_recency() {
-//     let mut agent_group = setup().await;
-//     let agents = agent_group.create_agents().await;
-//     let ann = &agents[0];
-//     let bob = &agents[1];
-
-//     ann.follow(FollowInput {
-//         agent: bob.pubkey.clone(),
-//         follow_topics: vec![FollowTopicInput {
-//             topic: String::from("holochain"),
-//             weight: String::from("0.9"),
-//         }],
-//         follow_other: false,
-//     })
-//     .await;
-
-//     bob.create_mew(CreateMewInput {
-//         mew_type: MewType::Original,
-//         text: Some(String::from("OLD #holochain mew")),
-//         links: None,
-//     })
-//     .await;
-
-//     let oldest_mew_seconds = 2;
-//     std::thread::sleep(std::time::Duration::from_secs(oldest_mew_seconds));
-
-//     bob.create_mew(CreateMewInput {
-//         mew_type: MewType::Original,
-//         text: Some(String::from("NEW #holochain mew")),
-//         links: None,
-//     })
-//     .await;
-
-//     consistency_10s([&(ann.cell.clone()), &(bob.cell.clone())]).await;
-
-//     let recommended_feed = ann
-//         .recommended(RecommendedInput {
-//             now: Timestamp::now(),
-//             oldest_mew_seconds: Some(oldest_mew_seconds),
-//         })
-//         .await;
-
-//     assert_eq!(recommended_feed.len(), 1);
-//     assert_eq!(
-//         recommended_feed[0].mew.content.as_ref().unwrap().text,
-//         String::from("NEW #holochain mew")
-//     );
-// }
 
 // TEST HELPERS:
 
@@ -152,14 +73,6 @@ impl Agent<'_> {
 
     // pub async fn follow(&self, input: FollowInput) -> () {
     //     self.conductor.call(&self.zome, "follow", input).await
-    // }
-
-    // pub async fn create_mew(&self, input: CreateMewInput) -> ActionHash {
-    //     self.conductor.call(&self.zome, "create_mew", input).await
-    // }
-
-    // pub async fn recommended(&self, input: RecommendedInput) -> Vec<FeedMew> {
-    //     self.conductor.call(&self.zome, "recommended", input).await
     // }
 }
 
@@ -212,3 +125,22 @@ where
 {
     agent.conductor.call(&agent.zome, fn_name, payload).await
 }
+
+// Examples:
+
+// ann.follow(FollowInput {
+//     agent: bob.pubkey.clone(),
+//     follow_topics: vec![FollowTopicInput {
+//         topic: String::from("holochain"),
+//         weight: String::from("1.0"),
+//     }],
+//     follow_other: false,
+// })
+// .await;
+
+// bob.create_mew(CreateMewInput {
+//     mew_type: MewType::Original,
+//     text: Some(String::from("Wow #holochain is cool!")),
+//     links: None,
+// })
+// .await;
