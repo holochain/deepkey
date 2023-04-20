@@ -2,6 +2,7 @@
 name = "deepkey"
 version = "0.0.1"
 edition = "2021"
+resolver = "2"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -9,7 +10,10 @@ name = "deepkey"
 
 [dependencies]
 hdk = { workspace = true }
-
 serde = { workspace = true }
+deepkey_integrity = { workspace = true }
 
-deepkey_integrity = { workspace = true } 
+[dev-dependencies]
+holochain = { workspace = true }
+tokio = { workspace = true }
+
