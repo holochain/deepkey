@@ -22,8 +22,8 @@ import { deepkeyZomeCall, isPresent } from "../../utils.js"
 const DNA_PATH = process.cwd() + "/../workdir/deepkey.happ"
 
 test("invite an agent, and have them accept the invite", async (t) => {
-  try {
-    await runScenario(async (scenario) => {
+  await runScenario(async (scenario) => {
+    try {
       const appSource = { appBundleSource: { path: DNA_PATH } }
 
       const [alice, bob] = await scenario.addPlayersWithApps([
@@ -59,10 +59,10 @@ test("invite an agent, and have them accept the invite", async (t) => {
       const storedAcceptance = decode(acceptanceEntry as Uint8Array)
 
       expect(storedAcceptance).toEqual(inviteAcceptance)
-    })
-  } catch (e) {
-    throw e.data.data
-  }
+    } catch (e) {
+      throw e.data.data
+    }
+  })
 })
 
 test.skip("create and read DeviceInviteAcceptance", async (t) => {

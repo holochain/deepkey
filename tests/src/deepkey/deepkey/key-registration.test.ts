@@ -26,8 +26,8 @@ type KeyGeneration = {
 type KeyRegistration = {}
 
 test("new_key_registration", async (t) => {
-  try {
-    await runScenario(async (scenario) => {
+  await runScenario(async (scenario) => {
+    try {
       const appSource = { appBundleSource: { path: DNA_PATH } }
 
       const [alice, bob] = await scenario.addPlayersWithApps([
@@ -76,8 +76,8 @@ test("new_key_registration", async (t) => {
         createdKeyRegistrationEntry as Uint8Array
       )
       expect(storedKeyRegistration).toEqual(keyRegistration)
-    })
-  } catch (e) {
-    throw e.data.data
-  }
+    } catch (e) {
+      throw e.data.data
+    }
+  })
 })
