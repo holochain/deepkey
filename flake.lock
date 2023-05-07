@@ -39,7 +39,7 @@
         "flake-compat": "flake-compat",
         "flake-utils": "flake-utils",
         "nixpkgs": [
-          "holochain-dev",
+          "holonix",
           "nixpkgs"
         ],
         "rust-overlay": "rust-overlay"
@@ -173,7 +173,7 @@
         "type": "github"
       }
     },
-    "holochain-dev": {
+    "holonix": {
       "inputs": {
         "cargo-chef": "cargo-chef",
         "cargo-rdme": "cargo-rdme",
@@ -182,17 +182,17 @@
         "flake-compat": "flake-compat_2",
         "flake-parts": "flake-parts",
         "holochain": [
-          "holochain-dev",
+          "holonix",
           "versions",
           "holochain"
         ],
         "lair": [
-          "holochain-dev",
+          "holonix",
           "versions",
           "lair"
         ],
         "launcher": [
-          "holochain-dev",
+          "holonix",
           "versions",
           "launcher"
         ],
@@ -201,7 +201,7 @@
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",
         "rust-overlay": "rust-overlay_2",
         "scaffolding": [
-          "holochain-dev",
+          "holonix",
           "versions",
           "scaffolding"
         ],
@@ -321,9 +321,9 @@
     },
     "root": {
       "inputs": {
-        "holochain-dev": "holochain-dev",
+        "holonix": "holonix",
         "nixpkgs": [
-          "holochain-dev",
+          "holonix",
           "nixpkgs"
         ]
       }
@@ -331,12 +331,12 @@
     "rust-overlay": {
       "inputs": {
         "flake-utils": [
-          "holochain-dev",
+          "holonix",
           "crane",
           "flake-utils"
         ],
         "nixpkgs": [
-          "holochain-dev",
+          "holonix",
           "crane",
           "nixpkgs"
         ]
@@ -359,7 +359,7 @@
       "inputs": {
         "flake-utils": "flake-utils_2",
         "nixpkgs": [
-          "holochain-dev",
+          "holonix",
           "nixpkgs"
         ]
       },
