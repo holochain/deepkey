@@ -6,7 +6,7 @@ pub fn create_keyset_root(_: ()) -> ExternResult<(ActionHash, ActionHash)> {
     let first_deepkey_agent: AgentPubKey = agent_info()?.agent_latest_pubkey;
 
     // There is only one authorized signer: the first deepkey agent (fda)
-    let new_authority_spec = AuthoritySpec::new(1, vec![first_deepkey_agent.clone()]);
+    let new_authority_spec = AuthoritySpec::new(0, vec![first_deepkey_agent.clone()]);
 
     let fda_bytes = SerializedBytes::try_from(first_deepkey_agent.clone())
         .map_err(|e| wasm_error!(WasmErrorInner::Guest(e.into())))?;

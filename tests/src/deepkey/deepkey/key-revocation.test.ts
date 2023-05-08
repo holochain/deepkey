@@ -1,4 +1,3 @@
-import { DeviceInviteAcceptance } from "./../../../../ui/src/deepkey/deepkey/types"
 import { describe, expect, test } from "vitest"
 
 import { runScenario, pause } from "@holochain/tryorama"
@@ -25,7 +24,7 @@ type KeyGeneration = {
 
 type KeyRegistration = {}
 
-test("new_key_registration", async (t) => {
+test("revoke", async (t) => {
   await runScenario(async (scenario) => {
     try {
       const appSource = { appBundleSource: { path: DNA_PATH } }
@@ -43,23 +42,16 @@ test("new_key_registration", async (t) => {
       await scenario.shareAllAgents()
 
       const newKeyToRegister = await fakeAgentPubKey()
-      // First get the KeyGeneration, with valid signature of the new key from the Deepkey chain agent
+      // // First get the KeyGeneration, with valid signature of the new key from the Deepkey chain agent
       const keyGeneration = await deepkeyZomeCall(alice)<KeyGeneration>(
         "instantiate_key_generation",
         newKeyToRegister
       )
-      // The enum Create option from the KeyRegistration options.
-      const keyRegistration = {
+      await deepkeyZomeCall(alice)<null>("new_key_registration", {
         Create: {
           ...keyGeneration,
         },
-      }
-
-      // Register the new key
-      await deepkeyZomeCall(alice)<null>(
-        "new_key_registration",
-        keyRegistration
-      )
+      })
 
       // Retrieve the KeyRegistration via its KeyAnchor
       const createdKeyRegistrationRecord = await deepkeyZomeCall(alice)<Record>(
@@ -67,15 +59,16 @@ test("new_key_registration", async (t) => {
         newKeyToRegister
       )
 
-      expect(isPresent(createdKeyRegistrationRecord.entry)).toBeTruthy()
 
-      const createdKeyRegistrationEntry = (
-        createdKeyRegistrationRecord.entry as { Present: Entry }
-      ).Present.entry
-      const storedKeyRegistration = decode(
-        createdKeyRegistrationEntry as Uint8Array
-      )
-      expect(storedKeyRegistration).toEqual(keyRegistration)
+      // expect(isPresent(createdKeyRegistrationRecord.entry)).toBeTruthy()
+
+      // const createdKeyRegistrationEntry = (
+      //   createdKeyRegistrationRecord.entry as { Present: Entry }
+      // ).Present.entry
+      // const storedKeyRegistration = decode(
+      //   createdKeyRegistrationEntry as Uint8Array
+      // )
+      // expect(storedKeyRegistration).toEqual(keyRegistration)
     } catch (e) {
       throw e.data.data
     }

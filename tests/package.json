@@ -8,17 +8,17 @@
   "author": "",
   "license": "CAL-1.0",
   "dependencies": {
-    "@holochain/client": "^0.12.0",
+    "@holochain/client": "^0.14.1",
     "@holochain/tryorama": "^0.11.2",
-    "@msgpack/msgpack": "^2.7.0",
-    "@whi/holo-hash": "^0.3.0",
-    "@whi/holochain-backdrop": "^1.0.3",
-    "@whi/holochain-client": "^0.80.0",
-    "vitest": "^0.25.3",
-    "ws": "^8.12.1"
+    "@msgpack/msgpack": "^2.8.0",
+    "@whi/holo-hash": "^0.5.0",
+    "@whi/holochain-backdrop": "^2.2.1",
+    "@whi/holochain-client": "^0.83.0",
+    "vitest": "^0.31.0",
+    "ws": "^8.13.0"
   },
   "type": "module",
   "devDependencies": {
-    "vite": "^3.2.4"
+    "vite": "^3.2.6"
   }
 }

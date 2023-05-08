@@ -2,7 +2,7 @@ use deepkey_integrity::*;
 use hdk::prelude::*;
 
 #[hdk_extern]
-pub fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<()> {
+pub fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<ActionHash> {
     // key anchor must be created from the key being registered
     // so we need to get the new key from the key registration
     let new_key = match key_registration.clone() {
@@ -28,33 +28,13 @@ pub fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<(
         }
     };
 
-    create_entry(EntryTypes::KeyRegistration(key_registration))?;
+    let key_registration_hash = create_entry(EntryTypes::KeyRegistration(key_registration))?;
     create_entry(EntryTypes::KeyAnchor(KeyAnchor::from_agent_key(new_key)))?;
-    Ok(())
+    Ok(key_registration_hash)
 }
 
-// This writes a KeyRegistration::Create from a new AgentPubKey
-// But the README has a more modular set of functions
-// Consider scrapping this in favor of generating a KeyRegistration separately
 #[hdk_extern]
-pub fn register_key(new_key: AgentPubKey) -> ExternResult<()> {
-    let my_pubkey = agent_info()?.agent_latest_pubkey;
-    let author_signature = sign(my_pubkey, new_key.clone())?;
-    let key_generation = KeyGeneration {
-        new_key: new_key.clone(),
-        new_key_signing_of_author: author_signature,
-    };
-
-    let key_registration = KeyRegistration::Create(key_generation);
-
-    // write the key registration to the chain
-    create_entry(EntryTypes::KeyRegistration(key_registration))?;
-    // now write the key anchor
-    // create_entry(EntryTypes::KeyAnchor(KeyAnchor::new(new_key)))?;
-    Ok(())
-}
-#[hdk_extern]
-pub fn get_key_registration_from_agent_pubkey_key_anchor(
+pub fn get_key_registration_from_key_anchor(
     agent_pubkey: AgentPubKey,
 ) -> ExternResult<Option<Record>> {
     let key_anchor = KeyAnchor::from_agent_key(agent_pubkey);
@@ -72,6 +52,7 @@ pub fn get_key_registration_from_agent_pubkey_key_anchor(
         .flatten();
     Ok(key_registration_record)
 }
+
 
 
 // #[hdk_extern]
