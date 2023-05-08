@@ -82,24 +82,24 @@ pub fn validate_create_link_change_rule_updates(
     target_address: AnyLinkableHash,
     _tag: LinkTag,
 ) -> ExternResult<ValidateCallbackResult> {
-    let action_hash = ActionHash::from(base_address);
-    let record = must_get_valid_record(action_hash)?;
-    let _change_rule: crate::ChangeRule = record
-        .entry()
-        .to_app_option()
-        .map_err(|e| wasm_error!(e))?
-        .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
-            "Linked action must reference an entry"
-        ))))?;
-    let action_hash = ActionHash::from(target_address);
-    let record = must_get_valid_record(action_hash)?;
-    let _change_rule: crate::ChangeRule = record
-        .entry()
-        .to_app_option()
-        .map_err(|e| wasm_error!(e))?
-        .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
-            "Linked action must reference an entry"
-        ))))?;
+    // let action_hash = ActionHash::from(base_address);
+    // let record = must_get_valid_record(action_hash)?;
+    // let _change_rule: crate::ChangeRule = record
+    //     .entry()
+    //     .to_app_option()
+    //     .map_err(|e| wasm_error!(e))?
+    //     .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+    //         "Linked action must reference an entry"
+    //     ))))?;
+    // let action_hash = ActionHash::from(target_address);
+    // let record = must_get_valid_record(action_hash)?;
+    // let _change_rule: crate::ChangeRule = record
+    //     .entry()
+    //     .to_app_option()
+    //     .map_err(|e| wasm_error!(e))?
+    //     .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+    //         "Linked action must reference an entry"
+    //     ))))?;
     Ok(ValidateCallbackResult::Valid)
 }
 pub fn validate_delete_link_change_rule_updates(

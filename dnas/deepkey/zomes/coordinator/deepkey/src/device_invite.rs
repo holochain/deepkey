@@ -32,31 +32,38 @@ pub fn get_device_invite(device_invite_hash: ActionHash) -> ExternResult<Option<
 pub fn get_device_invites_for_keyset_root(
     keyset_root_hash: ActionHash,
 ) -> ExternResult<Vec<Record>> {
-    let links = get_links(keyset_root_hash, LinkTypes::KeysetRootToDeviceInvites, None)?;
-    let get_input: Vec<GetInput> = links
-        .into_iter()
-        .map(|link| GetInput::new(ActionHash::from(link.target).into(), GetOptions::default()))
-        .collect();
-    let records: Vec<Record> = HDK
-        .with(|hdk| hdk.borrow().get(get_input))?
-        .into_iter()
-        .filter_map(|r| r)
-        .collect();
-    Ok(records)
+    // let links = get_links(keyset_root_hash, LinkTypes::KeysetRootToDeviceInvites, None)?;
+    // let get_input: Vec<GetInput> = links
+    //     .into_iter()
+    //     .map(|link| GetInput::new(ActionHash::from(link.target).into(), GetOptions::default()))
+    //     .collect();
+    // let records: Vec<Record> = HDK
+    //     .with(|hdk| hdk.borrow().get(get_input))?
+    //     .into_iter()
+    //     .filter_map(|r| r)
+    //     .collect();
+    // Ok(records)
+    Err(wasm_error!(WasmErrorInner::Guest(
+        "Not implemented".into()
+    )))
 }
 #[hdk_extern]
 pub fn get_device_invites_for_invitee(invitee: AgentPubKey) -> ExternResult<Vec<Record>> {
-    let links = get_links(invitee, LinkTypes::InviteeToDeviceInvites, None)?;
-    let get_input: Vec<GetInput> = links
-        .into_iter()
-        .map(|link| GetInput::new(ActionHash::from(link.target).into(), GetOptions::default()))
-        .collect();
-    let records: Vec<Record> = HDK
-        .with(|hdk| hdk.borrow().get(get_input))?
-        .into_iter()
-        .filter_map(|r| r)
-        .collect();
-    Ok(records)
+    // let links = get_links(invitee, LinkTypes::InviteeToDeviceInvites, None)?;
+    // let get_input: Vec<GetInput> = links
+    //     .into_iter()
+    //     .map(|link| GetInput::new(ActionHash::from(link.target).into(), GetOptions::default()))
+    //     .collect();
+    // let records: Vec<Record> = HDK
+    //     .with(|hdk| hdk.borrow().get(get_input))?
+    //     .into_iter()
+    //     .filter_map(|r| r)
+    //     .collect();
+    // Ok(records)
+    Err(wasm_error!(WasmErrorInner::Guest(
+        "Not implemented".into()
+    )))
+
 }
 
 /// Create a new device invitation for the given agent and return the acceptance.

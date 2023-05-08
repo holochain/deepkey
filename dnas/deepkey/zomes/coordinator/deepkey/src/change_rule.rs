@@ -10,19 +10,20 @@ pub fn create_change_rule(change_rule: ChangeRule) -> ExternResult<Record> {
 }
 #[hdk_extern]
 pub fn get_change_rule(original_change_rule_hash: ActionHash) -> ExternResult<Option<Record>> {
-    let links = get_links(
-        original_change_rule_hash.clone(),
-        LinkTypes::ChangeRuleUpdates,
-        None,
-    )?;
-    let latest_link = links
-        .into_iter()
-        .max_by(|link_a, link_b| link_b.timestamp.cmp(&link_a.timestamp));
-    let latest_change_rule_hash = match latest_link {
-        Some(link) => ActionHash::from(link.target.clone()),
-        None => original_change_rule_hash.clone(),
-    };
-    get(latest_change_rule_hash, GetOptions::default())
+    // let links = get_links(
+    //     original_change_rule_hash.clone(),
+    //     LinkTypes::ChangeRuleUpdates,
+    //     None,
+    // )?;
+    // let latest_link = links
+    //     .into_iter()
+    //     .max_by(|link_a, link_b| link_b.timestamp.cmp(&link_a.timestamp));
+    // let latest_change_rule_hash = match latest_link {
+    //     Some(link) => ActionHash::from(link.target.clone()),
+    //     None => original_change_rule_hash.clone(),
+    // };
+    // get(latest_change_rule_hash, GetOptions::default())
+    Ok(None)
 }
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UpdateChangeRuleInput {
