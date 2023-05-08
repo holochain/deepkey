@@ -13,3 +13,10 @@ hdk = { workspace = true }
 serde = { workspace = true }
 
 deepkey_integrity = { workspace = true } 
+
+[dev-dependencies]
+holochain = { workspace = true }
+tokio =  { workspace = true }
+serial_test =  { workspace = true }
+futures =  { workspace = true }
+
