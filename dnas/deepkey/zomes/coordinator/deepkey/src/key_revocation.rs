@@ -26,7 +26,7 @@ pub fn authorize_key_revocation(key_revocation: KeyRevocation) -> ExternResult<K
 
     let my_authorization = (0, my_signature); // TODO: replace 0 with index of my agent's key in authorized_signers
     let mut authorizations = key_revocation.revocation_authorization;
-    // authorizations.push(my_authorization);
+    authorizations.push(my_authorization);
     let new_key_revocation = KeyRevocation {
         prior_key_registration: key_revocation.prior_key_registration,
         revocation_authorization: authorizations,
