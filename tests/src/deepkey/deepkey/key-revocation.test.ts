@@ -22,9 +22,17 @@ type KeyGeneration = {
   new_key_signing_of_author: Signature
 }
 
-type KeyRegistration = {}
+type KeyRegistration = {
+  new_key: Buffer
+  new_key_signing_of_author: Buffer
+}
 
-test("revoke", async (t) => {
+type KeyRevocation = {
+  prior_key_registration: ActionHash
+  revoction_authorization: []
+}
+
+test("revoke key registration", async (t) => {
   await runScenario(async (scenario) => {
     try {
       const appSource = { appBundleSource: { path: DNA_PATH } }
@@ -47,29 +55,30 @@ test("revoke", async (t) => {
         "instantiate_key_generation",
         newKeyToRegister
       )
-      await deepkeyZomeCall(alice)<null>("new_key_registration", {
-        Create: {
-          ...keyGeneration,
-        },
-      })
-
-      // Retrieve the KeyRegistration via its KeyAnchor
-      const createdKeyRegistrationRecord = await deepkeyZomeCall(alice)<Record>(
-        "get_key_registration_from_key_anchor",
-        newKeyToRegister
+      const keyReg1Action = await deepkeyZomeCall(alice)<ActionHash>(
+        "new_key_registration",
+        { Create: { ...keyGeneration } }
       )
+      let keyRevocation = await deepkeyZomeCall(
+        alice
+      )<any>("instantiate_key_revocation", keyReg1Action)
 
-
-      // expect(isPresent(createdKeyRegistrationRecord.entry)).toBeTruthy()
-
-      // const createdKeyRegistrationEntry = (
-      //   createdKeyRegistrationRecord.entry as { Present: Entry }
-      // ).Present.entry
-      // const storedKeyRegistration = decode(
-      //   createdKeyRegistrationEntry as Uint8Array
+      keyRevocation = await deepkeyZomeCall(alice)<any>(
+        "authorize_key_revocation",
+        keyRevocation
+      )
+      console.log(keyRevocation)
+      const keyReg2Action = await deepkeyZomeCall(alice)<ActionHash>(
+        "create_key_revocation_record",
+        keyRevocation
+      )
+      // const keyReg = await deepkeyZomeCall(alice)<Record>(
+      //   "get_key_registration_from_key_anchor",
+      //   newKeyToRegister
       // )
-      // expect(storedKeyRegistration).toEqual(keyRegistration)
+      // expect(isPresent(keyReg.entry))
     } catch (e) {
+      console.error(e)
       throw e.data.data
     }
   })

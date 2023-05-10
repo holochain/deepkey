@@ -1,16 +1,16 @@
 use deepkey_integrity::*;
 use hdk::prelude::*;
 
-// // function instantiate_key_revocation creates and returns a KeyRevocation in an ExternResult
-// #[hdk_extern]
-// pub fn instantiate_key_revocation(
-//     prior_key_registration: ActionHash,
-// ) -> ExternResult<KeyRevocation> {
-//     Ok(KeyRevocation {
-//         prior_key_registration,
-//         revocation_authorization: Vec::new(),
-//     })
-// }
+// function instantiate_key_revocation creates and returns a KeyRevocation in an ExternResult
+#[hdk_extern]
+pub fn instantiate_key_revocation(
+    prior_key_registration: ActionHash,
+) -> ExternResult<KeyRevocation> {
+    Ok(KeyRevocation {
+        prior_key_registration,
+        revocation_authorization: Vec::new(),
+    })
+}
 
 #[hdk_extern]
 /// Receives a KeyRevocation, which in the simplest case could be a
@@ -36,13 +36,21 @@ pub fn authorize_key_revocation(key_revocation: KeyRevocation) -> ExternResult<K
 
 #[hdk_extern]
 pub fn create_key_revocation_record(key_revocation: KeyRevocation) -> ExternResult<Record> {
-    let key_revocation_hash = create_entry(&EntryTypes::KeyRevocation(key_revocation.clone()))?;
+    let key_revocation_hash1 = create_entry(&EntryTypes::KeyRevocation(key_revocation.clone()))?;
+    let key_revocation_hash = update_entry(
+        // key_revocation.prior_key_registration.clone(),
+        key_revocation_hash1.clone(),
+        &EntryTypes::KeyRevocation(key_revocation.clone()),
+    )?;
     let record = get(key_revocation_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
         WasmErrorInner::Guest(String::from(
             "Could not find the newly created KeyRevocation"
         ))
     ))?;
     Ok(record)
+    // Err(wasm_error!(WasmErrorInner::Guest(String::from(
+    //     "create_key_revocation_record is not implemented"
+    // ))))
 }
 
 #[hdk_extern]
