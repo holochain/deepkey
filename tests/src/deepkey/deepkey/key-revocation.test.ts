@@ -32,7 +32,7 @@ type KeyRevocation = {
   revoction_authorization: []
 }
 
-test("revoke key registration", async (t) => {
+test.only("revoke key registration", async (t) => {
   await runScenario(async (scenario) => {
     try {
       const appSource = { appBundleSource: { path: DNA_PATH } }
@@ -49,29 +49,57 @@ test("revoke key registration", async (t) => {
 
       await scenario.shareAllAgents()
 
-      const newKeyToRegister = await fakeAgentPubKey()
-      // // First get the KeyGeneration, with valid signature of the new key from the Deepkey chain agent
+      // What's the time?
+      // const sysTime = await deepkeyZomeCall(alice)<number>("now", [])
+      // console.log("sysTime", sysTime)
+      // const sysTime = Buffer.alloc(8);
+      // sysTime.writeBigInt64LE(BigInt(Math.floor(Date.now() * 1000)));
+      const sysTime = Math.floor(Date.now() * 1000)
+
+      const keyToRevoke = await fakeAgentPubKey()
+      // First get the KeyGeneration, with valid signature of the new key from the Deepkey chain agent
       const keyGeneration = await deepkeyZomeCall(alice)<KeyGeneration>(
         "instantiate_key_generation",
-        newKeyToRegister
+        keyToRevoke
       )
       const keyReg1Action = await deepkeyZomeCall(alice)<ActionHash>(
         "new_key_registration",
         { Create: { ...keyGeneration } }
       )
-      let keyRevocation = await deepkeyZomeCall(
-        alice
-      )<any>("instantiate_key_revocation", keyReg1Action)
+      const keyAnchorRecord = await deepkeyZomeCall(alice)<any>(
+        "get_agent_pubkey_key_anchor",
+        keyToRevoke
+      )
+      // expect(keyAnchorRecord).toBeDefined()
+      const keyAnchor = (decode(keyAnchorRecord.entry.Present.entry) as any)
+        .bytes
 
+      let keyRevocation = await deepkeyZomeCall(alice)<any>(
+        "instantiate_key_revocation",
+        keyReg1Action
+      )
       keyRevocation = await deepkeyZomeCall(alice)<any>(
         "authorize_key_revocation",
         keyRevocation
       )
-      console.log(keyRevocation)
+
+      // key anchor query: key should be valid
+      const keyStateBefore = await deepkeyZomeCall(alice)<ActionHash>(
+        "key_state",
+        [keyAnchor, sysTime]
+      )
+      expect(keyStateBefore).toEqual({ Valid: null })
       const keyReg2Action = await deepkeyZomeCall(alice)<ActionHash>(
-        "create_key_revocation_record",
+        "revoke_key",
         keyRevocation
       )
+      // key anchor query: key revoked
+      const keyStateAfter = await deepkeyZomeCall(alice)<ActionHash>(
+        "key_state",
+        [keyAnchor, sysTime]
+      )
+      expect(keyStateAfter).toEqual({ Invalidated: null })
+ 
       // const keyReg = await deepkeyZomeCall(alice)<Record>(
       //   "get_key_registration_from_key_anchor",
       //   newKeyToRegister
@@ -79,7 +107,7 @@ test("revoke key registration", async (t) => {
       // expect(isPresent(keyReg.entry))
     } catch (e) {
       console.error(e)
-      throw e.data.data
+      throw e
     }
   })
 })

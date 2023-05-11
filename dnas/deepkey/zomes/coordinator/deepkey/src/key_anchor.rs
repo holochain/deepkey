@@ -8,43 +8,47 @@ pub enum KeyState {
     Valid,
 }
 
+#[hdk_extern]
 pub fn key_state((key_anchor_bytes, _timestamp): ([u8; 32], Timestamp)) -> ExternResult<KeyState> {
-    #[allow(unused_variables)]
     let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(KeyAnchor {
         bytes: key_anchor_bytes,
     }))?;
 
     // TODO: get details here
     // find any deletes, anything pointing to this key anchor
-    // let details_opt = get_details(key_anchor_hash, GetOptions::default())?;
+    let details_opt = get_details(key_anchor_hash.clone(), GetOptions::default())?;
 
-    // let key_anchor_opt = get(key_anchor_hash.clone(), GetOptions::default())?;
-    // if let None = key_anchor_opt {
-    //     return Ok(KeyState::NotFound);
-    // }
-    // let key_anchor = key_anchor_opt.unwrap();
+    let key_anchor_opt = get(key_anchor_hash.clone(), GetOptions::default())?;
+    if let None = key_anchor_opt {
+        return Ok(KeyState::NotFound);
+    }
+    let key_anchor = key_anchor_opt.unwrap();
 
-    // let key_registration_actionhash_opt = key_anchor.action().prev_action();
-    // if let None = key_registration_actionhash_opt {
-    //     return Ok(KeyState::NotFound);
-    // }
-    // let key_registration_actionhash = key_registration_actionhash_opt.unwrap().clone();
+    let key_registration_actionhash_opt = key_anchor.action().prev_action();
+    if let None = key_registration_actionhash_opt {
+        return Ok(KeyState::NotFound);
+    }
+    let key_registration_actionhash = key_registration_actionhash_opt.unwrap().clone();
 
-    // let key_registration_record_opt = get(key_registration_actionhash, GetOptions::default())?;
-    // if let None = key_registration_record_opt {
-    //     return Ok(KeyState::NotFound);
-    // }
-    // let key_registration_record = key_registration_record_opt.unwrap().clone();
+    let key_registration_record_opt = get(key_registration_actionhash, GetOptions::default())?;
+    if let None = key_registration_record_opt {
+        return Ok(KeyState::NotFound);
+    }
+    let key_registration_record = key_registration_record_opt.unwrap().clone();
 
-    // let key_registration_opt = key_registration_record.entry.into_option();
-    // if let None = key_registration_opt {
-    //     return Ok(KeyState::NotFound);
-    // }
-    // let key_registration_entry = key_registration_opt.unwrap().clone();
+    let key_registration_opt = key_registration_record.entry.into_option();
+    if let None = key_registration_opt {
+        return Ok(KeyState::NotFound);
+    }
+    let key_registration_entry = key_registration_opt.unwrap().clone();
 
-    // let key_registration = KeyRegistration::try_from(key_registration_entry)?;
-
-    Ok(KeyState::Valid)
+    let key_registration = KeyRegistration::try_from(key_registration_entry)?;
+    match key_registration {
+        KeyRegistration::Create(_) => Ok(KeyState::Valid),
+        KeyRegistration::CreateOnly(_) => Ok(KeyState::Valid),
+        KeyRegistration::Update(_, _) => Ok(KeyState::Valid),
+        KeyRegistration::Delete(_) => Ok(KeyState::Invalidated),
+    }
 }
 
 #[hdk_extern]

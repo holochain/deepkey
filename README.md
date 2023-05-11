@@ -420,7 +420,7 @@ pub struct KeyRevocation {
 
 #### Validation
 
-- The `KeyRevocation` record must be an `Update`
+- The `KeyRevocation` record must be an `Update` (Update the `KeyRegistration` entry with a `KeyRegistration::Update` or `KeyRegistration::Delete`)
 - The `original_action_address` of the `Update` action must be the `prior_key_registration` of the `KeyRevocation`
 - The prior change rule from the prior generator (see above) must `authorize` the prior `KeyRegistration` hash with the `KeyRevocation` authorization vec
 

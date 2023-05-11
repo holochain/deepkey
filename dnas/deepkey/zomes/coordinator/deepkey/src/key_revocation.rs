@@ -35,22 +35,47 @@ pub fn authorize_key_revocation(key_revocation: KeyRevocation) -> ExternResult<K
 }
 
 #[hdk_extern]
-pub fn create_key_revocation_record(key_revocation: KeyRevocation) -> ExternResult<Record> {
-    let key_revocation_hash1 = create_entry(&EntryTypes::KeyRevocation(key_revocation.clone()))?;
-    let key_revocation_hash = update_entry(
-        // key_revocation.prior_key_registration.clone(),
-        key_revocation_hash1.clone(),
-        &EntryTypes::KeyRevocation(key_revocation.clone()),
+pub fn revoke_key(key_revocation: KeyRevocation) -> ExternResult<()> {
+    let registration_record = get(
+        key_revocation.prior_key_registration.clone(),
+        GetOptions::default(),
+    )?
+    .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+        "Cannot find the KeyRegistration to be revoked"
+    ))))?;
+    let registration = registration_record
+        .entry()
+        .to_app_option::<KeyRegistration>()
+        .map_err(|err| wasm_error!(WasmErrorInner::Guest(err.to_string())))?
+        .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Cannot find the KeyRegistration to be revoked"
+        ))))?;
+    let agent_pubkey = match registration {
+        KeyRegistration::Create(key_generation) => Ok(key_generation.new_key),
+        KeyRegistration::CreateOnly(_) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
+            "CreateOnly is Unimplemented"
+        ))))?,
+        KeyRegistration::Update(_, key_generation) => Ok(key_generation.new_key),
+        KeyRegistration::Delete(_) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Cannot revoke a KeyRegistration that is already revoked"
+        )))),
+    }?;
+    let key_anchor = KeyAnchor::from_agent_key(agent_pubkey);
+    let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(key_anchor.clone()))?;
+    let old_key_anchor_record =
+        get(key_anchor_hash, GetOptions::default())?.ok_or(wasm_error!(WasmErrorInner::Guest(
+            String::from("Could not find the KeyAnchor for the KeyRegistration to be revoked")
+        )))?;
+
+    update_entry(
+        key_revocation.prior_key_registration.clone(),
+        &EntryTypes::KeyRegistration(KeyRegistration::Delete(key_revocation.clone())),
     )?;
-    let record = get(key_revocation_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
-        WasmErrorInner::Guest(String::from(
-            "Could not find the newly created KeyRevocation"
-        ))
-    ))?;
-    Ok(record)
-    // Err(wasm_error!(WasmErrorInner::Guest(String::from(
-    //     "create_key_revocation_record is not implemented"
-    // ))))
+    update_entry(
+        old_key_anchor_record.action_address().clone(),
+        &EntryTypes::KeyAnchor(key_anchor),
+    )?;
+    Ok(())
 }
 
 #[hdk_extern]
