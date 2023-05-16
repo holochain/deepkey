@@ -3,17 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "test": "TRYORAMA_LOG_LEVEL=${TRYORAMA_LOG_LEVEL:-error} NODE_NO_WARNINGS=1 vitest --threads=false --run  -t ${TESTS:-.*}"
+    "test": "TRYORAMA_LOG_LEVEL=${TRYORAMA_LOG_LEVEL:-error} NODE_NO_WARNINGS=1 vitest --run -t ${TESTS:-.*}"
   },
   "author": "",
   "license": "CAL-1.0",
   "dependencies": {
     "@holochain/client": "^0.14.1",
-    "@holochain/tryorama": "^0.11.2",
+    "@holochain/tryorama": "^0.13.0",
     "@msgpack/msgpack": "^2.8.0",
-    "@whi/holo-hash": "^0.5.0",
-    "@whi/holochain-backdrop": "^2.2.1",
-    "@whi/holochain-client": "^0.83.0",
     "vitest": "^0.31.0",
     "ws": "^8.13.0"
   },

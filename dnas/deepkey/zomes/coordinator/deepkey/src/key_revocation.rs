@@ -36,20 +36,17 @@ pub fn authorize_key_revocation(key_revocation: KeyRevocation) -> ExternResult<K
 
 #[hdk_extern]
 pub fn revoke_key(key_revocation: KeyRevocation) -> ExternResult<()> {
-    let registration_record = get(
+    let registration = get(
         key_revocation.prior_key_registration.clone(),
         GetOptions::default(),
     )?
+    .map(|record| record.entry().to_app_option::<KeyRegistration>())
+    .transpose()
+    .map_err(|err| wasm_error!(WasmErrorInner::Guest(err.to_string())))?
+    .flatten()
     .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
         "Cannot find the KeyRegistration to be revoked"
     ))))?;
-    let registration = registration_record
-        .entry()
-        .to_app_option::<KeyRegistration>()
-        .map_err(|err| wasm_error!(WasmErrorInner::Guest(err.to_string())))?
-        .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
-            "Cannot find the KeyRegistration to be revoked"
-        ))))?;
     let agent_pubkey = match registration {
         KeyRegistration::Create(key_generation) => Ok(key_generation.new_key),
         KeyRegistration::CreateOnly(_) => Err(wasm_error!(WasmErrorInner::Guest(String::from(

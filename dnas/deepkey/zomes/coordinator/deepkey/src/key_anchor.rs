@@ -17,6 +17,7 @@ pub fn key_state((key_anchor_bytes, _timestamp): ([u8; 32], Timestamp)) -> Exter
     // TODO: get details here
     // find any deletes, anything pointing to this key anchor
     let details_opt = get_details(key_anchor_hash.clone(), GetOptions::default())?;
+    // Here you can find the latest update or delete!
 
     let key_anchor_opt = get(key_anchor_hash.clone(), GetOptions::default())?;
     if let None = key_anchor_opt {
