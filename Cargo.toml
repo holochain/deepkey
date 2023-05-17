@@ -10,12 +10,12 @@ members = ["dnas/*/zomes/coordinator/*", "dnas/*/zomes/integrity/*"]
 
 [workspace.dependencies]
 serde = "1"
-hdi = { version = "0.3.0" }
-hdk = { version = "0.3.0-beta-dev.0" }
-holochain = { version = "0.3.0-beta-dev.0", default-features = false, features = [ "sweetest" ] }
-tokio = { version = "^1.3", features = ["full"] }
-serial_test = "2.0.0"
-futures = { version = "0.3.1", default-features = false }
+hdi = { version = "0.2.2" } # "0.3.0"
+hdk = { version = "0.1.2" } # "0.3.0-beta-dev.0"
+# holochain = { version = "0.3.0-beta-dev.0", default-features = false, features = [ "sweetest" ] }
+# tokio = { version = "^1.3", features = ["full"] }
+# serial_test = "2.0.0"
+# futures = { version = "0.3.1", default-features = false }
 
 [workspace.dependencies.deepkey]
 path = "dnas/deepkey/zomes/coordinator/deepkey"

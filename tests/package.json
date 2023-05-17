@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "test": "TRYORAMA_LOG_LEVEL=${TRYORAMA_LOG_LEVEL:-error} NODE_NO_WARNINGS=1 vitest --run -t ${TESTS:-.*}"
+    "test": "TRYORAMA_LOG_LEVEL=${TRYORAMA_LOG_LEVEL:-error} NODE_NO_WARNINGS=1 vitest --threads false --run -t ${TESTS:-.*}"
   },
   "author": "",
   "license": "CAL-1.0",
