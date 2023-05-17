@@ -54,8 +54,8 @@ pub fn validate_delete_device_invite_acceptance(
 }
 pub fn validate_create_link_device_invite_to_device_invite_acceptances(
     _action: CreateLink,
-    base_address: AnyLinkableHash,
-    target_address: AnyLinkableHash,
+    _base_address: AnyLinkableHash,
+    _target_address: AnyLinkableHash,
     _tag: LinkTag,
 ) -> ExternResult<ValidateCallbackResult> {
     // Check the entry type for the given action hash

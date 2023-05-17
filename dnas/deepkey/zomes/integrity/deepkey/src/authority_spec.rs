@@ -49,7 +49,7 @@ pub fn validate_delete_authority_spec(
 pub fn validate_create_link_signer_to_authority_specs(
     _action: CreateLink,
     _base_address: AnyLinkableHash,
-    target_address: AnyLinkableHash,
+    _target_address: AnyLinkableHash,
     _tag: LinkTag,
 ) -> ExternResult<ValidateCallbackResult> {
     // let action_hash = ActionHash::from(target_address);

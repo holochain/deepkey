@@ -9,7 +9,7 @@ pub fn create_change_rule(change_rule: ChangeRule) -> ExternResult<Record> {
     Ok(record)
 }
 #[hdk_extern]
-pub fn get_change_rule(original_change_rule_hash: ActionHash) -> ExternResult<Option<Record>> {
+pub fn get_change_rule(_original_change_rule_hash: ActionHash) -> ExternResult<Option<Record>> {
     // let links = get_links(
     //     original_change_rule_hash.clone(),
     //     LinkTypes::ChangeRuleUpdates,

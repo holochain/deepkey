@@ -28,7 +28,7 @@ pub fn get_device_invite_acceptance(
 }
 #[hdk_extern]
 pub fn get_device_invite_acceptances_for_device_invite(
-    device_invite_hash: ActionHash,
+    _device_invite_hash: ActionHash,
 ) -> ExternResult<Vec<Record>> {
     // let links = get_links(
     //     device_invite_hash,

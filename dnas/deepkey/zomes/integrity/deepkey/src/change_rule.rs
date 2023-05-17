@@ -78,8 +78,8 @@ pub fn validate_delete_change_rule(
 }
 pub fn validate_create_link_change_rule_updates(
     _action: CreateLink,
-    base_address: AnyLinkableHash,
-    target_address: AnyLinkableHash,
+    _base_address: AnyLinkableHash,
+    _target_address: AnyLinkableHash,
     _tag: LinkTag,
 ) -> ExternResult<ValidateCallbackResult> {
     // let action_hash = ActionHash::from(base_address);

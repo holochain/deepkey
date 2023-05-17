@@ -23,7 +23,7 @@ pub fn get_authority_spec(authority_spec_hash: ActionHash) -> ExternResult<Optio
     get(authority_spec_hash, GetOptions::default())
 }
 #[hdk_extern]
-pub fn get_authority_specs_for_signer(signer: AgentPubKey) -> ExternResult<Vec<Record>> {
+pub fn get_authority_specs_for_signer(_signer: AgentPubKey) -> ExternResult<Vec<Record>> {
     // let links = get_links(signer, LinkTypes::SignerToAuthoritySpecs, None)?;
     // let get_input: Vec<GetInput> = links
     //     .into_iter()

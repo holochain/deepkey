@@ -56,8 +56,8 @@ pub fn validate_delete_device_invite(
 }
 pub fn validate_create_link_keyset_root_to_device_invites(
     _action: CreateLink,
-    base_address: AnyLinkableHash,
-    target_address: AnyLinkableHash,
+    _base_address: AnyLinkableHash,
+    _target_address: AnyLinkableHash,
     _tag: LinkTag,
 ) -> ExternResult<ValidateCallbackResult> {
     // let action_hash = ActionHash::from(base_address);
@@ -94,7 +94,7 @@ pub fn validate_delete_link_keyset_root_to_device_invites(
 pub fn validate_create_link_invitee_to_device_invites(
     _action: CreateLink,
     _base_address: AnyLinkableHash,
-    target_address: AnyLinkableHash,
+    _target_address: AnyLinkableHash,
     _tag: LinkTag,
 ) -> ExternResult<ValidateCallbackResult> {
     // let action_hash = ActionHash::from(target_address);

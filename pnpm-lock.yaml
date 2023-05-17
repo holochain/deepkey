@@ -32,8 +32,8 @@ importers:
         specifier: ^0.14.1
         version: 0.14.1
       '@holochain/tryorama':
-        specifier: ^0.13.0
-        version: 0.13.0
+        specifier: ^0.11.2
+        version: 0.11.2
       '@msgpack/msgpack':
         specifier: ^2.8.0
         version: 2.8.0
@@ -84,6 +84,22 @@ packages:
       build: 0.1.4
     dev: true
 
+  /@holochain/client@0.12.5(ws@8.13.0):
+    resolution: {integrity: sha512-9Q1G8sKEGsqnCl067CaRbzwPZZ5zeDCJdvQ8TJpb+psP2kLJBbHZ2qulMXAlNUz7Pg0l4B1Eh/BFJByJHRLlow==}
+    engines: {node: ^14.13.1 || >=16.0.0 || >=18.0.0}
+    dependencies:
+      '@holochain/serialization': 0.1.0-beta-rc.3
+      '@msgpack/msgpack': 2.8.0
+      '@tauri-apps/api': 1.3.0
+      emittery: 1.0.1
+      isomorphic-ws: 5.0.0(ws@8.13.0)
+      js-base64: 3.7.5
+      lodash-es: 4.17.21
+      tweetnacl: 1.0.3
+    transitivePeerDependencies:
+      - ws
+    dev: false
+
   /@holochain/client@0.14.1:
     resolution: {integrity: sha512-5rWPIRdxhvV+SpKHegKsPSw7AcN1JjtLS5RhAlLT7dsXvn70BcMWsImhBs1sqw69QsbEMKlhqaOH+sOS5LkDBQ==}
     engines: {node: '>=16.0.0 || >=18.0.0'}
@@ -106,11 +122,11 @@ packages:
     resolution: {integrity: sha512-DJx4V2KXHVLciyOGjOYKTM/JLBpBEZ3RsPIRCgf7qmwhQdxXvhi2p+oFFRD51yUT5uC1/MzIVeJCl/R60PwFbw==}
     dev: false
 
-  /@holochain/tryorama@0.13.0:
-    resolution: {integrity: sha512-6otfPSJcmJL64xDhF54dD57zHopr2ytZ9DSnkaKqIy7yWczkUKAb+oTK2h2x/CTYY+knnPmB4k4GMQvhxEUWQQ==}
-    engines: {node: '>=16.0.0 || >=18.0.0'}
+  /@holochain/tryorama@0.11.2:
+    resolution: {integrity: sha512-RCi7QtGejpzfGIx1EKyTX+QnkooGaUAY0TiFHDc5uamCvNNX1Ya6Esgvyrt2zpO5YBUUrSbdbB1gBB3a8bwr7A==}
+    engines: {node: ^14.13.1 || >=16.0.0 || >=18.0.0}
     dependencies:
-      '@holochain/client': 0.14.1
+      '@holochain/client': 0.12.5(ws@8.13.0)
       get-port: 6.1.2
       lodash: 4.17.21
       uuid: 8.3.2
@@ -1176,6 +1192,10 @@ packages:
   /tslib@1.14.1:
     resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
     dev: true
+
+  /tweetnacl@1.0.3:
+    resolution: {integrity: sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw==}
+    dev: false
 
   /type-detect@4.0.8:
     resolution: {integrity: sha512-0fr/mIH1dlO+x7TlcMy+bIDqKPsw/70tVyeHW787goQjhmqaZe10uwLujubK9q9Lg6Fiho1KUKDYz0Z7k7g5/g==}

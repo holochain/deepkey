@@ -9,7 +9,7 @@
   "license": "CAL-1.0",
   "dependencies": {
     "@holochain/client": "^0.14.1",
-    "@holochain/tryorama": "^0.13.0",
+    "@holochain/tryorama": "^0.11.2",
     "@msgpack/msgpack": "^2.8.0",
     "vitest": "^0.31.0",
     "ws": "^8.13.0"
