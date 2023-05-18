@@ -31,10 +31,10 @@ test("invite an agent, and have them accept the invite", async (t) => {
         appSource,
       ])
 
-      await Promise.all([
-        deepkeyZomeCall(alice)("create_keyset_root"),
-        deepkeyZomeCall(bob)("create_keyset_root"),
-      ])
+      // await Promise.all([
+      //   deepkeyZomeCall(alice)("create_keyset_root"),
+      //   deepkeyZomeCall(bob)("create_keyset_root"),
+      // ])
 
       await scenario.shareAllAgents()
 

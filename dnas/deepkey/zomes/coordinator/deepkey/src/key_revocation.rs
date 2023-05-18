@@ -52,9 +52,11 @@ pub fn revoke_key(key_revocation: KeyRevocation) -> ExternResult<()> {
         KeyRegistration::CreateOnly(_) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
             "CreateOnly is Unimplemented"
         ))))?,
-        KeyRegistration::Update(_, key_generation) => Ok(key_generation.new_key),
+        KeyRegistration::Update(_, _) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Cannot revoke: this key has already been revoked and updated to a new key."
+        ))))?,
         KeyRegistration::Delete(_) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
-            "Cannot revoke a KeyRegistration that is already revoked"
+            "Cannot revoke: Key is already revoked"
         )))),
     }?;
     let key_anchor = KeyAnchor::from_agent_key(agent_pubkey);
@@ -68,10 +70,7 @@ pub fn revoke_key(key_revocation: KeyRevocation) -> ExternResult<()> {
         key_revocation.prior_key_registration.clone(),
         &EntryTypes::KeyRegistration(KeyRegistration::Delete(key_revocation.clone())),
     )?;
-    update_entry(
-        old_key_anchor_record.action_address().clone(),
-        &EntryTypes::KeyAnchor(key_anchor),
-    )?;
+    delete_entry(old_key_anchor_record.action_address().clone())?;
     Ok(())
 }
 

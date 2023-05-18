@@ -14,10 +14,22 @@ pub fn key_state((key_anchor_bytes, _timestamp): ([u8; 32], Timestamp)) -> Exter
         bytes: key_anchor_bytes,
     }))?;
 
-    // TODO: get details here
     // find any deletes, anything pointing to this key anchor
-    let _details_opt = get_details(key_anchor_hash.clone(), GetOptions::default())?;
-    // Here you can find the latest update or delete!
+    let key_anchor_details_opt = get_details(key_anchor_hash.clone(), GetOptions::default())?;
+    if let None = key_anchor_details_opt {
+        return Ok(KeyState::NotFound);
+    }
+    let key_anchor_details = key_anchor_details_opt.unwrap();
+    match key_anchor_details {
+        Details::Entry(entry_details) => {
+            if entry_details.deletes.len() > 0 {
+                return Ok(KeyState::Invalidated);
+            }
+        }
+        Details::Record(_) => Err(wasm_error!(WasmErrorInner::Guest(
+            "Problem with KeyAnchor record".into()
+        )))?,
+    };
 
     let key_anchor_opt = get(key_anchor_hash.clone(), GetOptions::default())?;
     if let None = key_anchor_opt {
@@ -47,7 +59,7 @@ pub fn key_state((key_anchor_bytes, _timestamp): ([u8; 32], Timestamp)) -> Exter
     match key_registration {
         KeyRegistration::Create(_) => Ok(KeyState::Valid),
         KeyRegistration::CreateOnly(_) => Ok(KeyState::Valid),
-        KeyRegistration::Update(_, _) => Ok(KeyState::Valid),
+        KeyRegistration::Update(_, _) => Ok(KeyState::Invalidated),
         KeyRegistration::Delete(_) => Ok(KeyState::Invalidated),
     }
 }

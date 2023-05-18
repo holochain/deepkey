@@ -35,10 +35,10 @@ test("new_key_registration", async (t) => {
         appSource,
       ])
 
-      await Promise.all([
-        deepkeyZomeCall(alice)("create_keyset_root"),
-        deepkeyZomeCall(bob)("create_keyset_root"),
-      ])
+      // await Promise.all([
+      //   deepkeyZomeCall(alice)("create_keyset_root"),
+      //   deepkeyZomeCall(bob)("create_keyset_root"),
+      // ])
 
       await scenario.shareAllAgents()
 
