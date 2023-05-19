@@ -35,6 +35,7 @@ pub fn authorize_key_revocation(key_revocation: KeyRevocation) -> ExternResult<K
 }
 
 #[hdk_extern]
+// TODO: Couldn't revoke, update, and create just be in a single save_key_registration function?
 pub fn revoke_key(key_revocation: KeyRevocation) -> ExternResult<()> {
     let registration = get(
         key_revocation.prior_key_registration.clone(),

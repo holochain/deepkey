@@ -4,8 +4,8 @@ use hdk::prelude::*;
 #[hdk_entry_helper]
 pub enum KeyState {
     NotFound,
-    Invalidated,
-    Valid,
+    Invalidated(SignedActionHashed),
+    Valid(SignedActionHashed),
 }
 
 #[hdk_extern]
@@ -21,47 +21,76 @@ pub fn key_state((key_anchor_bytes, _timestamp): ([u8; 32], Timestamp)) -> Exter
     }
     let key_anchor_details = key_anchor_details_opt.unwrap();
     match key_anchor_details {
-        Details::Entry(entry_details) => {
-            if entry_details.deletes.len() > 0 {
-                return Ok(KeyState::Invalidated);
-            }
-        }
+        Details::Entry(entry_details) => entry_details
+            .deletes
+            .first()
+            .or(entry_details.updates.first())
+            .map(|action| Ok(KeyState::Invalidated(action.clone())))
+            .or(entry_details
+                .actions
+                .first()
+                .map(|action| Ok(KeyState::Valid(action.clone()))))
+            .unwrap_or(Ok(KeyState::NotFound)),
         Details::Record(_) => Err(wasm_error!(WasmErrorInner::Guest(
             "Problem with KeyAnchor record".into()
         )))?,
-    };
-
-    let key_anchor_opt = get(key_anchor_hash.clone(), GetOptions::default())?;
-    if let None = key_anchor_opt {
-        return Ok(KeyState::NotFound);
     }
-    let key_anchor = key_anchor_opt.unwrap();
 
-    let key_registration_actionhash_opt = key_anchor.action().prev_action();
-    if let None = key_registration_actionhash_opt {
-        return Ok(KeyState::NotFound);
-    }
-    let key_registration_actionhash = key_registration_actionhash_opt.unwrap().clone();
+    // let key_anchor_opt = get(key_anchor_hash.clone(), GetOptions::default())?;
+    // if let None = key_anchor_opt {
+    //     return Ok(KeyState::NotFound);
+    // }
+    // let key_anchor = key_anchor_opt.unwrap();
 
-    let key_registration_record_opt = get(key_registration_actionhash, GetOptions::default())?;
-    if let None = key_registration_record_opt {
-        return Ok(KeyState::NotFound);
-    }
-    let key_registration_record = key_registration_record_opt.unwrap().clone();
+    // let key_registration_actionhash_opt = key_anchor.action().prev_action();
+    // if let None = key_registration_actionhash_opt {
+    //     return Ok(KeyState::NotFound);
+    // }
+    // let key_registration_actionhash = key_registration_actionhash_opt.unwrap().clone();
 
-    let key_registration_opt = key_registration_record.entry.into_option();
-    if let None = key_registration_opt {
-        return Ok(KeyState::NotFound);
-    }
-    let key_registration_entry = key_registration_opt.unwrap().clone();
+    // let key_registration_record_opt = get(key_registration_actionhash, GetOptions::default())?;
+    // if let None = key_registration_record_opt {
+    //     return Ok(KeyState::NotFound);
+    // }
+    // let key_registration_record = key_registration_record_opt.unwrap().clone();
 
-    let key_registration = KeyRegistration::try_from(key_registration_entry)?;
-    match key_registration {
-        KeyRegistration::Create(_) => Ok(KeyState::Valid),
-        KeyRegistration::CreateOnly(_) => Ok(KeyState::Valid),
-        KeyRegistration::Update(_, _) => Ok(KeyState::Invalidated),
-        KeyRegistration::Delete(_) => Ok(KeyState::Invalidated),
-    }
+    // let key_registration_opt = key_registration_record.entry.into_option();
+    // if let None = key_registration_opt {
+    //     return Ok(KeyState::NotFound);
+    // }
+    // let key_registration_entry = key_registration_opt.unwrap().clone();
+
+    // let key_registration = KeyRegistration::try_from(key_registration_entry)?;
+    // match key_registration {
+    //     KeyRegistration::Create(key_generation) => {
+    //         Ok(KeyState::Valid(key_generation))},
+    //     KeyRegistration::CreateOnly(_) => Ok(KeyState::Valid),
+    //     KeyRegistration::Update(_, _) => Ok(KeyState::Invalidated),
+    //     KeyRegistration::Delete(_) => Ok(KeyState::Invalidated),
+    // }
+}
+
+#[hdk_extern]
+// Note, we're still passing in an agent_pubkey; at some point we will want to have methods that
+// take in a KeyAnchor directly.
+pub fn get_key_registration_from_agent_pubkey_key_anchor(
+    agent_pubkey: AgentPubKey,
+) -> ExternResult<Option<Record>> {
+    let key_anchor = KeyAnchor::from_agent_key(agent_pubkey);
+    let key_anchor_clone = key_anchor.clone(); // Clone the key_anchor
+    let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(key_anchor_clone))?;
+    let key_registration_record = get(key_anchor_hash, GetOptions::default())?
+        .map(|key_anchor_element| {
+            key_anchor_element
+                .action()
+                .prev_action()
+                .map(|action| action.to_owned())
+        })
+        .flatten()
+        .map(|key_registration_action| get(key_registration_action.clone(), GetOptions::default()))
+        .transpose()?
+        .flatten();
+    Ok(key_registration_record)
 }
 
 #[hdk_extern]
