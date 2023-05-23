@@ -6,50 +6,126 @@ use holochain::sweettest::{
     SweetCell, SweetConductor, SweetConductorBatch, SweetDnaFile, SweetZome,
 };
 use holochain::test_utils::consistency_10s;
-
+use serial_test::serial;
 use deepkey_integrity::*; // for the types
 
 const DNA_FILEPATH: &str = "../../../workdir/deepkey.dna";
 const ZOME_NAME: &str = "deepkey";
 
+#[serial]
+#[tokio::test(flavor = "multi_thread")]
+async fn revoke_key_registration() {
+    let mut agent_group = setup().await;
+    let agents = agent_group.create_agents().await;
+    let ann = &agents[0];
+
+    let key_generation: KeyGeneration = ann
+        .call("instantiate_key_generation", ann.pubkey.clone())
+        .await;
+    let key_registration_hash: ActionHash = ann
+        .call(
+            "new_key_registration",
+            KeyRegistration::Create(key_generation),
+        )
+        .await;
+    let key_revocation1 = KeyRevocation {
+        prior_key_registration: key_registration_hash,
+        revocation_authorization: Vec::new(),
+    };
+    let key_revocation2: KeyRevocation =
+        ann.call("authorize_key_revocation", key_revocation1).await;
+
+    consistency_10s([&(ann.cell.clone())]).await;
+
+    // Query KeyAnchor; should return the key_registration
+    let key_registration_record: Record = ann
+        .call("get_key_registration_from_key_anchor", ann.pubkey.clone())
+        .await;
+    println!("key_registration_record: {:?}", key_registration_record);
+
+    // let key_registration_hash2: ActionHash = ann
+    //     .call(
+    //         "new_key_registration",
+    //         KeyRegistration::Delete(key_revocation2),
+    //     )
+    //     .await;
+    // // Query via KeyAnchor; should return nothing
+    // let key_registration_record: Record = ann
+    //     .call("get_key_registration_from_key_anchor", ann.pubkey.clone())
+    //     .await;
+    // println!(
+    //     "revoked key_registration_record: {:?}",
+    //     key_registration_record
+    // );
+}
+
+#[serial]
+#[tokio::test(flavor = "multi_thread")]
+async fn create_and_authorize_key_revocation() {
+    let mut agent_group = setup().await;
+    let agents = agent_group.create_agents().await;
+    let ann = &agents[0];
+    // let bob = &agents[1];
+    // let cat = &agents[2];
+
+    // TODO: Install a second test DNA and register that pubkey
+    let key_generation: KeyGeneration = ann
+        .call("instantiate_key_generation", ann.pubkey.clone())
+        .await;
+
+    // Register the new key
+    let key_registration_hash: ActionHash = ann
+        .call(
+            "new_key_registration",
+            KeyRegistration::Create(key_generation),
+        )
+        .await;
+
+    let key_revocation1 = KeyRevocation {
+        prior_key_registration: key_registration_hash,
+        revocation_authorization: Vec::new(),
+    };
+
+    // Ann authorizes the revocation
+    let key_revocation2: KeyRevocation =
+        ann.call("authorize_key_revocation", key_revocation1).await;
+
+    consistency_10s([&(ann.cell.clone())]).await;
+    assert_eq!(key_revocation2.revocation_authorization.len(), 1);
+}
+
+#[serial]
 #[tokio::test(flavor = "multi_thread")]
 async fn create_and_retrieve_key_registration() {
     let mut agent_group = setup().await;
     let agents = agent_group.create_agents().await;
     let ann = &agents[0];
-    let bob = &agents[1];
-    let cat = &agents[2];
+    // let bob = &agents[1];
+    // let cat = &agents[2];
 
     let key_generation: KeyGeneration = ann
-        .call("instantiate_key_generation", bob.pubkey.clone())
+        .call("instantiate_key_generation", ann.pubkey.clone())
         .await;
 
     let key_registration = KeyRegistration::Create(key_generation);
 
     // Register the new key
-    let _unit: () = ann
+    let _hash: ActionHash = ann
         .call("new_key_registration", key_registration.clone())
         .await;
 
     let key_registration_record: Record = ann
-        .call(
-            "get_key_registration_from_agent_pubkey_key_anchor",
-            bob.pubkey.clone(),
-        )
+        .call("get_key_registration_from_key_anchor", ann.pubkey.clone())
         .await;
-
-    consistency_10s([
-        &(ann.cell.clone()),
-        &(bob.cell.clone()),
-        &(cat.cell.clone()),
-    ])
-    .await;
 
     let key_registration2: KeyRegistration = key_registration_record
         .entry
         .to_app_option::<KeyRegistration>()
         .unwrap()
         .unwrap();
+
+    consistency_10s([&(ann.cell.clone())]).await;
+
     assert_eq!(key_registration, key_registration2);
 }
 
@@ -127,6 +203,13 @@ where
 }
 
 // Examples:
+
+// consistency_10s([
+//     &(ann.cell.clone()),
+//     &(bob.cell.clone()),
+//     &(cat.cell.clone()),
+// ])
+// .await;
 
 // ann.follow(FollowInput {
 //     agent: bob.pubkey.clone(),

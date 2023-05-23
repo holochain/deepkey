@@ -108,42 +108,42 @@ export interface DeviceInviteAcceptance {
 
 
 
-export interface KeyGeneration { 
-  new_key: AgentPubKey;
+// export interface KeyGeneration { 
+//   new_key: AgentPubKey;
 
-  new_key_signing_of_author: ActionHash;
-}
-
-
-
-
-
-export interface KeyRevocation { 
-  prior_key_registration: ActionHash;
-
-  revocation_authorization: Array<ActionHash>;
-}
-
-
-
-
-export interface Create {
-  type:  
-    | 'Update'
-        | 'Delete'
-    ;
-}
-
-export interface KeyRegistration { 
-  key_registration: Create;
-}
+//   new_key_signing_of_author: ActionHash;
+// }
 
 
 
 
 
-export interface KeyAnchor { 
-  bytes: Array<number>;
-}
+// export interface KeyRevocation { 
+//   prior_key_registration: ActionHash;
+
+//   revocation_authorization: Array<ActionHash>;
+// }
+
+
+
+
+// export interface Create {
+//   type:  
+//     | 'Update'
+//         | 'Delete'
+//     ;
+// }
+
+// export interface KeyRegistration { 
+//   key_registration: Create;
+// }
+
+
+
+
+
+// export interface KeyAnchor { 
+//   bytes: Array<number>;
+// }
 
 

@@ -1,5 +1,6 @@
 use crate::AuthoritySpec;
 use hdi::prelude::*;
+
 pub type Authorization = (u8, Signature);
 #[hdk_entry_helper]
 #[derive(Clone)]

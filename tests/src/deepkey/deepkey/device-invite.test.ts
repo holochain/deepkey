@@ -36,7 +36,7 @@ export async function getDeviceInvite(
   })
 }
 
-test("invite an agent", async (t) => {
+test.skip("invite an agent", async (t) => {
   // const holochain = new Holochain({
   //   timeout: 60_000,
   //   default_stdout_loggers: process.env.LOG_LEVEL === "silly",

@@ -332,7 +332,7 @@ The structure of a `KeyGeneration` is:
 ```rust
 pub struct KeyGeneration {
     new_key: AgentPubKey, // New key associated with current chain and KSR
-    new_key_signing_of_author: Signature, // The author of this chain must sign the new key
+    new_key_signing_of_author: Signature, // The new key must sign the Deepkey agent to join the Keyset
     // Ensure the generator has the same author as the KeyRegistration.
     generator: ActionHash, // This is the key authorized to generate new keys on this chain
     generator_signature: Signature, // The generator key signing the new key
@@ -420,9 +420,9 @@ pub struct KeyRevocation {
 
 #### Validation
 
-- The `KeyRevocation` record must be an `Update`
+- The `KeyRevocation` record must be an `Update` (Update the `KeyRegistration` entry with a `KeyRegistration::Update` or `KeyRegistration::Delete`)
 - The `original_action_address` of the `Update` action must be the `prior_key_registration` of the `KeyRevocation`
-- The prior change rule from the prior generator (see above) must `authorize` the prior `KeyRegistration` with the `KeyRevocation` authorization vec
+- The prior change rule from the prior generator (see above) must `authorize` the prior `KeyRegistration` hash with the `KeyRevocation` authorization vec
 
 ### KeyAnchor API
 

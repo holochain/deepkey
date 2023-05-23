@@ -17,5 +17,5 @@
     "incremental": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts"]
+  "include": ["deepkey.d.ts", "src/**/*.ts", "src/**/*.d.ts"]
 }

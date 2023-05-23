@@ -2,7 +2,8 @@ use deepkey_integrity::*;
 use hdk::prelude::*;
 
 #[hdk_extern]
-pub fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<()> {
+// TODO: Only accept Create or CreateOnly
+pub fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<ActionHash> {
     // key anchor must be created from the key being registered
     // so we need to get the new key from the key registration
     let new_key = match key_registration.clone() {
@@ -28,49 +29,58 @@ pub fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<(
         }
     };
 
-    create_entry(EntryTypes::KeyRegistration(key_registration))?;
+    let key_registration_hash = create_entry(EntryTypes::KeyRegistration(key_registration))?;
     create_entry(EntryTypes::KeyAnchor(KeyAnchor::from_agent_key(new_key)))?;
-    Ok(())
+    Ok(key_registration_hash)
 }
 
-// This writes a KeyRegistration::Create from a new AgentPubKey
-// But the README has a more modular set of functions
-// Consider scrapping this in favor of generating a KeyRegistration separately
 #[hdk_extern]
-pub fn register_key(new_key: AgentPubKey) -> ExternResult<()> {
-    let my_pubkey = agent_info()?.agent_latest_pubkey;
-    let author_signature = sign(my_pubkey, new_key.clone())?;
-    let key_generation = KeyGeneration {
-        new_key: new_key.clone(),
-        new_key_signing_of_author: author_signature,
-    };
+pub fn update_key(
+    (key_revocation, new_key_generation): (KeyRevocation, KeyGeneration),
+) -> ExternResult<()> {
+    let registration = get(
+        key_revocation.prior_key_registration.clone(),
+        GetOptions::default(),
+    )?
+    .map(|record| record.entry().to_app_option::<KeyRegistration>())
+    .transpose()
+    .map_err(|err| wasm_error!(WasmErrorInner::Guest(err.to_string())))?
+    .flatten()
+    .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+        "Cannot find the KeyRegistration to be revoked"
+    ))))?;
+    let old_agent_pubkey = match registration {
+        KeyRegistration::Create(key_generation) => Ok(key_generation.new_key),
+        KeyRegistration::CreateOnly(_) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
+            "CreateOnly is Unimplemented"
+        ))))?,
+        KeyRegistration::Update(_, _) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Cannot update: this key has already been revoked and updated to a new key."
+        ))))?,
+        KeyRegistration::Delete(_) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Cannot update: Key is already revoked"
+        )))),
+    }?;
+    let old_key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(
+        KeyAnchor::from_agent_key(old_agent_pubkey).clone(),
+    ))?;
+    let old_key_anchor_record = get(old_key_anchor_hash, GetOptions::default())?.ok_or(
+        wasm_error!(WasmErrorInner::Guest(
+            "Could not find the KeyAnchor for the KeyRegistration to be revoked".into()
+        )),
+    )?;
 
-    let key_registration = KeyRegistration::Create(key_generation);
+    let new_key_anchor = KeyAnchor::from_agent_key(new_key_generation.new_key.clone());
 
-    // write the key registration to the chain
-    create_entry(EntryTypes::KeyRegistration(key_registration))?;
-    // now write the key anchor
-    // create_entry(EntryTypes::KeyAnchor(KeyAnchor::new(new_key)))?;
+    update_entry(
+        key_revocation.prior_key_registration.clone(),
+        &EntryTypes::KeyRegistration(KeyRegistration::Update(key_revocation, new_key_generation)),
+    )?;
+    update_entry(
+        old_key_anchor_record.action_address().clone(),
+        &EntryTypes::KeyAnchor(new_key_anchor),
+    )?;
     Ok(())
-}
-#[hdk_extern]
-pub fn get_key_registration_from_agent_pubkey_key_anchor(
-    agent_pubkey: AgentPubKey,
-) -> ExternResult<Option<Record>> {
-    let key_anchor = KeyAnchor::from_agent_key(agent_pubkey);
-    let key_anchor_clone = key_anchor.clone(); // Clone the key_anchor
-    let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(key_anchor_clone))?;
-    let key_registration_record = get(key_anchor_hash, GetOptions::default())?
-        .map(|key_anchor_element| {
-            key_anchor_element.action().prev_action().map(|action| action.to_owned())
-        })
-        .flatten()
-        .map(|key_registration_action| {
-            get(key_registration_action.clone(), GetOptions::default())
-        })
-        .transpose()?
-        .flatten();
-    Ok(key_registration_record)
 }
 
 

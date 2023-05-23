@@ -15,7 +15,7 @@ use hdk::prelude::*;
 use keyset_root::create_keyset_root;
 #[hdk_extern]
 pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
-    // create_keyset_root(())?;
+    create_keyset_root(())?;
     Ok(InitCallbackResult::Pass)
 }
 #[derive(Serialize, Deserialize, Debug)]

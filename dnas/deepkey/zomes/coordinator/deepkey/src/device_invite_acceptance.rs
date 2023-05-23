@@ -26,26 +26,29 @@ pub fn get_device_invite_acceptance(
 ) -> ExternResult<Option<Record>> {
     get(device_invite_acceptance_hash, GetOptions::default())
 }
-// #[hdk_extern]
-// pub fn get_device_invite_acceptances_for_device_invite(
-//     device_invite_hash: ActionHash,
-// ) -> ExternResult<Vec<Record>> {
-//     let links = get_links(
-//         device_invite_hash,
-//         LinkTypes::DeviceInviteToDeviceInviteAcceptances,
-//         None,
-//     )?;
-//     let get_input: Vec<GetInput> = links
-//         .into_iter()
-//         .map(|link| GetInput::new(ActionHash::from(link.target).into(), GetOptions::default()))
-//         .collect();
-//     let records: Vec<Record> = HDK
-//         .with(|hdk| hdk.borrow().get(get_input))?
-//         .into_iter()
-//         .filter_map(|r| r)
-//         .collect();
-//     Ok(records)
-// }
+#[hdk_extern]
+pub fn get_device_invite_acceptances_for_device_invite(
+    _device_invite_hash: ActionHash,
+) -> ExternResult<Vec<Record>> {
+    // let links = get_links(
+    //     device_invite_hash,
+    //     LinkTypes::DeviceInviteToDeviceInviteAcceptances,
+    //     None,
+    // )?;
+    // let get_input: Vec<GetInput> = links
+    //     .into_iter()
+    //     .map(|link| GetInput::new(ActionHash::from(link.target).into(), GetOptions::default()))
+    //     .collect();
+    // let records: Vec<Record> = HDK
+    //     .with(|hdk| hdk.borrow().get(get_input))?
+    //     .into_iter()
+    //     .filter_map(|r| r)
+    //     .collect();
+    // Ok(records)
+    Err(wasm_error!(WasmErrorInner::Guest(
+        "Not implemented".into()
+    )))
+}
 
 #[hdk_extern]
 pub fn accept_invite(invite_acceptance: DeviceInviteAcceptance) -> ExternResult<ActionHash> {
