@@ -306,42 +306,43 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
         },
         FlatOp::RegisterCreateLink {
             link_type,
-            base_address,
-            target_address,
-            tag,
-            action,
+            base_address: _,
+            target_address: _,
+            tag: _,
+            action: _,
         } => match link_type {
-            LinkTypes::SignerToAuthoritySpecs => validate_create_link_signer_to_authority_specs(
-                action,
-                base_address,
-                target_address,
-                tag,
-            ),
-            LinkTypes::ChangeRuleUpdates => {
-                validate_create_link_change_rule_updates(action, base_address, target_address, tag)
-            }
-            LinkTypes::KeysetRootToDeviceInvites => {
-                validate_create_link_keyset_root_to_device_invites(
-                    action,
-                    base_address,
-                    target_address,
-                    tag,
-                )
-            }
-            LinkTypes::InviteeToDeviceInvites => validate_create_link_invitee_to_device_invites(
-                action,
-                base_address,
-                target_address,
-                tag,
-            ),
-            LinkTypes::DeviceInviteToDeviceInviteAcceptances => {
-                validate_create_link_device_invite_to_device_invite_acceptances(
-                    action,
-                    base_address,
-                    target_address,
-                    tag,
-                )
-            }
+            // LinkTypes::SignerToAuthoritySpecs => validate_create_link_signer_to_authority_specs(
+            //     action,
+            //     base_address,
+            //     target_address,
+            //     tag,
+            // ),
+            // LinkTypes::ChangeRuleUpdates => {
+            //     validate_create_link_change_rule_updates(action, base_address, target_address, tag)
+            // }
+            // LinkTypes::KeysetRootToDeviceInvites => {
+            //     validate_create_link_keyset_root_to_device_invites(
+            //         action,
+            //         base_address,
+            //         target_address,
+            //         tag,
+            //     )
+            // }
+            // LinkTypes::InviteeToDeviceInvites => validate_create_link_invitee_to_device_invites(
+            //     action,
+            //     base_address,
+            //     target_address,
+            //     tag,
+            // ),
+            // LinkTypes::DeviceInviteToDeviceInviteAcceptances => {
+            //     validate_create_link_device_invite_to_device_invite_acceptances(
+            //         action,
+            //         base_address,
+            //         target_address,
+            //         tag,
+            //     )
+            // }
+            _ => Ok(ValidateCallbackResult::Valid),
         },
         FlatOp::RegisterDeleteLink {
             link_type,
@@ -886,50 +887,51 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 }
             }
             OpRecord::CreateLink {
-                base_address,
-                target_address,
-                tag,
+                base_address: _,
+                target_address: _,
+                tag: _,
                 link_type,
-                action,
+                action: _,
             } => match link_type {
-                LinkTypes::SignerToAuthoritySpecs => {
-                    validate_create_link_signer_to_authority_specs(
-                        action,
-                        base_address,
-                        target_address,
-                        tag,
-                    )
-                }
-                LinkTypes::ChangeRuleUpdates => validate_create_link_change_rule_updates(
-                    action,
-                    base_address,
-                    target_address,
-                    tag,
-                ),
-                LinkTypes::KeysetRootToDeviceInvites => {
-                    validate_create_link_keyset_root_to_device_invites(
-                        action,
-                        base_address,
-                        target_address,
-                        tag,
-                    )
-                }
-                LinkTypes::InviteeToDeviceInvites => {
-                    validate_create_link_invitee_to_device_invites(
-                        action,
-                        base_address,
-                        target_address,
-                        tag,
-                    )
-                }
-                LinkTypes::DeviceInviteToDeviceInviteAcceptances => {
-                    validate_create_link_device_invite_to_device_invite_acceptances(
-                        action,
-                        base_address,
-                        target_address,
-                        tag,
-                    )
-                }
+                // LinkTypes::SignerToAuthoritySpecs => {
+                //     validate_create_link_signer_to_authority_specs(
+                //         action,
+                //         base_address,
+                //         target_address,
+                //         tag,
+                //     )
+                // }
+                // LinkTypes::ChangeRuleUpdates => validate_create_link_change_rule_updates(
+                //     action,
+                //     base_address,
+                //     target_address,
+                //     tag,
+                // ),
+                // LinkTypes::KeysetRootToDeviceInvites => {
+                //     validate_create_link_keyset_root_to_device_invites(
+                //         action,
+                //         base_address,
+                //         target_address,
+                //         tag,
+                //     )
+                // }
+                // LinkTypes::InviteeToDeviceInvites => {
+                //     validate_create_link_invitee_to_device_invites(
+                //         action,
+                //         base_address,
+                //         target_address,
+                //         tag,
+                //     )
+                // }
+                // LinkTypes::DeviceInviteToDeviceInviteAcceptances => {
+                //     validate_create_link_device_invite_to_device_invite_acceptances(
+                //         action,
+                //         base_address,
+                //         target_address,
+                //         tag,
+                //     )
+                // }
+                _ => Ok(ValidateCallbackResult::Valid),
             },
             OpRecord::DeleteLink {
                 original_action_hash,

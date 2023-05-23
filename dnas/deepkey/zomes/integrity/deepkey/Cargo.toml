@@ -2,6 +2,7 @@
 name = "deepkey_integrity"
 version = "0.0.1"
 edition = "2021"
+resolver = "2"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
