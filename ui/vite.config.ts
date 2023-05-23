@@ -1,14 +1,9 @@
-import { defineConfig } from 'vite';
-import checker from 'vite-plugin-checker';
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vitest/config';
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    checker({
-      typescript: true,
-      eslint: {
-        lintCommand: 'eslint --ext .ts,.html . --ignore-path .gitignore',
-      },
-    }),
-  ]
+	plugins: [sveltekit()],
+	test: {
+		include: ['src/**/*.{test,spec}.{js,ts}']
+	}
 });

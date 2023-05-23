@@ -1,24 +1,38 @@
-# DeepKey UI
-anchor, private metadata that's private entry
+# create-svelte
 
-store derivation, dna that you created the key from
+Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
 
-private metadata, private entry
+## Creating a project
 
-show local keys, show managed keys
+If you're seeing this, you've probably already done this step. Congrats!
 
-revoked keys strikethrough - replaced key 
+```bash
+# create a new project in the current directory
+npm create svelte@latest
 
-Revocations that happened on this chain, for keys not managed by this chain
+# create a new project in my-app
+npm create svelte@latest my-app
+```
 
-Keys under our management; and keys we managed that's not on our chain
+## Developing
 
-make a call across every keyset node
+Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
 
-key space: cap grant to call this function, keylist
+```bash
+npm run dev
 
-identify which keys are used for what
+# or start the server and open the app in a new browser tab
+npm run dev -- --open
+```
 
-foreign key actions
+## Building
 
-Key Explorer UI
+To create a production version of your app:
+
+```bash
+npm run build
+```
+
+You can preview the production build with `npm run preview`.
+
+> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
