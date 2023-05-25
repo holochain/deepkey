@@ -1,3 +1,4 @@
+
 # Deepkey
 
 Deepkey is a happ to provide a decentralized public key infrastructure (DPKI) for keys associated with Holochain conductors and applications. Similar to centralised services like Keybase, we want users to be able to manage their "keyset" by adding and removing devices and public/private keypairs.
@@ -20,20 +21,20 @@ Deepkey is a foundational app for all other Holochain app keys. Therefore, it is
 
 The most common call to Deepkey is `key_state((Key, Timestamp))` to query the validity of a key at a particular time.
 
-## Interations with Lair
+## Interactions with Lair
 
-Lair is designed to generate new keys from randomness, or generate new keys from a seed with derivation instructions.  In order for DeepKey to accomplish it's purpose of being able to regenerate your app keys from a device seed or a master seed for all of your devices, DeepKey must store the derivation patterns and instruct Lair to produce keys using them.  
+Lair is designed to generate new keys from randomness, or generate new keys from a seed with derivation instructions.  In order for Deepkey to accomplish it's purpose of being able to regenerate your app keys from a device seed or a master seed for all of your devices, Deepkey must store the derivation patterns and instruct Lair to produce keys using them.  
 
 ### Workflows
 
-- When you install holochain, DeepKey needs to inject seeds (master, revocation, device) and provide a UI for password encrypting and [exporting your seeds](https://docs.rs/hc_seed_bundle/latest/hc_seed_bundle/) for off device storage.
-- Every time a new holochain app is installed, DeepKey must specify the derivation to generate the new agent keys in Lair, and store in a private entry the derivation and app DNA it was used with.
+- When you install Holochain, Deepkey needs to inject seeds (master, revocation, device) and provide a UI for password encrypting and [exporting your seeds](https://docs.rs/hc_seed_bundle/latest/hc_seed_bundle/) for off device storage.
+- Every time a new Holochain app is installed, Deepkey must specify the derivation to generate the new agent keys in Lair, and store in a private entry the derivation and app DNA it was used with.
 - Replacing compromised keys
-- Deleting or revoking keys which have been abaonadoned
-- generating an invitation for a new device to join your keyspace
-- accepting an invitation for a new device
-- changing the rules for managing your keys
-- approve a key change or deletion, whether doing that locally with a revocation key or receiving that remotely as a social signing request
+- Deleting or revoking keys which have been abandoned
+- Generating an invitation for a new device to join your keyspace
+- Accepting an invitation for a new device
+- Changing the rules for managing your keys
+- Approving a key change or deletion, whether doing that locally with a revocation key or receiving that remotely as a social signing request
 
 ## Joining the DHT
 
