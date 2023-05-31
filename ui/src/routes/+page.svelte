@@ -3,8 +3,8 @@
 
 <style lang="postcss">
 	:global(html) {
-		background-color: #4a5568;
+		/* background-color: #4a5568; */
 		/* theme(colors.gray.100); */
-        @apply text-center;
+        /* @apply text-center; */
 	}
 </style>

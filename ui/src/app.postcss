@@ -1,11 +1,15 @@
 /* Write your global styles here, in PostCSS syntax */
-/* Write your global styles here, in PostCSS syntax */
-@import '@blueprintjs/icons/lib/css/blueprint-icons.css';
+/* @import '@blueprintjs/icons/lib/css/blueprint-icons.css'; */
 
-h1 {
-	/* color: rgb(49, 75, 189); */
+@font-face {
+	/* Reference name */
+	font-family: 'Space Grotesk';
+	/* For multiple files use commas, ex: url(), url(), ... */
+	src: url('/fonts/SpaceGrotesk-VariableFont_wght.ttf');
 }
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+:root {
+    --theme-font-family-base: 'Space Grotesk', sans-serif;
+    --theme-font-family-heading: 'Space Grotesk', sans-serif;
+}
+                        	
