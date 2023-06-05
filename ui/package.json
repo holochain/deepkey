@@ -13,6 +13,7 @@
 		"format": "prettier --plugin-search-dir . --write ."
 	},
 	"devDependencies": {
+		"@iconify-json/iconoir": "^1.1.28",
 		"@skeletonlabs/skeleton": "^1.6.2",
 		"@sveltejs/adapter-auto": "^2.0.0",
 		"@sveltejs/adapter-static": "^2.0.2",
@@ -30,10 +31,11 @@
 		"svelte": "^3.54.0",
 		"svelte-check": "^3.0.1",
 		"svelte-preprocess": "^5.0.3",
+		"svelte-tree": "^0.7.0",
 		"tailwindcss": "^3.3.2",
 		"tslib": "^2.4.1",
 		"typescript": "^5.0.0",
-		"vite": "^4.3.0",
+		"unplugin-icons": "^0.16.2",
 		"vitest": "^0.25.3"
 	},
 	"type": "module"
