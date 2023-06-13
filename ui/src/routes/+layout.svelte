@@ -24,7 +24,7 @@
 	<slot />
 	<!-- ---- / ---- -->
 	<svelte:fragment slot="pageFooter">
-		<footer class="card mt-12 sticky bottom-0">Home</footer>
+		<footer class="card mt-12 p-5 sticky bottom-0">Footer!</footer>
 	</svelte:fragment>
 	<!-- (footer) -->
 </AppShell>

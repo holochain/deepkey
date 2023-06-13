@@ -6,21 +6,23 @@
     "tests"
   ],
   "scripts": {
+    "dev": "VITE_ADMIN_PORT=$(port) VITE_APP_PORT=$(port) pnpm x",
+    "x": "hc s clean && pnpm build:happ && UI_PORT=5173 concurrently \"pnpm --filter ./ui dev\" \"pnpm start:happ\"",
+    "start:happ": "echo \"starting with admin $VITE_ADMIN_PORT\" && RUST_LOG=warn echo \"pass\" | hc s -f=$VITE_ADMIN_PORT --piped generate workdir/deepkey.happ --run=$VITE_APP_PORT -a deepkey network mdns",
     "start": "AGENTS=2 pnpm run network",
-    "network": "hc s clean && pnpm run build:happ && UI_PORT=8888 concurrently \"pnpm start -w ui\" \"pnpm run launch:happ\" \"holochain-playground\"",
+    "network": "hc s clean && pnpm run build:happ && UI_PORT=5173 concurrently \"pnpm --filter ./ui dev\" \"pnpm launch:happ\" holochain-playground",
     "test": "pnpm run build:zomes && hc app pack workdir --recursive && pnpm test --filter tests",
     "test:watch": "cargo watch -i 'tests/vitest.config.*' --clear -- pnpm test",
     "test:debug:watch": "TRYORAMA_LOG_LEVEL=info pnpm test:watch",
     "test:sweet:watch": "cargo watch --clear -- pnpm run test:sweet",
     "test:sweet": "pnpm run build:happ && set -x && RUST_BACKTRACE=1 cargo test -- --nocapture",
-    "launch:happ": "echo \"pass\" | RUST_LOG=warn hc launch --piped -n $AGENTS workdir/deepkey.happ --ui-port $UI_PORT network mdns",
-    "package": "pnpm run build:happ && pnpm run package -w ui && hc web-app pack workdir --recursive",
+    "launch:happ": "echo \"pass\" | RUST_LOG=warn hc launch --piped -n ${AGENTS:-1} workdir/deepkey.happ --ui-port ${UI_PORT:-5173} network mdns",
+    "package": "pnpm run build:happ && pnpm run package --filter ui && hc web-app pack workdir --recursive",
     "build:happ": "pnpm run build:zomes && hc app pack workdir --recursive",
-    "build:zomes": "RUSTFLAGS='' CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
-    "dev-build": "RUSTFLAGS=\"$RUSTFLAGS -A dead_code -A unused-imports\" pnpm build:zomes"
+    "build:zomes": "RUSTFLAGS='' CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown"
   },
   "devDependencies": {
-    "@holochain-playground/cli": "^0.0.11",
+    "@holochain-playground/cli": "^0.1.1",
     "concurrently": "^6.5.1",
     "concurrently-repeat": "^0.0.1",
     "cross-env": "^7.0.3",

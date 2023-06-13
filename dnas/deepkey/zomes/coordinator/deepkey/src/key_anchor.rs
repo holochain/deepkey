@@ -35,39 +35,6 @@ pub fn key_state((key_anchor_bytes, _timestamp): ([u8; 32], Timestamp)) -> Exter
             "Problem with KeyAnchor record".into()
         )))?,
     }
-
-    // let key_anchor_opt = get(key_anchor_hash.clone(), GetOptions::default())?;
-    // if let None = key_anchor_opt {
-    //     return Ok(KeyState::NotFound);
-    // }
-    // let key_anchor = key_anchor_opt.unwrap();
-
-    // let key_registration_actionhash_opt = key_anchor.action().prev_action();
-    // if let None = key_registration_actionhash_opt {
-    //     return Ok(KeyState::NotFound);
-    // }
-    // let key_registration_actionhash = key_registration_actionhash_opt.unwrap().clone();
-
-    // let key_registration_record_opt = get(key_registration_actionhash, GetOptions::default())?;
-    // if let None = key_registration_record_opt {
-    //     return Ok(KeyState::NotFound);
-    // }
-    // let key_registration_record = key_registration_record_opt.unwrap().clone();
-
-    // let key_registration_opt = key_registration_record.entry.into_option();
-    // if let None = key_registration_opt {
-    //     return Ok(KeyState::NotFound);
-    // }
-    // let key_registration_entry = key_registration_opt.unwrap().clone();
-
-    // let key_registration = KeyRegistration::try_from(key_registration_entry)?;
-    // match key_registration {
-    //     KeyRegistration::Create(key_generation) => {
-    //         Ok(KeyState::Valid(key_generation))},
-    //     KeyRegistration::CreateOnly(_) => Ok(KeyState::Valid),
-    //     KeyRegistration::Update(_, _) => Ok(KeyState::Invalidated),
-    //     KeyRegistration::Delete(_) => Ok(KeyState::Invalidated),
-    // }
 }
 
 #[hdk_extern]
