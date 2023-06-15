@@ -9,6 +9,7 @@
 		getSigningCredentials
 	} from '@holochain/client';
 	import { AppAgentWebsocket, encodeHashToBase64 } from '@holochain/client';
+	import { decode, encode } from '@msgpack/msgpack';
 	// import Fa from 'svelte-fa'
 	// import { faMap, faUser, faGear, faCalendar, faPlus, faHome, faSync, faArrowRightFromBracket, faArrowRotateBack } from '@fortawesome/free-solid-svg-icons';
 	import { getCookie, deleteCookie, setCookie } from 'svelte-cookie';
@@ -17,38 +18,39 @@
 	import KeyPlusIcon from '~icons/iconoir/key-alt-plus';
 
 	import Tree from 'svelte-tree';
-	// import { DeepkeyClient } from '../lib/deepkey-client';
+	import { DeepkeyClient } from '../lib/deepkey-client';
 
 	let client: AppAgentClient | undefined;
-	let loading = true;
-	let state: 'initial' | 'authorizing' | 'loading' | 'error' | 'success' = 'authorizing';
-	let syncing = false;
-	let error: any = undefined;
+	// let loading = true;
+	// let state: 'initial' | 'authorizing' | 'loading' | 'error' | 'success' = 'authorizing';
+	// let syncing = false;
+	// let error: any = undefined;
 	let creds;
 	let cell_id;
+	let appInfo;
 
-	$: error;
+	// $: error;
 	$: client;
-	$: loading;
-	$: state;
+	// $: loading;
+	// $: state;
 
-	const base64ToUint8 = (b64: string) => Base64.toUint8Array(b64);
+	// const base64ToUint8 = (b64: string) => Base64.toUint8Array(b64);
 
-	const jsonToCreds = (json: string) => {
-		const creds = JSON.parse(json);
-		creds.creds.capSecret = base64ToUint8(creds.creds.capSecret);
-		creds.creds.keyPair.publicKey = base64ToUint8(creds.creds.keyPair.publicKey);
-		creds.creds.keyPair.secretKey = base64ToUint8(creds.creds.keyPair.secretKey);
-		creds.creds.signingKey = base64ToUint8(creds.creds.signingKey);
-		return creds;
-	};
+	// const jsonToCreds = (json: string) => {
+	// 	const creds = JSON.parse(json);
+	// 	creds.creds.capSecret = base64ToUint8(creds.creds.capSecret);
+	// 	creds.creds.keyPair.publicKey = base64ToUint8(creds.creds.keyPair.publicKey);
+	// 	creds.creds.keyPair.secretKey = base64ToUint8(creds.creds.keyPair.secretKey);
+	// 	creds.creds.signingKey = base64ToUint8(creds.creds.signingKey);
+	// 	return creds;
+	// };
 
 	onMount(async () => {
 		// We pass '' as url because it will dynamically be replaced in launcher environments
 		const adminPort: string = import.meta.env.VITE_ADMIN_PORT;
 		let appPort: string = import.meta.env.VITE_APP_PORT;
-		console.log('adminPort', adminPort);
-		console.log('appPort', appPort);
+		// console.log('adminPort', adminPort);
+		// console.log('appPort', appPort);
 		let installed_app_id = 'deepkey';
 		// const credsJson = getCookie('creds');
 		// if (credsJson) {
@@ -63,37 +65,39 @@
 				window.location.hostname
 			}:${creds.appPort}`;
 			client = await AppAgentWebsocket.connect(url, installed_app_id);
-			const appInfo = await client.appInfo();
+			appInfo = await client.appInfo();
 			console.log('appInfo', appInfo);
 			const { cell_id } = appInfo.cell_info[installed_app_id][0]['provisioned'].cell_id[0];
 			setSigningCredentials(cell_id, creds.creds);
 		} else {
 			client = await AppAgentWebsocket.connect(`ws://localhost:${appPort}`, installed_app_id);
-			const appInfo = await client.appInfo();
+			appInfo = await client.appInfo();
 			console.log('appInfo', appInfo);
 			// cell_id = appInfo.cell_info[installed_app_id][0]['provisioned'].cell_id[0];
 			// console.log('cell_id', cell_id);
 			if (adminPort) {
-				console.log('Connecting to adminPort');
+				// console.log('Connecting to adminPort');
 				const adminWebsocket = await AdminWebsocket.connect(`ws://localhost:${adminPort}`);
 				const cellIds = await adminWebsocket.listCellIds();
 				cell_id = cellIds[0];
-				console.log('cellIds', cellIds);
+				// console.log('cellIds', cellIds);
 
 				await adminWebsocket.authorizeSigningCredentials(cellIds[0]);
-				const c = getSigningCredentials(cellIds[0]);
+				creds = getSigningCredentials(cellIds[0]);
+				console.log(creds);
 				// setCookie('creds', JSON.stringify(c));
-				state = 'loading';
+				// state = 'loading';
 			}
 		}
 
-		await client.callZome({
-			cell_id,
-			zome_name: installed_app_id,
-			fn_name: 'key_state',
-			// provenance: agentKey,
-			payload: null
-		});
+		const agentKey = client.myPubKey;
+		console.log('agentKey', agentKey);
+		
+		const deepkey = new DeepkeyClient(client, cell_id);
+
+		const res2 = await deepkey.key_state(agentKey);
+		console.log('res2', res2);
+
 	});
 
 	let visible: boolean = false;
@@ -132,8 +136,6 @@
 		}
 	];
 
-	// const holoClient = AppAgentWebsocket.connect('ws://localhost:8888');
-	// const deepkey = new DeepkeyClient(holoClient);
 </script>
 
 <!-- Top section -->
