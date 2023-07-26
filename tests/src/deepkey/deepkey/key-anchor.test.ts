@@ -210,7 +210,7 @@ test.skip("create and read KeyAnchor", async () => {
     });
     assert.deepEqual(
       sample,
-      decode((createReadOutput.entry as any).Present.entry) as any
+      msgpack.decode((createReadOutput.entry as any).Present.entry) as any
     );
   });
 });
@@ -266,7 +266,7 @@ test.skip("create and update KeyAnchor", async () => {
     });
     assert.deepEqual(
       contentUpdate,
-      decode((readUpdatedOutput0.entry as any).Present.entry) as any
+      msgpack.decode((readUpdatedOutput0.entry as any).Present.entry) as any
     );
 
     // Alice updates the KeyAnchor again
@@ -294,7 +294,7 @@ test.skip("create and update KeyAnchor", async () => {
     });
     assert.deepEqual(
       contentUpdate,
-      decode((readUpdatedOutput1.entry as any).Present.entry) as any
+      msgpack.decode((readUpdatedOutput1.entry as any).Present.entry) as any
     );
   });
 });

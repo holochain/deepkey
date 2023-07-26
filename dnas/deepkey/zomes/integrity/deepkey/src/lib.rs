@@ -47,9 +47,9 @@ pub enum EntryTypes {
 pub enum LinkTypes {
     SignerToAuthoritySpecs,
     ChangeRuleUpdates,
-    KeysetRootToDeviceInvites,
-    InviteeToDeviceInvites,
-    DeviceInviteToDeviceInviteAcceptances,
+    KeysetRootToDeviceInviteAcceptances,
+    InviteeToDeviceInviteAcceptances,
+    DeviceInviteToDeviceInviteAcceptances, // unused for now
 }
 #[hdk_extern]
 pub fn genesis_self_check(_data: GenesisSelfCheckData) -> ExternResult<ValidateCallbackResult> {
@@ -366,7 +366,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 target_address,
                 tag,
             ),
-            LinkTypes::KeysetRootToDeviceInvites => {
+            LinkTypes::KeysetRootToDeviceInviteAcceptances => {
                 validate_delete_link_keyset_root_to_device_invites(
                     action,
                     original_action,
@@ -375,13 +375,15 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     tag,
                 )
             }
-            LinkTypes::InviteeToDeviceInvites => validate_delete_link_invitee_to_device_invites(
-                action,
-                original_action,
-                base_address,
-                target_address,
-                tag,
-            ),
+            LinkTypes::InviteeToDeviceInviteAcceptances => {
+                validate_delete_link_invitee_to_device_invites(
+                    action,
+                    original_action,
+                    base_address,
+                    target_address,
+                    tag,
+                )
+            }
             LinkTypes::DeviceInviteToDeviceInviteAcceptances => {
                 validate_delete_link_device_invite_to_device_invite_acceptances(
                     action,
@@ -973,7 +975,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         create_link.target_address,
                         create_link.tag,
                     ),
-                    LinkTypes::KeysetRootToDeviceInvites => {
+                    LinkTypes::KeysetRootToDeviceInviteAcceptances => {
                         validate_delete_link_keyset_root_to_device_invites(
                             action,
                             create_link.clone(),
@@ -982,7 +984,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                             create_link.tag,
                         )
                     }
-                    LinkTypes::InviteeToDeviceInvites => {
+                    LinkTypes::InviteeToDeviceInviteAcceptances => {
                         validate_delete_link_invitee_to_device_invites(
                             action,
                             create_link.clone(),

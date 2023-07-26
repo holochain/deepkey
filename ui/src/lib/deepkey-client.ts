@@ -9,18 +9,60 @@
 
 // import { EntryRecord } from '@holochain-open-dev/utils';
 // import { UnsubscribeFunction } from 'emittery';
-import { type AgentPubKey } from '@holochain/client';
+import type {
+	ActionHash,
+	AgentPubKey,
+	AppAgentCallZomeRequest,
+	AppAgentClient,
+	HoloHashed
+} from '@holochain/client';
 
-// type KeyAnchor = UInt8Array[32];
-// export function getKeyAnchor(pubkey: AgentPubKey): KeyAnchor {
-// 	return pubkey.slice(4, 36);
-// }
+type KeyAnchor = Uint8Array;
+export function getKeyAnchor(pubkey: AgentPubKey): KeyAnchor {
+	return pubkey.slice(4, 36);
+}
 
+type Authorization = [number, Buffer]; // u8 index, 64 byte signature
+
+type KeyGeneration = {
+	new_key: AgentPubKey;
+	new_key_signing_of_author: Buffer; // 64 bytes
+};
+
+type KeyRevocation = {
+	prior_key_registration: ActionHash;
+	revocation_authorization: Authorization[];
+};
+
+type KeyRegistration =
+	| {
+			Create: KeyGeneration;
+	  }
+	| {
+			CreateOnly: KeyGeneration;
+	  }
+	| {
+			Update: [KeyRevocation, KeyGeneration];
+	  }
+	| {
+			Delete: KeyRevocation;
+	  };
+
+export type KeyState =
+	| {
+			NotFound: null;
+	  }
+	| {
+			Invalidated: { hashed: HoloHashed<KeyRegistration> };
+	  }
+	| {
+			Valid: { hashed: HoloHashed<KeyRegistration> };
+	  };
 export class DeepkeyClient {
 	constructor(
 		public client: AppAgentClient,
-		// public roleName: string,
-		public cellId,
+		public roleName: string,
+		// public cellId: CellId,
 		public zomeName = 'deepkey'
 	) {}
 
@@ -42,18 +84,22 @@ export class DeepkeyClient {
 		return this.callZome('key_state', [agentKey, Date.now()]);
 	}
 
+	// ActionHash of the Keyset Root
+	async keyset_authority(): Promise<ActionHash> {
+		return this.callZome('query_keyset_authority_action_hash', null);
+	}
+
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	callZome(fn_name: string, payload: any) {
 		const req: AppAgentCallZomeRequest = {
-			// role_name: this.roleName,
-			cell_id: this.cellId,
+			role_name: this.roleName,
+			// cell_id: this.cellId,
 			zome_name: this.zomeName,
 			fn_name,
 			payload
 		};
 		return this.client.callZome(req, 30000);
 	}
-
 }
 
 // export const DeepkeyClient = {};

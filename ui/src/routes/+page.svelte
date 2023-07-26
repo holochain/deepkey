@@ -1,32 +1,34 @@
 <script lang="ts">
 	import { onMount, setContext } from 'svelte';
-	import {
-		AdminWebsocket,
-		type AppAgentClient,
-		type GrantedFunctionsType,
-		setSigningCredentials,
-		generateSigningKeyPair,
-		getSigningCredentials
-	} from '@holochain/client';
-	import { AppAgentWebsocket, encodeHashToBase64 } from '@holochain/client';
+	import TreeView from 'svelte-tree-view';
+	
+	import type { AppAgentClient } from '@holochain/client';
 	import { decode, encode } from '@msgpack/msgpack';
 	// import Fa from 'svelte-fa'
 	// import { faMap, faUser, faGear, faCalendar, faPlus, faHome, faSync, faArrowRightFromBracket, faArrowRotateBack } from '@fortawesome/free-solid-svg-icons';
-	import { getCookie, deleteCookie, setCookie } from 'svelte-cookie';
+	// import { getCookie, deleteCookie, setCookie } from 'svelte-cookie';
 	import { Base64 } from 'js-base64';
 	import KeyAltIcon from '~icons/iconoir/key-alt-remove';
 	import KeyPlusIcon from '~icons/iconoir/key-alt-plus';
 
-	import Tree from 'svelte-tree';
 	import { DeepkeyClient } from '../lib/deepkey-client';
+	import { authorizeClient, setupHolochain } from '$lib/holochain-client';
+
+	const data = {
+		a: [1, 2, 3],
+		b: new Map([
+			['c', { d: null }],
+			['e', { f: [9, 8, 7] }]
+		])
+	};
 
 	let client: AppAgentClient | undefined;
 	// let loading = true;
 	// let state: 'initial' | 'authorizing' | 'loading' | 'error' | 'success' = 'authorizing';
 	// let syncing = false;
 	// let error: any = undefined;
-	let creds;
-	let cell_id;
+	let creds: any;
+	let deepkeyCellId;
 	let appInfo;
 
 	// $: error;
@@ -36,106 +38,23 @@
 
 	// const base64ToUint8 = (b64: string) => Base64.toUint8Array(b64);
 
-	// const jsonToCreds = (json: string) => {
-	// 	const creds = JSON.parse(json);
-	// 	creds.creds.capSecret = base64ToUint8(creds.creds.capSecret);
-	// 	creds.creds.keyPair.publicKey = base64ToUint8(creds.creds.keyPair.publicKey);
-	// 	creds.creds.keyPair.secretKey = base64ToUint8(creds.creds.keyPair.secretKey);
-	// 	creds.creds.signingKey = base64ToUint8(creds.creds.signingKey);
-	// 	return creds;
-	// };
-
 	onMount(async () => {
-		// We pass '' as url because it will dynamically be replaced in launcher environments
-		const adminPort: string = import.meta.env.VITE_ADMIN_PORT;
-		let appPort: string = import.meta.env.VITE_APP_PORT;
-		// console.log('adminPort', adminPort);
-		// console.log('appPort', appPort);
-		let installed_app_id = 'deepkey';
-		// const credsJson = getCookie('creds');
-		// if (credsJson) {
-		// 	creds = jsonToCreds(credsJson);
-		// 	installed_app_id = creds.installed_app_id;
-		// }
-		// console.log('creds', credsJson);
+		let app_role = 'deepkey';
 
-		if (creds) {
-			console.log('CREDS', creds);
-			const url = `${window.location.protocol == 'https:' ? 'wss:' : 'ws:'}//${
-				window.location.hostname
-			}:${creds.appPort}`;
-			client = await AppAgentWebsocket.connect(url, installed_app_id);
-			appInfo = await client.appInfo();
-			console.log('appInfo', appInfo);
-			const { cell_id } = appInfo.cell_info[installed_app_id][0]['provisioned'].cell_id[0];
-			setSigningCredentials(cell_id, creds.creds);
-		} else {
-			client = await AppAgentWebsocket.connect(`ws://localhost:${appPort}`, installed_app_id);
-			appInfo = await client.appInfo();
-			console.log('appInfo', appInfo);
-			// cell_id = appInfo.cell_info[installed_app_id][0]['provisioned'].cell_id[0];
-			// console.log('cell_id', cell_id);
-			if (adminPort) {
-				// console.log('Connecting to adminPort');
-				const adminWebsocket = await AdminWebsocket.connect(`ws://localhost:${adminPort}`);
-				const cellIds = await adminWebsocket.listCellIds();
-				cell_id = cellIds[0];
-				// console.log('cellIds', cellIds);
+		client = await setupHolochain();
 
-				await adminWebsocket.authorizeSigningCredentials(cellIds[0]);
-				creds = getSigningCredentials(cellIds[0]);
-				console.log(creds);
-				// setCookie('creds', JSON.stringify(c));
-				// state = 'loading';
-			}
-		}
+		const deepkey = new DeepkeyClient(client, app_role);
 
-		const agentKey = client.myPubKey;
-		console.log('agentKey', agentKey);
-		
-		const deepkey = new DeepkeyClient(client, cell_id);
-
-		const res2 = await deepkey.key_state(agentKey);
+		const res2 = await deepkey.key_state(client.myPubKey);
 		console.log('res2', res2);
+
+		const keyset_authority = await deepkey.keyset_authority();
+		console.log(keyset_authority);
 
 	});
 
-	let visible: boolean = false;
+	let visible: boolean = true;
 	let message: string = 'This is a notification message';
-
-	const tree = [
-		{
-			name: 'This is a root node',
-			children: [
-				{
-					name: 'And it has'
-				},
-				{
-					name: 'two children'
-				}
-			]
-		},
-		{
-			name: 'This is another root node',
-			children: [
-				{
-					name: 'This one is alone'
-				},
-				{
-					name: 'But this one has nested children',
-					children: [
-						{
-							name: 'Like this'
-						},
-						{
-							name: 'and this'
-						}
-					]
-				}
-			]
-		}
-	];
-
 </script>
 
 <!-- Top section -->
@@ -182,10 +101,15 @@
 {/if}
 
 <main class="card p-4 m-5">
-	<Tree {tree} let:node>
-		<div class="name">{node.name}</div>
-	</Tree>
+	<TreeView
+		{data}
+		recursionOpts={{
+			maxDepth: 16,
+			shouldExpandNode: () => true
+		}}
+	/>
 </main>
+
 <footer class="h-32 m-12" />
 
 <!-- 

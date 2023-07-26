@@ -45,9 +45,7 @@ pub fn get_device_invite_acceptances_for_device_invite(
     //     .filter_map(|r| r)
     //     .collect();
     // Ok(records)
-    Err(wasm_error!(WasmErrorInner::Guest(
-        "Not implemented".into()
-    )))
+    Err(wasm_error!(WasmErrorInner::Guest("Not implemented".into())))
 }
 
 #[hdk_extern]
@@ -57,7 +55,30 @@ pub fn accept_invite(invite_acceptance: DeviceInviteAcceptance) -> ExternResult<
     //     MembraneProof::None,
     // );
     // let joining_proof_hash = create_entry(EntryTypes::JoiningProof(joining_proof))?;
-    let acceptance_hash = create_entry(EntryTypes::DeviceInviteAcceptance(invite_acceptance.clone()))?;
+    let invite_record = get(invite_acceptance.invite.clone(), GetOptions::default())?.ok_or(wasm_error!(WasmErrorInner::Guest(String::from("Could not find the invite"))))?;
+    let invite = invite_record.entry.to_app_option::<DeviceInvite>().map_err(|e| {
+        wasm_error!(WasmErrorInner::Guest(format!(
+            "Could not convert entry to DeviceInvite: {:?}",
+            e
+        )))
+    })?.ok_or(wasm_error!(WasmErrorInner::Guest(String::from("Could not find the invite"))))?;
+
+    let acceptance_hash = create_entry(EntryTypes::DeviceInviteAcceptance(
+        invite_acceptance.clone(),
+    ))?;
+
+    create_link(
+        invite_acceptance.keyset_root_authority.clone(),
+        acceptance_hash.clone(),
+        LinkTypes::KeysetRootToDeviceInviteAcceptances,
+        (),
+    )?;
+    create_link(
+        invite.invitee.clone(),
+        acceptance_hash.clone(),
+        LinkTypes::InviteeToDeviceInviteAcceptances,
+        (),
+    )?;
 
     Ok(acceptance_hash)
 }

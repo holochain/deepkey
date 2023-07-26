@@ -1,8 +1,15 @@
 
 
+# Main methods with description
+
+## Getting information
+`query_keyset_authority_action_hash`: Gets the keyset authority (KSR hash) (either device invite acceptance or keyset root) for this conductor
+
+## Inviting
+`invite_agent`: The agent to invite into the keyset. Returns an unsigned DeviceInviteAcceptance.
 
 
-# All Public DeepKey hdk_extern Methods
+# Flat List of all public DeepKey hdk_extern methods
 
 ## authority_spec.rs
 - create_authority_spec

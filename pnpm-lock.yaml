@@ -72,6 +72,9 @@ importers:
       svelte-cookie:
         specifier: ^1.0.1
         version: 1.0.1
+      svelte-tree-view:
+        specifier: ^1.3.3
+        version: 1.3.3(svelte@3.59.1)
     devDependencies:
       '@iconify-json/iconoir':
         specifier: ^1.1.28
@@ -127,9 +130,6 @@ importers:
       svelte-preprocess:
         specifier: ^5.0.3
         version: 5.0.4(postcss-load-config@4.0.1)(postcss@8.4.23)(svelte@3.59.1)(typescript@5.1.3)
-      svelte-tree:
-        specifier: ^0.7.0
-        version: 0.7.0
       tailwindcss:
         specifier: ^3.3.2
         version: 3.3.2
@@ -2971,9 +2971,13 @@ packages:
       typescript: 5.1.3
     dev: true
 
-  /svelte-tree@0.7.0:
-    resolution: {integrity: sha512-22YEdqHvqQ+2OJzFqBznn6QgvoT0DGQPU04Wij5PilWDs4bPpQTbKSaSCWVBwdeNxnfk8ZB7H9J/2s2TNCv+lw==}
-    dev: true
+  /svelte-tree-view@1.3.3(svelte@3.59.1):
+    resolution: {integrity: sha512-MkpOC/+FK1cMRDUy9H4O82s+B20oKBYcq9B1ql+xQ46tueRnqHUC5tRmFpOG1slHy+ZijSEmA0zwtwO1h174Cg==}
+    peerDependencies:
+      svelte: '>=3'
+    dependencies:
+      svelte: 3.59.1
+    dev: false
 
   /svelte@3.58.0:
     resolution: {integrity: sha512-brIBNNB76mXFmU/Kerm4wFnkskBbluBDCjx/8TcpYRb298Yh2dztS2kQ6bhtjMcvUhd5ynClfwpz5h2gnzdQ1A==}
@@ -2983,7 +2987,6 @@ packages:
   /svelte@3.59.1:
     resolution: {integrity: sha512-pKj8fEBmqf6mq3/NfrB9SLtcJcUvjYSWyePlfCqN9gujLB25RitWK8PvFzlwim6hD/We35KbPlRteuA6rnPGcQ==}
     engines: {node: '>= 8'}
-    dev: true
 
   /tailwindcss@3.3.2:
     resolution: {integrity: sha512-9jPkMiIBXvPc2KywkraqsUfbfj+dHDb+JPWtSJa9MLFdrPyazI7q6WX2sUrm7R9eVR7qqv3Pas7EvQFzxKnI6w==}
