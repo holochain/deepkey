@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, setContext } from 'svelte';
+	import { onMount } from 'svelte';
 	import TreeView from 'svelte-tree-view';
 
 	import type { ActionHash, AgentPubKey, AppAgentClient } from '@holochain/client';
@@ -10,8 +10,10 @@
 	import KeyPlusIcon from '~icons/iconoir/key-alt-plus';
 	import AgentIcon from '~icons/iconoir/laptop';
 
+
 	import { DeepkeyClient } from '../lib/deepkey-client';
 	import { authorizeClient, setupHolochain } from '$lib/holochain-client';
+	import InviteAgent from '../components/invite-agent.svelte';
 
 	const data = {
 		a: [1, 2, 3],
@@ -22,34 +24,24 @@
 	};
 
 	let client: AppAgentClient | undefined;
+	let deepkey: DeepkeyClient | undefined;
 	let deepkeyAgentPubkey: AgentPubKey | undefined;
 	let keysetRootAuthority: ActionHash | undefined;
 	let keysetMembers: AgentPubKey[] = [];
 
-	// let loading = true;
-	// let state: 'initial' | 'authorizing' | 'loading' | 'error' | 'success' = 'authorizing';
-	// let syncing = false;
-	// let error: any = undefined;
-	let creds: any;
-	let deepkeyCellId;
-	let appInfo;
-
-	// $: error;
 	$: client;
+	$: deepkey;
 	$: keysetRootAuthority;
 	$: deepkeyAgentPubkey;
 	$: keysetMembers;
-	// $: loading;
-	// $: state;
-
-	// const base64ToUint8 = (b64: string) => Base64.toUint8Array(b64);
 
 	onMount(async () => {
 		let app_role = 'deepkey';
 
 		client = await setupHolochain();
 
-		const deepkey = new DeepkeyClient(client, app_role);
+		deepkey = new DeepkeyClient(client, app_role);
+
 		keysetRootAuthority = await deepkey.keyset_authority();
 
 		// const res2 = await deepkey.key_state(client.myPubKey);
@@ -109,7 +101,7 @@
 	</aside>
 {/if}
 <div class="card p-4 m-5">
-	<h1 class="text-2xl font-bold mb-2">Current Deepkey Agent</h1>
+	<h1 class="text-2xl font-bold mb-2">Current Deepkey Agent Key</h1>
 	<p class="text-gray-500 text-lg">
 		{deepkeyAgentPubkey && Base64.fromUint8Array(deepkeyAgentPubkey)}
 	</p>
@@ -120,16 +112,20 @@
 </div>
 
 <div class="card p-4 m-5">
-	<h3 class="text-2xl mb-4">All Members of this Keyset</h3>
-	<ul class="list flex flex-col">
+	<h3 class="text-2xl mb-4">Members of this Keyset</h3>
+	<InviteAgent {deepkey} />
+
+	<ul class="list flex flex-col mt-6">
 		{#each keysetMembers as member}
 			<li>
 				<span> <AgentIcon class="h-6 w-6" /> </span>
 				<p class="text-gray-500 text-lg">{Base64.fromUint8Array(member)}</p>
-				<span class="chip bg-gradient-to-br variant-gradient-secondary-tertiary">Current Agent</span>
+				<span class="chip bg-gradient-to-br variant-gradient-secondary-tertiary">Me</span
+				>
 			</li>
 		{/each}
 	</ul>
+	
 </div>
 
 <main class="card p-4 m-5">

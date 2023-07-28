@@ -58,6 +58,12 @@ export type KeyState =
 	| {
 			Valid: { hashed: HoloHashed<KeyRegistration> };
 	  };
+
+export type DeviceInviteAcceptance = {
+	keyset_root_authority: ActionHash;
+	invite: ActionHash;
+};
+
 export class DeepkeyClient {
 	constructor(
 		public client: AppAgentClient,
@@ -89,12 +95,16 @@ export class DeepkeyClient {
 		return this.callZome('query_keyset_authority_action_hash', null);
 	}
 
-	// Take the ActionHash of the Keyset Root, 
+	// Take the ActionHash of the Keyset Root,
 	// return the members of the Keyset by their AgentPubKey
 	async query_keyset_members(ksr: ActionHash): Promise<AgentPubKey[]> {
 		return this.callZome('query_keyset_members', ksr);
 	}
-	
+
+	async invite_agent(agentKey: AgentPubKey): Promise<DeviceInviteAcceptance> {
+		return this.callZome('invite_agent', agentKey);
+	}
+
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	callZome(fn_name: string, payload: any) {
 		const req: AppAgentCallZomeRequest = {
