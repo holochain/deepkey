@@ -50,6 +50,7 @@ pub enum LinkTypes {
     KeysetRootToDeviceInviteAcceptances,
     InviteeToDeviceInviteAcceptances,
     DeviceInviteToDeviceInviteAcceptances, // unused for now
+    // KeysetRootToKeyAnchors,
 }
 #[hdk_extern]
 pub fn genesis_self_check(_data: GenesisSelfCheckData) -> ExternResult<ValidateCallbackResult> {

@@ -3,7 +3,8 @@
 # Main methods with description
 
 ## Getting information
-`query_keyset_authority_action_hash`: Gets the keyset authority (KSR hash) (either device invite acceptance or keyset root) for this conductor
+`query_keyset_authority_action_hash`: Gets the keyset authority (KSR actionhash) (either device invite acceptance or keyset root) for this conductor
+`query_keyset_members`: Get the AgentPubKey of every member of a Keyset. (Everyone who's written a device invite acceptance, or who has the KSR on their chain.)
 
 ## Inviting
 `invite_agent`: The agent to invite into the keyset. Returns an unsigned DeviceInviteAcceptance.

@@ -84,11 +84,17 @@ export class DeepkeyClient {
 		return this.callZome('key_state', [agentKey, Date.now()]);
 	}
 
-	// ActionHash of the Keyset Root
+	// Return the ActionHash of the Keyset Root
 	async keyset_authority(): Promise<ActionHash> {
 		return this.callZome('query_keyset_authority_action_hash', null);
 	}
 
+	// Take the ActionHash of the Keyset Root, 
+	// return the members of the Keyset by their AgentPubKey
+	async query_keyset_members(ksr: ActionHash): Promise<AgentPubKey[]> {
+		return this.callZome('query_keyset_members', ksr);
+	}
+	
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	callZome(fn_name: string, payload: any) {
 		const req: AppAgentCallZomeRequest = {
@@ -101,5 +107,3 @@ export class DeepkeyClient {
 		return this.client.callZome(req, 30000);
 	}
 }
-
-// export const DeepkeyClient = {};

@@ -14,7 +14,7 @@
 
 <AppShell>
 	<svelte:fragment slot="header"
-		><AppBar regionPage="relative" slotPageHeader="sticky top-0 z-10">Skeleton</AppBar
+		><AppBar regionPage="relative" slotPageHeader="sticky top-0 z-10">Deepkey Explorer</AppBar
 		></svelte:fragment
 	>
 	<!-- <svelte:fragment slot="sidebarLeft">Sidebar Left</svelte:fragment> -->
@@ -24,7 +24,7 @@
 	<slot />
 	<!-- ---- / ---- -->
 	<svelte:fragment slot="pageFooter">
-		<footer class="card mt-12 p-5 sticky bottom-0">Footer!</footer>
+		<footer class="card mt-12 p-5 sticky bottom-0"><!-- Footer Goes here! --></footer>
 	</svelte:fragment>
 	<!-- (footer) -->
 </AppShell>
