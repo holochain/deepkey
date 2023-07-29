@@ -10,7 +10,6 @@
 	import KeyPlusIcon from '~icons/iconoir/key-alt-plus';
 	import AgentIcon from '~icons/iconoir/laptop';
 
-
 	import { DeepkeyClient } from '../lib/deepkey-client';
 	import { authorizeClient, setupHolochain } from '$lib/holochain-client';
 	import InviteAgent from '../components/invite-agent.svelte';
@@ -54,8 +53,7 @@
 		keysetMembers = await deepkey.query_keyset_members(keysetRootAuthority);
 	});
 
-	let visible: boolean = true;
-	let message: string = 'This is a notification message';
+	let visible: boolean = false;
 </script>
 
 <!-- Top section -->
@@ -120,12 +118,12 @@
 			<li>
 				<span> <AgentIcon class="h-6 w-6" /> </span>
 				<p class="text-gray-500 text-lg">{Base64.fromUint8Array(member)}</p>
-				<span class="chip bg-gradient-to-br variant-gradient-secondary-tertiary">Me</span
-				>
+				{#if Base64.fromUint8Array(member) === Base64.fromUint8Array(deepkeyAgentPubkey ?? Uint8Array.from([]))}
+					<span class="chip bg-gradient-to-br variant-gradient-secondary-tertiary">Me</span>
+				{/if}
 			</li>
 		{/each}
 	</ul>
-	
 </div>
 
 <main class="card p-4 m-5">

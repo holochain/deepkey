@@ -104,6 +104,11 @@ export class DeepkeyClient {
 	async invite_agent(agentKey: AgentPubKey): Promise<DeviceInviteAcceptance> {
 		return this.callZome('invite_agent', agentKey);
 	}
+	async accept_invitation(dia: DeviceInviteAcceptance): Promise<ActionHash> {
+		return this.callZome('accept_invite', dia);
+	}
+
+	
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	callZome(fn_name: string, payload: any) {
