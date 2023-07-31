@@ -57,3 +57,50 @@ pub fn create_keyset_root(_: ()) -> ExternResult<(ActionHash, ActionHash)> {
 pub fn get_keyset_root(keyset_root_hash: ActionHash) -> ExternResult<Option<Record>> {
     get(keyset_root_hash, GetOptions::default())
 }
+
+#[hdk_extern]
+pub fn query_keyset_members(keyset_root_hash: ActionHash) -> ExternResult<Vec<AgentPubKey>> {
+    // Get the PubKey of the Deepkey Agent who wrote the KeysetRoot
+    let keyset_root_record =
+        get(keyset_root_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
+            WasmErrorInner::Guest(String::from("Could not find the Keyset Root"))
+        ))?;
+    let ksr_chain_pubkey = keyset_root_record.action().author().clone();
+
+    let dia_hashes: Vec<ActionHash> = get_links(
+        keyset_root_hash,
+        LinkTypes::KeysetRootToDeviceInviteAcceptances,
+        None,
+    )?
+    .into_iter()
+    .map(|link| link.target.into())
+    .collect();
+    let dia_records: Vec<Record> = dia_hashes
+        .into_iter()
+        .map(|dia_hash| get(dia_hash, GetOptions::default()))
+        .collect::<ExternResult<Vec<Option<Record>>>>()?
+        .into_iter()
+        .filter_map(|x| x)
+        .collect();
+
+    // Query all the Deepkey Agents that wrote the DeviceInviteAcceptances
+    let mut dia_author_pubkeys = dia_records
+        .into_iter()
+        .map(|dia_record| dia_record.action().author().clone())
+        .collect::<Vec<AgentPubKey>>();
+
+    // Don't forget the First Deepkey Agent
+    dia_author_pubkeys.push(ksr_chain_pubkey);
+
+    Ok(dia_author_pubkeys)
+}
+
+#[hdk_extern]
+pub fn query_keyset_keys(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyAnchor>> {
+    let keyset_root_record = get(keyset_root_hash, GetOptions::default())?.ok_or(wasm_error!(
+        WasmErrorInner::Guest(String::from("Could not find the Keyset Root"))
+    ))?;
+    // go from ksr, to list of all key anchors registered on this keyset
+
+    Err(wasm_error!(WasmErrorInner::Guest("Not implemented".into())))
+}

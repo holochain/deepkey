@@ -1,14 +1,11 @@
-import { defineConfig } from 'vite';
-import checker from 'vite-plugin-checker';
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vitest/config';
+import Icons from 'unplugin-icons/vite';
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    checker({
-      typescript: true,
-      eslint: {
-        lintCommand: 'eslint --ext .ts,.html . --ignore-path .gitignore',
-      },
-    }),
-  ]
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	plugins: [sveltekit(), Icons({ compiler: 'svelte' }) as any],
+	test: {
+		include: ['src/**/*.{test,spec}.{js,ts}']
+	}
 });

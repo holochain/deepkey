@@ -9,10 +9,18 @@ pub enum KeyState {
 }
 
 #[hdk_extern]
-pub fn key_state((key_anchor_bytes, _timestamp): ([u8; 32], Timestamp)) -> ExternResult<KeyState> {
-    let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(KeyAnchor {
-        bytes: key_anchor_bytes,
-    }))?;
+pub fn key_state((agent_key, _timestamp): (AgentPubKey, Timestamp)) -> ExternResult<KeyState> {
+    // let key_anchor_bytes = key_anchor_vec.try_into().map_err(|_| {
+    //     wasm_error!(WasmErrorInner::Guest(
+    //         "Could not convert key_anchor_vec to [u8; 32]".into()
+    //     ))
+    // })?;
+    // let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(KeyAnchor {
+    //     bytes: key_anchor_bytes,
+    // }))?;
+    // TODO: should pass in the actual key anchor, but can't deserialize [u8; 32] from JS.
+    // Reference: https://docs.rs/serde_with/1.10.0/serde_with/struct.Bytes.html
+    let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(KeyAnchor::from_agent_key(agent_key)))?;
 
     // find any deletes, anything pointing to this key anchor
     let key_anchor_details_opt = get_details(key_anchor_hash.clone(), GetOptions::default())?;
@@ -25,6 +33,8 @@ pub fn key_state((key_anchor_bytes, _timestamp): ([u8; 32], Timestamp)) -> Exter
             .deletes
             .first()
             .or(entry_details.updates.first())
+            // TODO: use timestamp on the update or delete header to determine if it's invalid before the timestamp
+            // get earliest timestamp, in case multiple updates/deletes happened at different time to the same key
             .map(|action| Ok(KeyState::Invalidated(action.clone())))
             .or(entry_details
                 .actions
@@ -35,39 +45,6 @@ pub fn key_state((key_anchor_bytes, _timestamp): ([u8; 32], Timestamp)) -> Exter
             "Problem with KeyAnchor record".into()
         )))?,
     }
-
-    // let key_anchor_opt = get(key_anchor_hash.clone(), GetOptions::default())?;
-    // if let None = key_anchor_opt {
-    //     return Ok(KeyState::NotFound);
-    // }
-    // let key_anchor = key_anchor_opt.unwrap();
-
-    // let key_registration_actionhash_opt = key_anchor.action().prev_action();
-    // if let None = key_registration_actionhash_opt {
-    //     return Ok(KeyState::NotFound);
-    // }
-    // let key_registration_actionhash = key_registration_actionhash_opt.unwrap().clone();
-
-    // let key_registration_record_opt = get(key_registration_actionhash, GetOptions::default())?;
-    // if let None = key_registration_record_opt {
-    //     return Ok(KeyState::NotFound);
-    // }
-    // let key_registration_record = key_registration_record_opt.unwrap().clone();
-
-    // let key_registration_opt = key_registration_record.entry.into_option();
-    // if let None = key_registration_opt {
-    //     return Ok(KeyState::NotFound);
-    // }
-    // let key_registration_entry = key_registration_opt.unwrap().clone();
-
-    // let key_registration = KeyRegistration::try_from(key_registration_entry)?;
-    // match key_registration {
-    //     KeyRegistration::Create(key_generation) => {
-    //         Ok(KeyState::Valid(key_generation))},
-    //     KeyRegistration::CreateOnly(_) => Ok(KeyState::Valid),
-    //     KeyRegistration::Update(_, _) => Ok(KeyState::Invalidated),
-    //     KeyRegistration::Delete(_) => Ok(KeyState::Invalidated),
-    // }
 }
 
 #[hdk_extern]

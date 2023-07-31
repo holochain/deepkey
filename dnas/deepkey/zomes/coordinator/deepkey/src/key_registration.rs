@@ -35,6 +35,19 @@ pub fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<A
 }
 
 #[hdk_extern]
+pub fn register_test_key(_: ()) -> ExternResult<KeyRegistration> {
+    // get this agent's pubkey
+    let agent_key = agent_info()?.agent_latest_pubkey;
+    let signature = sign(agent_key.clone(), agent_key.clone())?;
+    let key_registration = KeyRegistration::Create(KeyGeneration {
+        new_key: agent_key,
+        new_key_signing_of_author: signature
+    });
+    new_key_registration(key_registration.clone())?;
+    Ok(key_registration)
+}
+
+#[hdk_extern]
 pub fn update_key(
     (key_revocation, new_key_generation): (KeyRevocation, KeyGeneration),
 ) -> ExternResult<()> {
@@ -84,31 +97,31 @@ pub fn update_key(
 }
 
 
-// #[hdk_extern]
-// pub fn get_key_registration(
-//     original_key_registration_hash: ActionHash,
-// ) -> ExternResult<Option<Record>> {
-//     get_latest_key_registration(original_key_registration_hash)
-// }
-// fn get_latest_key_registration(
-//     key_registration_hash: ActionHash,
-// ) -> ExternResult<Option<Record>> {
-//     let details = get_details(key_registration_hash, GetOptions::default())?
-//         .ok_or(wasm_error!(WasmErrorInner::Guest("KeyRegistration not found".into())))?;
-//     let record_details = match details {
-//         Details::Entry(_) => {
-//             Err(wasm_error!(WasmErrorInner::Guest("Malformed details".into())))
-//         }
-//         Details::Record(record_details) => Ok(record_details),
-//     }?;
-//     if record_details.deletes.len() > 0 {
-//         return Ok(None);
-//     }
-//     match record_details.updates.last() {
-//         Some(update) => get_latest_key_registration(update.action_address().clone()),
-//         None => Ok(Some(record_details.record)),
-//     }
-// }
+#[hdk_extern]
+pub fn get_key_registration(
+    original_key_registration_hash: ActionHash,
+) -> ExternResult<Option<Record>> {
+    get_latest_key_registration(original_key_registration_hash)
+}
+fn get_latest_key_registration(
+    key_registration_hash: ActionHash,
+) -> ExternResult<Option<Record>> {
+    let details = get_details(key_registration_hash, GetOptions::default())?
+        .ok_or(wasm_error!(WasmErrorInner::Guest("KeyRegistration not found".into())))?;
+    let record_details = match details {
+        Details::Entry(_) => {
+            Err(wasm_error!(WasmErrorInner::Guest("Malformed details".into())))
+        }
+        Details::Record(record_details) => Ok(record_details),
+    }?;
+    if record_details.deletes.len() > 0 {
+        return Ok(None);
+    }
+    match record_details.updates.last() {
+        Some(update) => get_latest_key_registration(update.action_address().clone()),
+        None => Ok(Some(record_details.record)),
+    }
+}
 // #[derive(Serialize, Deserialize, Debug)]
 // pub struct UpdateKeyRegistrationInput {
 //     pub previous_key_registration_hash: ActionHash,

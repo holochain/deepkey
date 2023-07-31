@@ -6,5 +6,5 @@
     "esModuleInterop": true /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */,
     "allowSyntheticDefaultImports": true
   },
-  "include": ["../ui/deepkey.d.ts", "./**/*.ts"],
+  "include": ["../ui/ambient.d.ts", "./**/*.ts"],
 }
