@@ -1,6 +1,8 @@
 use deepkey_integrity::*;
 use hdk::prelude::*;
 
+use crate::source_of_authority::query_keyset_authority_action_hash;
+
 #[hdk_extern]
 // TODO: Only accept Create or CreateOnly
 pub fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<ActionHash> {
@@ -29,8 +31,22 @@ pub fn new_key_registration(key_registration: KeyRegistration) -> ExternResult<A
         }
     };
 
+    let key_anchor = KeyAnchor::from_agent_key(new_key);
+    let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(key_anchor.clone()))?;
+    let keyset_root_authority = query_keyset_authority_action_hash(())?;
+    
+    // Create the KeyRegistration entry and its associated KeyAnchor entry
     let key_registration_hash = create_entry(EntryTypes::KeyRegistration(key_registration))?;
-    create_entry(EntryTypes::KeyAnchor(KeyAnchor::from_agent_key(new_key)))?;
+    create_entry(EntryTypes::KeyAnchor(key_anchor))?;
+    
+    // Create Link entry here: from KeySetRoot -> KeyAnchor
+    create_link(
+        keyset_root_authority,
+        key_anchor_hash,
+        LinkTypes::KeysetRootToKeyAnchors,
+        (),
+    )?;
+    
     Ok(key_registration_hash)
 }
 

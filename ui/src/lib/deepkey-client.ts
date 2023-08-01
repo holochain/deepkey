@@ -17,9 +17,9 @@ import type {
 	HoloHashed
 } from '@holochain/client';
 
-type KeyAnchor = Uint8Array;
+type KeyAnchor = { bytes: Uint8Array };
 export function getKeyAnchor(pubkey: AgentPubKey): KeyAnchor {
-	return pubkey.slice(4, 36);
+	return { bytes: pubkey.slice(3, 35) };
 }
 
 type Authorization = [number, Buffer]; // u8 index, 64 byte signature
@@ -101,14 +101,16 @@ export class DeepkeyClient {
 		return this.callZome('query_keyset_members', ksr);
 	}
 
+	async query_keyset_keys(ksr: ActionHash): Promise<KeyAnchor[]> {
+		return this.callZome('query_keyset_keys', ksr);
+	}
+	
 	async invite_agent(agentKey: AgentPubKey): Promise<DeviceInviteAcceptance> {
 		return this.callZome('invite_agent', agentKey);
 	}
 	async accept_invitation(dia: DeviceInviteAcceptance): Promise<ActionHash> {
 		return this.callZome('accept_invite', dia);
 	}
-
-	
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	callZome(fn_name: string, payload: any) {

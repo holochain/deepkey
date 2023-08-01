@@ -1,4 +1,3 @@
-import { DeviceInviteAcceptance } from "./../../../../ui/src/deepkey/deepkey/types";
 import { describe, expect, test } from "vitest";
 import * as ed25519 from "@noble/ed25519";
 import { runScenario, pause } from "@holochain/tryorama";
@@ -16,7 +15,6 @@ import {
 import { decode, encode } from "@msgpack/msgpack";
 
 import { deepkeyZomeCall, isPresent } from "../../utils.js";
-import { KeyGeneration, KeyRegistration } from "../../../../ui/deepkey";
 
 const DNA_PATH = process.cwd() + "/../workdir/deepkey.happ";
 
@@ -34,7 +32,7 @@ test("new_key_registration", async (t) => {
 
       const [keypair, newKeyToRegister] = await generateSigningKeyPair();
       // Sign the KeyGeneration with the new key
-      const keyGeneration: KeyGeneration = {
+      const keyGeneration = {
         new_key: newKeyToRegister,
         new_key_signing_of_author: await ed25519.signAsync(
           newKeyToRegister,
@@ -67,7 +65,7 @@ test("new_key_registration", async (t) => {
       ).Present.entry;
       const storedKeyRegistration = decode(
         createdKeyRegistrationEntry as Uint8Array
-      ) as KeyRegistration;
+      ) as any;
       expect(storedKeyRegistration.Create.new_key).toEqual(
         Buffer.from(keyRegistration.Create.new_key)
       );
@@ -92,7 +90,7 @@ test("update key registration", async (t) => {
 
       const [existingKeypair, existingPubkey] = await generateSigningKeyPair();
       // Sign the KeyGeneration with the new key
-      const keyGeneration: KeyGeneration = {
+      const keyGeneration = {
         new_key: existingPubkey,
         new_key_signing_of_author: await ed25519.signAsync(
           existingPubkey,
@@ -102,7 +100,7 @@ test("update key registration", async (t) => {
 
       const [nextKeypair, nextPubkey] = await generateSigningKeyPair();
       // Sign the KeyGeneration with the new key
-      const nextKeyGeneration: KeyGeneration = {
+      const nextKeyGeneration = {
         new_key: nextPubkey,
         new_key_signing_of_author: await ed25519.signAsync(
           nextPubkey,

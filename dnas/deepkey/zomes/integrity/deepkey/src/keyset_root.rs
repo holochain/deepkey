@@ -55,3 +55,14 @@ pub fn validate_delete_keyset_root(
         "Keyset Roots cannot be deleted",
     )))
 }
+pub fn validate_delete_link_keyset_root_to_key_anchors(
+    _action: DeleteLink,
+    _original_action: CreateLink,
+    _base: AnyLinkableHash,
+    _target: AnyLinkableHash,
+    _tag: LinkTag,
+) -> ExternResult<ValidateCallbackResult> {
+    Ok(ValidateCallbackResult::Invalid(String::from(
+        "KeysetRootToKeyAnchors links cannot be deleted",
+    )))
+}

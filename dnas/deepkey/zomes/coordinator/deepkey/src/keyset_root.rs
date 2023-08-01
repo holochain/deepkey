@@ -36,20 +36,6 @@ pub fn create_keyset_root(_: ()) -> ExternResult<(ActionHash, ActionHash)> {
         spec_change,
     )))?;
 
-    // let keyset_root_record =
-    //     get(keyset_root_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
-    //         WasmErrorInner::Guest(String::from("Could not find the newly created Keyset Root"))
-    //     ))?;
-
-    // let change_rule_record =
-    //     get(change_rule_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
-    //         WasmErrorInner::Guest(String::from("Could not find the newly created Change Rule"))
-    //     ))?;
-    // Ok((keyset_root_record, change_rule_record))
-
-    // Err(wasm_error!(WasmErrorInner::Guest(String::from(
-    //     "Testing an error message here"
-    // ))))
     Ok((keyset_root_hash, change_rule_hash))
 }
 
@@ -58,6 +44,7 @@ pub fn get_keyset_root(keyset_root_hash: ActionHash) -> ExternResult<Option<Reco
     get(keyset_root_hash, GetOptions::default())
 }
 
+// Get all of the members of the keyset: the first deepkey agent, and all the deepkey agents
 #[hdk_extern]
 pub fn query_keyset_members(keyset_root_hash: ActionHash) -> ExternResult<Vec<AgentPubKey>> {
     // Get the PubKey of the Deepkey Agent who wrote the KeysetRoot
@@ -95,12 +82,28 @@ pub fn query_keyset_members(keyset_root_hash: ActionHash) -> ExternResult<Vec<Ag
     Ok(dia_author_pubkeys)
 }
 
+// Get all of the keys registered on the keyset, across all the deepkey agents
 #[hdk_extern]
 pub fn query_keyset_keys(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyAnchor>> {
-    let keyset_root_record = get(keyset_root_hash, GetOptions::default())?.ok_or(wasm_error!(
-        WasmErrorInner::Guest(String::from("Could not find the Keyset Root"))
-    ))?;
-    // go from ksr, to list of all key anchors registered on this keyset
+    let key_anchors = get_links(keyset_root_hash, LinkTypes::KeysetRootToKeyAnchors, None)?
+        .into_iter()
+        .map(|link| link.target.into())
+        .map(|key_anchor_hash: EntryHash| get(key_anchor_hash, GetOptions::default()))
+        .collect::<ExternResult<Vec<Option<Record>>>>()?
+        .into_iter()
+        .filter_map(|x| x)
+        .map(|record| {
+            record.entry.to_app_option::<KeyAnchor>().map_err(|e| {
+                wasm_error!(WasmErrorInner::Guest(format!(
+                    "Could not deserialize KeyAnchor: {}",
+                    e
+                )))
+            })
+        })
+        .collect::<ExternResult<Vec<Option<KeyAnchor>>>>()?
+        .into_iter()
+        .filter_map(|x| x)
+        .collect::<Vec<KeyAnchor>>();
 
-    Err(wasm_error!(WasmErrorInner::Guest("Not implemented".into())))
+    Ok(key_anchors)
 }

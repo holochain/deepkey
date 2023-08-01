@@ -48,9 +48,9 @@ pub enum LinkTypes {
     SignerToAuthoritySpecs,
     ChangeRuleUpdates,
     KeysetRootToDeviceInviteAcceptances,
+    KeysetRootToKeyAnchors,
     InviteeToDeviceInviteAcceptances,
     DeviceInviteToDeviceInviteAcceptances, // unused for now
-    // KeysetRootToKeyAnchors,
 }
 #[hdk_extern]
 pub fn genesis_self_check(_data: GenesisSelfCheckData) -> ExternResult<ValidateCallbackResult> {
@@ -312,6 +312,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             tag: _,
             action: _,
         } => match link_type {
+            // TODO: properly validate links
             // LinkTypes::SignerToAuthoritySpecs => validate_create_link_signer_to_authority_specs(
             //     action,
             //     base_address,
@@ -369,6 +370,15 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             ),
             LinkTypes::KeysetRootToDeviceInviteAcceptances => {
                 validate_delete_link_keyset_root_to_device_invites(
+                    action,
+                    original_action,
+                    base_address,
+                    target_address,
+                    tag,
+                )
+            }
+            LinkTypes::KeysetRootToKeyAnchors => {
+                validate_delete_link_keyset_root_to_key_anchors(
                     action,
                     original_action,
                     base_address,
@@ -896,6 +906,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 link_type,
                 action: _,
             } => match link_type {
+                // TODO: properly validate links
                 // LinkTypes::SignerToAuthoritySpecs => {
                 //     validate_create_link_signer_to_authority_specs(
                 //         action,
@@ -978,6 +989,15 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     ),
                     LinkTypes::KeysetRootToDeviceInviteAcceptances => {
                         validate_delete_link_keyset_root_to_device_invites(
+                            action,
+                            create_link.clone(),
+                            base_address,
+                            create_link.target_address,
+                            create_link.tag,
+                        )
+                    }
+                    LinkTypes::KeysetRootToKeyAnchors => {
+                        validate_delete_link_keyset_root_to_key_anchors(
                             action,
                             create_link.clone(),
                             base_address,
