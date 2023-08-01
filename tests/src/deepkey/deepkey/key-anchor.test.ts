@@ -24,7 +24,6 @@ import { deepkeyZomeCall, isPresent } from "../../utils.js";
 import * as ed25519 from "@noble/ed25519";
 
 const DNA_PATH = process.cwd() + "/../workdir/deepkey.happ";
-``;
 
 type KeyAnchor = Uint8Array;
 export function getKeyAnchor(pubkey: AgentPubKey): KeyAnchor {

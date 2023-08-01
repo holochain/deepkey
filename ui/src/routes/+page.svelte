@@ -28,12 +28,6 @@
 	let keysetRootAuthority: ActionHash | undefined;
 	let keysetMembers: AgentPubKey[] = [];
 
-	$: client;
-	$: deepkey;
-	$: keysetRootAuthority;
-	$: deepkeyAgentPubkey;
-	$: keysetMembers;
-
 	onMount(async () => {
 		let app_role = 'deepkey';
 
@@ -42,13 +36,14 @@
 		deepkey = new DeepkeyClient(client, app_role);
 
 		keysetRootAuthority = await deepkey.keyset_authority();
+		console.log('keysetRootAuthority', Base64.fromUint8Array(keysetRootAuthority));
 
-		// const res2 = await deepkey.key_state(client.myPubKey);
-		// console.log('res2', res2);
+		// // const res2 = await deepkey.key_state(client.myPubKey);
+		// // console.log('res2', res2);
 
 		const appInfo = await client.appInfo();
+		// console.log('appInfo', appInfo);
 		deepkeyAgentPubkey = appInfo.agent_pub_key;
-		console.log('appInfo', appInfo);
 
 		keysetMembers = await deepkey.query_keyset_members(keysetRootAuthority);
 	});

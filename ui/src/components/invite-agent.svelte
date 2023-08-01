@@ -9,10 +9,12 @@
 	export let deepkey: DeepkeyClient | undefined;
 	let showInviteInput = false;
 	let showAcceptInput = false;
-	
-    let agentKeyToInviteB64 = '';
+
+	let agentKeyToInviteB64 = '';
 	let diaPayload = '';
+
 	let pastedDiaPayload = '';
+	let acceptInvitationError: string = '';
 
 	async function inviteAgent() {
 		const agentKeyToInvite: AgentPubKey = Base64.toUint8Array(agentKeyToInviteB64);
@@ -21,11 +23,17 @@
 		diaPayload = Base64.fromUint8Array(encode(dia));
 	}
 
-    async function acceptInvitation() {
-        const dia = decode(Base64.toUint8Array(pastedDiaPayload)) as DeviceInviteAcceptance;
-
-        const diaHash = await deepkey?.accept_invitation(dia);
-    }
+	async function acceptInvitation() {
+		try {
+			const dia = decode(Base64.toUint8Array(pastedDiaPayload)) as DeviceInviteAcceptance;
+			console.log('Decoded Device invite acceptance', dia);
+			const diaHash = await deepkey?.accept_invitation(dia);
+		} catch (e) {
+			console.error(e);
+			acceptInvitationError = (e as Error).message;
+		}
+		showInviteInput = false;
+	}
 </script>
 
 {#if showInviteInput}
@@ -70,6 +78,9 @@
 			<button type="button" class="btn variant-filled-primary" on:click={acceptInvitation}>
 				Accept
 			</button>
+			{#if acceptInvitationError}
+				<div class="text-error-50">{acceptInvitationError}</div>
+			{/if}
 			<button
 				type="button"
 				class="btn variant-filled-secondary"

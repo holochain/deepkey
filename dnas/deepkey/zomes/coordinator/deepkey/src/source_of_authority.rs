@@ -10,20 +10,22 @@ use hdk::prelude::*;
 // ChainQueryFilter::new().sequence_range(ChainQueryFilterRange::ActionSeqRange(KEYSET_ROOT_INDEX, KEYSET_ROOT_INDEX + 1))
 #[hdk_extern]
 pub fn query_keyset_authority_action_hash(_: ()) -> ExternResult<ActionHash> {
-    if let Some(device_invite_acceptance) = query(
-        ChainQueryFilter::new().entry_type(UnitEntryTypes::DeviceInviteAcceptance.try_into()?),
+    if let Some(device_invite_acceptance_record) = query(
+        ChainQueryFilter::new()
+            .include_entries(true)
+            .entry_type(UnitEntryTypes::DeviceInviteAcceptance.try_into()?),
     )?
     .into_iter()
     .next()
     {
         let device_invite_acceptance =
-            DeviceInviteAcceptance::try_from(device_invite_acceptance.clone())?;
+            DeviceInviteAcceptance::try_from(device_invite_acceptance_record)?;
+
         Ok(device_invite_acceptance.keyset_root_authority)
-    } else if let Some(keyset_root) = query(
-        ChainQueryFilter::new().entry_type(EntryType::App(UnitEntryTypes::KeysetRoot.try_into()?)),
-    )?
-    .into_iter()
-    .next()
+    } else if let Some(keyset_root) =
+        query(ChainQueryFilter::new().entry_type(UnitEntryTypes::KeysetRoot.try_into()?))?
+            .into_iter()
+            .next()
     {
         Ok(keyset_root.action_address().to_owned())
     } else {
