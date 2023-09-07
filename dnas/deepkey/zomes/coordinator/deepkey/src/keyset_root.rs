@@ -105,5 +105,6 @@ pub fn query_keyset_keys(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyAn
         .filter_map(|x| x)
         .collect::<Vec<KeyAnchor>>();
 
+    // We'll probably want another method that filters by key_state for active keys only
     Ok(key_anchors)
 }

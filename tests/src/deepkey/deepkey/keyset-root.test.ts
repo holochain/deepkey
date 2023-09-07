@@ -87,7 +87,7 @@ test("keyset_root: query_keyset_members and query_keyset_keys", async (t) => {
 
       // TODO: This isn't working, but it should be. Does the DHT need more time to sync?
       // The link KeysetRootToKeyAnchors is not being propagated across the DHT somehow.
-      
+
       // expect(base64KeyAnchors(key_anchors), "Bob can't see key registered on Alice").toEqual(
       //   base64KeyAnchors([getKeyAnchor(newKeyToRegister)])
       // );
@@ -105,6 +105,9 @@ test("keyset_root: query_keyset_members and query_keyset_keys", async (t) => {
         "query_keyset_keys",
         aliceKeysetRoot
       );
+      console.log("aliceKeyAnchors", aliceKeyAnchors);
+      console.log("bobKeyAnchors", bobKeyAnchors);
+
       // expect(base64KeyAnchors(aliceKeyAnchors)).toEqual(
       //   base64KeyAnchors(bobKeyAnchors)
       // );

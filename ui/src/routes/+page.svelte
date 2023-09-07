@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import TreeView from 'svelte-tree-view';
 
 	import type { ActionHash, AgentPubKey, AppAgentClient } from '@holochain/client';
 	import { decode, encode } from '@msgpack/msgpack';
@@ -10,23 +9,18 @@
 	import KeyPlusIcon from '~icons/iconoir/key-alt-plus';
 	import AgentIcon from '~icons/iconoir/laptop';
 
-	import { DeepkeyClient } from '../lib/deepkey-client';
+	import { DeepkeyClient, type KeyAnchor } from '../lib/deepkey-client';
 	import { authorizeClient, setupHolochain } from '$lib/holochain-client';
 	import InviteAgent from '../components/invite-agent.svelte';
-
-	const data = {
-		a: [1, 2, 3],
-		b: new Map([
-			['c', { d: null }],
-			['e', { f: [9, 8, 7] }]
-		])
-	};
+	import RegisterKey from '../components/register-key.svelte';
+	import Identicon from '../components/identicon.svelte';
 
 	let client: AppAgentClient | undefined;
 	let deepkey: DeepkeyClient | undefined;
 	let deepkeyAgentPubkey: AgentPubKey | undefined;
 	let keysetRootAuthority: ActionHash | undefined;
 	let keysetMembers: AgentPubKey[] = [];
+	let keysetKeys: KeyAnchor[] = [];
 
 	onMount(async () => {
 		let app_role = 'deepkey';
@@ -38,14 +32,15 @@
 		keysetRootAuthority = await deepkey.keyset_authority();
 		console.log('keysetRootAuthority', Base64.fromUint8Array(keysetRootAuthority));
 
-		// // const res2 = await deepkey.key_state(client.myPubKey);
-		// // console.log('res2', res2);
+		// const res2 = await deepkey.key_state(client.myPubKey);
+		// console.log('res2', res2);
 
 		const appInfo = await client.appInfo();
 		// console.log('appInfo', appInfo);
 		deepkeyAgentPubkey = appInfo.agent_pub_key;
 
 		keysetMembers = await deepkey.query_keyset_members(keysetRootAuthority);
+		keysetKeys = await deepkey.query_keyset_keys(keysetRootAuthority);
 	});
 
 	let visible: boolean = false;
@@ -94,18 +89,23 @@
 	</aside>
 {/if}
 <div class="card p-4 m-5">
-	<h1 class="text-2xl font-bold mb-2">Current Deepkey Agent Key</h1>
-	<p class="text-gray-500 text-lg">
-		{deepkeyAgentPubkey && Base64.fromUint8Array(deepkeyAgentPubkey)}
-	</p>
-	<h3 class="text-2xl font-bold mb-2 mt-5">Keyset Root Authority</h3>
+	<!-- identicon on the left -->
+	{#if keysetRootAuthority}
+		<Identicon bytes={keysetRootAuthority} />
+	{/if}
+	<h3 class="text-2xl font-bold mb-2 mt-5">Keyset Root Hash</h3>
+	<p>All devices Managed by this are under the same key management rules</p>
 	<p class="text-gray-500 text-lg">
 		{keysetRootAuthority && Base64.fromUint8Array(keysetRootAuthority)}
+	</p>
+	<h1 class="text-2xl font-bold mb-2 mt-5">This Device</h1>
+	<p class="text-gray-500 text-lg">
+		{deepkeyAgentPubkey && Base64.fromUint8Array(deepkeyAgentPubkey)}
 	</p>
 </div>
 
 <div class="card p-4 m-5">
-	<h3 class="text-2xl mb-4">Members of this Keyset</h3>
+	<h3 class="text-2xl mb-4">Devices in this Keyset</h3>
 	<InviteAgent {deepkey} />
 
 	<ul class="list flex flex-col mt-6">
@@ -114,22 +114,34 @@
 				<span> <AgentIcon class="h-6 w-6" /> </span>
 				<p class="text-gray-500 text-lg">{Base64.fromUint8Array(member)}</p>
 				{#if Base64.fromUint8Array(member) === Base64.fromUint8Array(deepkeyAgentPubkey ?? Uint8Array.from([]))}
-					<span class="chip bg-gradient-to-br variant-gradient-secondary-tertiary">Me</span>
+					<span class="chip bg-gradient-to-br variant-gradient-secondary-tertiary"
+						>This device's key</span
+					>
 				{/if}
 			</li>
 		{/each}
 	</ul>
 </div>
 
-<main class="card p-4 m-5">
-	<h3 class="text-2xl mb-4">Tree of Keys</h3>
-	<TreeView
-		{data}
-		recursionOpts={{
-			maxDepth: 16,
-			shouldExpandNode: () => true
-		}}
-	/>
-</main>
+<div class="card p-4 m-5">
+	<h3 class="text-2xl mb-4">All Keys within this Keyset</h3>
+	<!-- 
+	generate random keypair
+	derive new key from seed, derivation path 
+	make a lair call, gen new keypair or provide derivation string
+	export a seed bundle; save the seed. lair saves it as encrypted thing
+	dual-encrypted: password, security questions
+	https://github.com/holochain/lair/tree/main/crates/hc_seed_bundle
+-->
+	<RegisterKey {deepkey} />
+	<ul class="list flex flex-col mt-6">
+		{#each keysetKeys as key}
+			<li>
+				<span> <AgentIcon class="h-6 w-6" /> </span>
+				<p class="text-gray-500 text-lg">{Base64.fromUint8Array(key.bytes)}</p>
+			</li>
+		{/each}
+	</ul>
+</div>
 
 <footer class="h-32 m-12" />

@@ -17,12 +17,12 @@ import type {
 	HoloHashed
 } from '@holochain/client';
 
-type KeyAnchor = { bytes: Uint8Array };
+export type KeyAnchor = { bytes: Uint8Array };
 export function getKeyAnchor(pubkey: AgentPubKey): KeyAnchor {
 	return { bytes: pubkey.slice(3, 35) };
 }
 
-type Authorization = [number, Buffer]; // u8 index, 64 byte signature
+export type Authorization = [number, Buffer]; // u8 index, 64 byte signature
 
 type KeyGeneration = {
 	new_key: AgentPubKey;
@@ -34,7 +34,7 @@ type KeyRevocation = {
 	revocation_authorization: Authorization[];
 };
 
-type KeyRegistration =
+export type KeyRegistration =
 	| {
 			Create: KeyGeneration;
 	  }
@@ -110,6 +110,9 @@ export class DeepkeyClient {
 	}
 	async accept_invitation(dia: DeviceInviteAcceptance): Promise<ActionHash> {
 		return this.callZome('accept_invite', dia);
+	}
+	async register_key(keyRegistration: KeyRegistration): Promise<ActionHash> {
+		return this.callZome('new_key_registration', keyRegistration);
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any

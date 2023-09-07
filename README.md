@@ -474,7 +474,7 @@ The `KeyAnchor` record must always be written onto the chain immediately followi
 
 ## Private Metadata
 
-In addition to shared/public keysets and registrations, each agent can keep private data for personal records about registered keys. This private data can be used to rebuild keypairs for apps from a master seed.
+In addition to shared/public keysets and registrations, each agent can keep private data for personal records about registered keys. After KeyRegistration, Deepkey writes a private entry with this data. This private data can be used to rebuild keypairs for apps from a master seed.
 
 `KeyMeta` records record the derivation path and index used to generate a previously registered key.
 
@@ -488,6 +488,7 @@ The structure of `KeyMeta` is:
 - `derivation_path` as 32 bytes encoding a derivation path for generating the registered key
 - `derivation_index` as a u32 representing the index for generating the registered key from the `derivation_path`
 - `key_type` as an enum of `AppUI`, `AppSig`, `AppEncryption`, `TLS` _TODO: confirm compatibility with Lair Key API_
+
 
 **Create**:
 
