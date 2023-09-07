@@ -14,6 +14,7 @@
 	import InviteAgent from '../components/invite-agent.svelte';
 	import RegisterKey from '../components/register-key.svelte';
 	import Identicon from '../components/identicon.svelte';
+	import CryptographicHash from '../components/cryptographicHash.svelte';
 
 	let client: AppAgentClient | undefined;
 	let deepkey: DeepkeyClient | undefined;
@@ -62,7 +63,7 @@
 		<!-- Message -->
 		<div class="alert-message">
 			<h3 class="h3">Key Revocation Request</h3>
-			<p>You have received a request to revoke key 0x239828h2ff</p>
+			<p>You have received a request to revoke key 0x</p>
 		</div>
 		<!-- Actions -->
 		<div class="alert-actions">
@@ -79,7 +80,7 @@
 		<!-- Message -->
 		<div class="alert-message">
 			<h3 class="h3">Device Invitation Received</h3>
-			<p>You have received a request to join the Keyset of Root Agent #298fFfA9</p>
+			<p>You have received a request to join the Keyset of Root Agent 0x</p>
 		</div>
 		<!-- Actions -->
 		<div class="alert-actions">
@@ -90,14 +91,11 @@
 {/if}
 <div class="card p-4 m-5">
 	<!-- identicon on the left -->
-	{#if keysetRootAuthority}
-		<Identicon bytes={keysetRootAuthority} />
-	{/if}
 	<h3 class="text-2xl font-bold mb-2 mt-5">Keyset Root Hash</h3>
 	<p>All devices Managed by this are under the same key management rules</p>
-	<p class="text-gray-500 text-lg">
-		{keysetRootAuthority && Base64.fromUint8Array(keysetRootAuthority)}
-	</p>
+	{#if keysetRootAuthority}
+		<CryptographicHash hash={keysetRootAuthority} />
+	{/if}
 	<h1 class="text-2xl font-bold mb-2 mt-5">This Device</h1>
 	<p class="text-gray-500 text-lg">
 		{deepkeyAgentPubkey && Base64.fromUint8Array(deepkeyAgentPubkey)}

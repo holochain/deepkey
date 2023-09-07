@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 
 	export let bytes: Uint8Array;
+
 	let canvas: HTMLCanvasElement;
 
 	onMount(() => {
