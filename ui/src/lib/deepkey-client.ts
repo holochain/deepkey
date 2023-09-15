@@ -90,6 +90,10 @@ export class DeepkeyClient {
 		return this.callZome('key_state', [agentKey, Date.now()]);
 	}
 
+	async name_device(name: string): Promise<null> {
+		return this.callZome('name_device', name);
+	}
+
 	// Return the ActionHash of the Keyset Root
 	async keyset_authority(): Promise<ActionHash> {
 		return this.callZome('query_keyset_authority_action_hash', null);
@@ -104,7 +108,7 @@ export class DeepkeyClient {
 	async query_keyset_keys(ksr: ActionHash): Promise<KeyAnchor[]> {
 		return this.callZome('query_keyset_keys', ksr);
 	}
-	
+
 	async invite_agent(agentKey: AgentPubKey): Promise<DeviceInviteAcceptance> {
 		return this.callZome('invite_agent', agentKey);
 	}

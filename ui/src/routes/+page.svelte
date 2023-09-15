@@ -7,7 +7,6 @@
 	import { Base64 } from 'js-base64';
 	import KeyAltIcon from '~icons/iconoir/key-alt-remove';
 	import KeyPlusIcon from '~icons/iconoir/key-alt-plus';
-	import EditIcon from '~icons/iconoir/edit';
 	import AgentIcon from '~icons/iconoir/laptop';
 
 	import { DeepkeyClient, type KeyAnchor } from '../lib/deepkey-client';
@@ -16,6 +15,7 @@
 	import RegisterKey from '../components/register-key.svelte';
 	import Identicon from '../components/identicon.svelte';
 	import CryptographicHash from '../components/cryptographicHash.svelte';
+	import EditableName from '../components/editableName.svelte';
 
 	let client: AppAgentClient | undefined;
 	let deepkey: DeepkeyClient | undefined;
@@ -117,8 +117,7 @@
 		{#each keysetMembers as member}
 			<li>
 				<span> <AgentIcon class="h-6 w-6" /> </span>
-				<p class="text-gray-350 text-lg">unnamed</p>
-				<EditIcon />
+				<EditableName deepkey={deepkey}/>
 				{#if member}
 					<CryptographicHash hash={member} />
 				{/if}

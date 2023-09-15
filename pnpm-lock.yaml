@@ -84,6 +84,9 @@ importers:
       svelte-cookie:
         specifier: ^1.0.1
         version: 1.0.1
+      svelte-svg-spinners:
+        specifier: ^0.2.0
+        version: 0.2.0
       svelte-tree-view:
         specifier: ^1.3.3
         version: 1.3.3(svelte@3.59.1)
@@ -3014,6 +3017,10 @@ packages:
       svelte: 3.59.1
       typescript: 5.1.3
     dev: true
+
+  /svelte-svg-spinners@0.2.0:
+    resolution: {integrity: sha512-qOIcls8oRVOiZAsFqYmaEj9qSIwfHuxsclPhvhcFMnuLieIkwv4Fi0zX70nQfujyOCXoSi5Bxbu5rzWrpYooRA==}
+    dev: false
 
   /svelte-tree-view@1.3.3(svelte@3.59.1):
     resolution: {integrity: sha512-MkpOC/+FK1cMRDUy9H4O82s+B20oKBYcq9B1ql+xQ46tueRnqHUC5tRmFpOG1slHy+ZijSEmA0zwtwO1h174Cg==}
