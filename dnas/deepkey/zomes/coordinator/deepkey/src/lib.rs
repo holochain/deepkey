@@ -9,6 +9,7 @@ pub mod key_revocation;
 pub mod keyset_root;
 pub mod source_of_authority;
 pub mod key_anchor;
+pub mod device_name;
 use deepkey_integrity::*;
 use hdk::prelude::*;
 #[allow(unused_imports)]

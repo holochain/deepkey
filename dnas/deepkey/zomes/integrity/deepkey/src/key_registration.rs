@@ -6,9 +6,9 @@ use crate::{KeyGeneration, KeyRevocation};
 #[derive(Clone, PartialEq)]
 pub enum KeyRegistration {
     Create(KeyGeneration), // Creates a key under management of current KSR on this chain
-    CreateOnly(KeyGeneration), // Keys for hosted web users may be of this type, cannot replace/revoke
-    Update(KeyRevocation, KeyGeneration), // revokes a key and replaces it with a newly generated one
-    Delete(KeyRevocation) // permanently revokes a key (Note: still uses an update action.)
+    CreateOnly(KeyGeneration), // Unmanaged key. Keys for hosted web users may be of this type, cannot replace/revoke
+    Update(KeyRevocation, KeyGeneration), // Revokes a key and replaces it with a newly generated one
+    Delete(KeyRevocation) // Permanently revokes a key (Note: still uses an update action.)
 }
 pub fn validate_create_key_registration(
     _action: EntryCreationAction,

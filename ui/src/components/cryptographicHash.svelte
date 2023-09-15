@@ -17,7 +17,7 @@
 </script>
 
 <div class="group relative inline-block">
-	<p class="m-2 p-2 variant-ringed-primary">
+	<p class="p-1 variant-ringed-primary">
 		<Identicon bytes={hash} />
 	</p>
 
@@ -25,7 +25,7 @@
 		<aside class="alert bg-gradient-to-br variant-gradient-primary-secondary rounded-sm">
 			<!-- Icon -->
 			{#if copiedConfirm}
-				<button>🤘</button>
+				<button>👍</button>
 			{:else}
 				<button use:clipboard={base64Hash} on:click={showCopied}><CopyIcon /></button>
 			{/if}

@@ -7,6 +7,7 @@
 	import { Base64 } from 'js-base64';
 	import KeyAltIcon from '~icons/iconoir/key-alt-remove';
 	import KeyPlusIcon from '~icons/iconoir/key-alt-plus';
+	import EditIcon from '~icons/iconoir/edit';
 	import AgentIcon from '~icons/iconoir/laptop';
 
 	import { DeepkeyClient, type KeyAnchor } from '../lib/deepkey-client';
@@ -91,15 +92,21 @@
 {/if}
 <div class="card p-4 m-5">
 	<!-- identicon on the left -->
-	<h3 class="text-2xl font-bold mb-2 mt-5">Keyset Root Hash</h3>
-	<p>All devices Managed by this are under the same key management rules</p>
-	{#if keysetRootAuthority}
-		<CryptographicHash hash={keysetRootAuthority} />
-	{/if}
-	<h1 class="text-2xl font-bold mb-2 mt-5">This Device</h1>
-	<p class="text-gray-500 text-lg">
-		{deepkeyAgentPubkey && Base64.fromUint8Array(deepkeyAgentPubkey)}
-	</p>
+
+	<div class="flex items-center gap-3">
+		<h3 class="text-2xl font-bold">Keyset Root Hash</h3>
+		{#if keysetRootAuthority}
+			<CryptographicHash hash={keysetRootAuthority} />
+		{/if}
+	</div>
+	<p>All devices managed under this keyset root are under the same key management rules.</p>
+
+	<div class="flex items-center gap-3">
+		<h1 class="text-2xl font-bold">This Device's Agent Key</h1>
+		{#if deepkeyAgentPubkey}
+			<CryptographicHash hash={deepkeyAgentPubkey} />
+		{/if}
+	</div>
 </div>
 
 <div class="card p-4 m-5">
@@ -110,7 +117,12 @@
 		{#each keysetMembers as member}
 			<li>
 				<span> <AgentIcon class="h-6 w-6" /> </span>
-				<p class="text-gray-500 text-lg">{Base64.fromUint8Array(member)}</p>
+				<p class="text-gray-350 text-lg">unnamed</p>
+				<EditIcon />
+				{#if member}
+					<CryptographicHash hash={member} />
+				{/if}
+
 				{#if Base64.fromUint8Array(member) === Base64.fromUint8Array(deepkeyAgentPubkey ?? Uint8Array.from([]))}
 					<span class="chip bg-gradient-to-br variant-gradient-secondary-tertiary"
 						>This device's key</span

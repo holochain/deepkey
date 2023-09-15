@@ -18,13 +18,16 @@ pub mod authorized_spec_change;
 pub use authorized_spec_change::*;
 pub mod authority_spec;
 pub use authority_spec::*;
+pub mod keyset_root;
 pub use keyset_root::*;
 pub mod error;
-pub mod keyset_root;
 pub use error::*;
 pub mod source_of_authority;
-use hdi::prelude::*;
 pub use source_of_authority::*;
+pub mod device_name;
+pub use device_name::*;
+use hdi::prelude::*;
+
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
 #[hdk_entry_defs]
@@ -51,6 +54,7 @@ pub enum LinkTypes {
     KeysetRootToKeyAnchors,
     InviteeToDeviceInviteAcceptances,
     DeviceInviteToDeviceInviteAcceptances, // unused for now
+    DeviceName,
 }
 #[hdk_extern]
 pub fn genesis_self_check(_data: GenesisSelfCheckData) -> ExternResult<ValidateCallbackResult> {
@@ -377,15 +381,13 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     tag,
                 )
             }
-            LinkTypes::KeysetRootToKeyAnchors => {
-                validate_delete_link_keyset_root_to_key_anchors(
-                    action,
-                    original_action,
-                    base_address,
-                    target_address,
-                    tag,
-                )
-            }
+            LinkTypes::KeysetRootToKeyAnchors => validate_delete_link_keyset_root_to_key_anchors(
+                action,
+                original_action,
+                base_address,
+                target_address,
+                tag,
+            ),
             LinkTypes::InviteeToDeviceInviteAcceptances => {
                 validate_delete_link_invitee_to_device_invites(
                     action,
@@ -404,6 +406,13 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     tag,
                 )
             }
+            LinkTypes::DeviceName => validate_delete_link_device_name(
+                action,
+                original_action,
+                base_address,
+                target_address,
+                tag,
+            ),
         },
         FlatOp::StoreRecord(store_record) => match store_record {
             OpRecord::CreateEntry { app_entry, action } => match app_entry {
@@ -1023,6 +1032,13 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                             create_link.tag,
                         )
                     }
+                    LinkTypes::DeviceName => validate_delete_link_device_name(
+                        action,
+                        create_link.clone(),
+                        base_address,
+                        create_link.target_address,
+                        create_link.tag,
+                    ),
                 }
             }
             OpRecord::CreatePrivateEntry { .. } => Ok(ValidateCallbackResult::Valid),
