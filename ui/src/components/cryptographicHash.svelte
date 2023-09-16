@@ -17,7 +17,7 @@
 </script>
 
 <div class="group relative inline-block">
-	<p class="p-1 variant-ringed-primary">
+	<p class="p-1 variant-ghost">
 		<Identicon bytes={hash} />
 	</p>
 

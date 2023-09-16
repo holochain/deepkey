@@ -1,10 +1,10 @@
 <script lang="ts">
-	// import renderIcon from '$lib/identicon/bishop';
-	import renderIcon from '$lib/identicon/discs';
+	import renderIcon from '$lib/identicon/bishop';
+	// import renderIcon from '$lib/identicon/discs';
 	import { onMount } from 'svelte';
 
 	export let bytes: Uint8Array;
-	export let size = 28;
+	export let size = 32;
 
 	let canvas: HTMLCanvasElement;
 

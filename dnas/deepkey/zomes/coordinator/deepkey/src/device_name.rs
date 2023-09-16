@@ -14,3 +14,20 @@ pub fn name_device(device_name: String) -> ExternResult<()> {
 
     Ok(())
 }
+
+#[hdk_extern]
+pub fn get_device_name(agent_pubkey: AgentPubKey) -> ExternResult<Option<String>> {
+    let links = get_links(agent_pubkey.clone(), LinkTypes::DeviceName, None)?;
+
+    match links.first() {
+        Some(link) => {
+            let name = String::from_utf8(link.tag.clone().into_inner()).map_err(|_| {
+                wasm_error!(WasmErrorInner::Guest(
+                    "Can't parse the name from this link.".into()
+                ))
+            })?;
+            Ok(Some(name))
+        }
+        None => Ok(None),
+    }
+}

@@ -4,10 +4,13 @@
 	import SaveIcon from '~icons/iconoir/save-floppy-disk';
 	import type { DeepkeyClient } from '$lib/deepkey-client';
 	import { TwelveDotsScaleRotate } from 'svelte-svg-spinners';
+	import type { AgentPubKey } from '@holochain/client';
+	import { onMount } from 'svelte';
 
-	export let name: string = 'unnamed';
+	export let pubkey: AgentPubKey;
 	export let deepkey: DeepkeyClient | undefined;
 
+	let name: string = 'unnamed';
 	let savedName = name;
 	let editing = false;
 	let dirty = false;
@@ -26,6 +29,14 @@
 		savedName = name;
 		toggleEdit();
 	}
+
+	async function getName() {
+		name = (await deepkey?.get_device_name(pubkey)) ?? name;
+	}
+
+	onMount(() => {
+		getName();
+	});
 </script>
 
 {#if editing}
@@ -40,7 +51,7 @@
 			<SaveIcon />
 		</button>
 	{/if}
-  
+
 	<button on:click={toggleEdit}>
 		<CancelIcon />
 	</button>

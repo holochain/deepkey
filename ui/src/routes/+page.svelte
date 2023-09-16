@@ -42,6 +42,7 @@
 		deepkeyAgentPubkey = appInfo.agent_pub_key;
 
 		keysetMembers = await deepkey.query_keyset_members(keysetRootAuthority);
+
 		keysetKeys = await deepkey.query_keyset_keys(keysetRootAuthority);
 	});
 
@@ -117,7 +118,7 @@
 		{#each keysetMembers as member}
 			<li>
 				<span> <AgentIcon class="h-6 w-6" /> </span>
-				<EditableName deepkey={deepkey}/>
+				<EditableName deepkey={deepkey} pubkey={member}/>
 				{#if member}
 					<CryptographicHash hash={member} />
 				{/if}

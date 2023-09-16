@@ -94,6 +94,11 @@ export class DeepkeyClient {
 		return this.callZome('name_device', name);
 	}
 
+	async get_device_name(key: AgentPubKey): Promise<null> {
+		return this.callZome('get_device_name', key);
+	}
+
+
 	// Return the ActionHash of the Keyset Root
 	async keyset_authority(): Promise<ActionHash> {
 		return this.callZome('query_keyset_authority_action_hash', null);
