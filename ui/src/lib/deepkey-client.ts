@@ -1,19 +1,11 @@
-// import type {
-// 	ActionHash,
-// 	AgentPubKey,
-// 	AppAgentCallZomeRequest,
-// 	AppAgentClient,
-// 	EntryHash,
-// 	HoloHash
-// } from '@holochain/client';
-
-// import { EntryRecord } from '@holochain-open-dev/utils';
-// import { UnsubscribeFunction } from 'emittery';
+import type { UnsubscribeFunction } from 'emittery';
+import { isSignalFromCellWithRole } from '@holochain-open-dev/utils';
 import type {
 	ActionHash,
 	AgentPubKey,
 	AppAgentCallZomeRequest,
 	AppAgentClient,
+	AppSignal,
 	HoloHashed
 } from '@holochain/client';
 
@@ -72,19 +64,17 @@ export class DeepkeyClient {
 		public zomeName = 'deepkey'
 	) {}
 
-	//   on(
-	//     eventName: 'signal',
-	//     listener: (eventData: HeardSignal) => void | Promise<void>
-	//   ): UnsubscribeFunction {
-	//     return this.client.on(eventName, async signal => {
-	//       if (
-	//         (await isSignalFromCellWithRole(this.client, this.roleName, signal)) &&
-	//         this.zomeName === signal.zome_name
-	//       ) {
-	//         listener(signal.payload as HeardSignal);
-	//       }
-	//     });
-	//   }
+	on<D>(listener: (eventData: D) => void | Promise<void>): UnsubscribeFunction {
+		const eventName = 'signal'; // it's always 'signal'.
+		return this.client.on(eventName, async (signal: AppSignal) => {
+			if (
+				(await isSignalFromCellWithRole(this.client, this.roleName, signal)) &&
+				this.zomeName === signal.zome_name
+			) {
+				listener(signal.payload as D);
+			}
+		});
+	}
 
 	async key_state(agentKey: AgentPubKey): Promise<KeyState> {
 		return this.callZome('key_state', [agentKey, Date.now()]);
@@ -98,6 +88,11 @@ export class DeepkeyClient {
 		return this.callZome('get_device_name', key);
 	}
 
+	async send_device_invitation(agent: AgentPubKey, dia: DeviceInviteAcceptance): Promise<null> {
+		const res = await this.callZome('send_device_invitation', [agent, dia]);
+		console.log(res);
+		return null;
+	}
 
 	// Return the ActionHash of the Keyset Root
 	async keyset_authority(): Promise<ActionHash> {

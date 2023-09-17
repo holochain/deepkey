@@ -16,11 +16,22 @@
 	let pastedDiaPayload = '';
 	let acceptInvitationError: string = '';
 
-	async function inviteAgent() {
+	async function inviteAgentOffline() {
 		const agentKeyToInvite: AgentPubKey = Base64.toUint8Array(agentKeyToInviteB64);
 		// TODO: Validate input here
 		const dia = await deepkey?.invite_agent(agentKeyToInvite);
 		diaPayload = Base64.fromUint8Array(encode(dia));
+	}
+
+	async function inviteAgent() {
+		const agentKeyToInvite: AgentPubKey = Base64.toUint8Array(agentKeyToInviteB64);
+		// TODO: Validate input here
+		const dia = await deepkey?.invite_agent(agentKeyToInvite);
+		if (dia) {
+			await deepkey?.send_device_invitation(agentKeyToInvite, dia);
+		} else {
+			console.error('Failed to invite agent. Please check the agent key.');
+		}
 	}
 
 	async function acceptInvitation() {
@@ -38,7 +49,7 @@
 
 {#if showInviteInput}
 	<label class="label">
-		<div>Enter the Deepkey Agent Key to invite into this Keyset</div>
+		<div>Enter the <b>Deepkey Agent Key</b> to invite into this Keyset</div>
 		<div class="flex flex-row space-x-2">
 			<input
 				class="input max-w-lg"
@@ -50,9 +61,12 @@
 			<button type="button" class="btn variant-filled-primary" on:click={inviteAgent}>
 				Invite
 			</button>
+			<button type="button" class="btn variant-filled-tertiary" on:click={inviteAgentOffline}>
+				Invite Offline
+			</button>
 			<button
 				type="button"
-				class="btn variant-filled-secondary"
+				class="btn variant-filled-surface"
 				on:click={() => (showInviteInput = false)}
 			>
 				Cancel

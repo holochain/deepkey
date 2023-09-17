@@ -3,13 +3,13 @@ pub mod authorized_spec_change;
 pub mod change_rule;
 pub mod device_invite;
 pub mod device_invite_acceptance;
+pub mod device_name;
+pub mod key_anchor;
 pub mod key_generation;
 pub mod key_registration;
 pub mod key_revocation;
 pub mod keyset_root;
 pub mod source_of_authority;
-pub mod key_anchor;
-pub mod device_name;
 use deepkey_integrity::*;
 use hdk::prelude::*;
 #[allow(unused_imports)]
@@ -17,8 +17,21 @@ use keyset_root::create_keyset_root;
 #[hdk_extern]
 pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
     create_keyset_root(())?;
+
+    // grant unrestricted access to receive_device_invitation so other agents can send us device invitations
+    let mut fns = BTreeSet::new();
+    fns.insert((zome_info()?.name, "receive_device_invitation".into()));
+    let functions = GrantedFunctions::Listed(fns);
+    create_cap_grant(CapGrantEntry {
+        tag: "".into(),
+        // empty access converts to unrestricted
+        access: ().into(),
+        functions,
+    })?;
+
     Ok(InitCallbackResult::Pass)
 }
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "type")]
 pub enum Signal {
@@ -42,6 +55,9 @@ pub enum Signal {
     LinkDeleted {
         action: SignedActionHashed,
         link_type: LinkTypes,
+    },
+    InvitationReceived {
+        device_invite_acceptance: DeviceInviteAcceptance,
     },
 }
 #[hdk_extern(infallible)]
@@ -144,4 +160,12 @@ fn get_entry_for_action(action_hash: &ActionHash) -> ExternResult<Option<EntryTy
         entry_index.clone(),
         entry,
     )?)
+}
+
+#[hdk_extern]
+pub fn receive_device_invitation(dia: DeviceInviteAcceptance) -> ExternResult<()> {
+    emit_signal(Signal::InvitationReceived {
+        device_invite_acceptance: dia.clone(),
+    })?;
+    Ok(())
 }

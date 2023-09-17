@@ -1,21 +1,19 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-
+	import { onDestroy, onMount } from 'svelte';
 	import type { ActionHash, AgentPubKey, AppAgentClient } from '@holochain/client';
-	import { decode, encode } from '@msgpack/msgpack';
-	// import { getCookie, deleteCookie, setCookie } from 'svelte-cookie';
 	import { Base64 } from 'js-base64';
-	import KeyAltIcon from '~icons/iconoir/key-alt-remove';
-	import KeyPlusIcon from '~icons/iconoir/key-alt-plus';
 	import AgentIcon from '~icons/iconoir/laptop';
 
 	import { DeepkeyClient, type KeyAnchor } from '../lib/deepkey-client';
-	import { authorizeClient, setupHolochain } from '$lib/holochain-client';
+	import { setupHolochain } from '$lib/holochain-client';
 	import InviteAgent from '../components/invite-agent.svelte';
 	import RegisterKey from '../components/register-key.svelte';
-	import Identicon from '../components/identicon.svelte';
 	import CryptographicHash from '../components/cryptographicHash.svelte';
 	import EditableName from '../components/editableName.svelte';
+	import RecovationAlert from '../components/recovationAlert.svelte';
+	import InvitationAlert from '../components/invitationAlert.svelte';
+	import type { UnsubscribeFunction } from 'emittery';
+	import { decode } from '@msgpack/msgpack';
 
 	let client: AppAgentClient | undefined;
 	let deepkey: DeepkeyClient | undefined;
@@ -23,13 +21,21 @@
 	let keysetRootAuthority: ActionHash | undefined;
 	let keysetMembers: AgentPubKey[] = [];
 	let keysetKeys: KeyAnchor[] = [];
+	let unsubscribe: UnsubscribeFunction | undefined;
 
 	onMount(async () => {
 		let app_role = 'deepkey';
 
 		client = await setupHolochain();
-
 		deepkey = new DeepkeyClient(client, app_role);
+
+		unsubscribe = deepkey.on((data: any) => {
+			if (data.type === "InvitationReceived") {
+				const dia = data.device_invite_acceptance;
+				// TODO: Write this to memory store, to show in the alert
+			}
+			console.log(data);
+		});
 
 		keysetRootAuthority = await deepkey.keyset_authority();
 		console.log('keysetRootAuthority', Base64.fromUint8Array(keysetRootAuthority));
@@ -38,7 +44,7 @@
 		// console.log('res2', res2);
 
 		const appInfo = await client.appInfo();
-		// console.log('appInfo', appInfo);
+
 		deepkeyAgentPubkey = appInfo.agent_pub_key;
 
 		keysetMembers = await deepkey.query_keyset_members(keysetRootAuthority);
@@ -46,6 +52,11 @@
 		keysetKeys = await deepkey.query_keyset_keys(keysetRootAuthority);
 	});
 
+	onDestroy(async () => {
+		unsubscribe && unsubscribe();
+	});
+
+	let showInvitationAlert: boolean = true;
 	let visible: boolean = false;
 </script>
 
@@ -59,38 +70,13 @@
 </div>
 
 {#if visible}
-	<aside class="alert variant-ghost m-5 bg-gradient-to-br variant-gradient-secondary-primary">
-		<!-- Icon -->
-		<KeyAltIcon class="h-12 w-12" />
-		<!-- Message -->
-		<div class="alert-message">
-			<h3 class="h3">Key Revocation Request</h3>
-			<p>You have received a request to revoke key 0x</p>
-		</div>
-		<!-- Actions -->
-		<div class="alert-actions">
-			<button type="button" class="btn variant-ghost-error">Sign Revocation</button>
-			<button type="button" class="btn variant-ghost-surface">Delete Request</button>
-		</div>
-	</aside>
+	<RecovationAlert />
 {/if}
 
-{#if visible}
-	<aside class="alert variant-ghost m-5 bg-gradient-to-br variant-gradient-secondary-primary">
-		<!-- Icon -->
-		<KeyPlusIcon class="h-12 w-12" />
-		<!-- Message -->
-		<div class="alert-message">
-			<h3 class="h3">Device Invitation Received</h3>
-			<p>You have received a request to join the Keyset of Root Agent 0x</p>
-		</div>
-		<!-- Actions -->
-		<div class="alert-actions">
-			<button type="button" class="btn variant-ghost-success">Accept Invitation</button>
-			<button type="button" class="btn variant-ghost-surface">Delete Request</button>
-		</div>
-	</aside>
+{#if showInvitationAlert}
+	<InvitationAlert />
 {/if}
+
 <div class="card p-4 m-5">
 	<!-- identicon on the left -->
 
@@ -118,7 +104,7 @@
 		{#each keysetMembers as member}
 			<li>
 				<span> <AgentIcon class="h-6 w-6" /> </span>
-				<EditableName deepkey={deepkey} pubkey={member}/>
+				<EditableName {deepkey} pubkey={member} />
 				{#if member}
 					<CryptographicHash hash={member} />
 				{/if}

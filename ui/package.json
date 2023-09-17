@@ -45,6 +45,7 @@
 		"@holochain-open-dev/utils": "^0.14.2",
 		"@holochain/client": "^0.14.1",
 		"@msgpack/msgpack": "^2.8.0",
+		"emittery": "^1.0.1",
 		"js-base64": "^3.7.5",
 		"locally-unique-id-generator": "^0.1.5",
 		"lodash": "^4.17.21",

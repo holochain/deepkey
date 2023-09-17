@@ -1,5 +1,6 @@
 use deepkey_integrity::*;
 use hdk::prelude::*;
+
 #[hdk_extern]
 pub fn create_device_invite_acceptance(
     device_invite_acceptance: DeviceInviteAcceptance,
@@ -55,13 +56,22 @@ pub fn accept_invite(invite_acceptance: DeviceInviteAcceptance) -> ExternResult<
     //     MembraneProof::None,
     // );
     // let joining_proof_hash = create_entry(EntryTypes::JoiningProof(joining_proof))?;
-    let invite_record = get(invite_acceptance.invite.clone(), GetOptions::default())?.ok_or(wasm_error!(WasmErrorInner::Guest(String::from("Could not find the invite"))))?;
-    let invite = invite_record.entry.to_app_option::<DeviceInvite>().map_err(|e| {
-        wasm_error!(WasmErrorInner::Guest(format!(
-            "Could not convert entry to DeviceInvite: {:?}",
-            e
-        )))
-    })?.ok_or(wasm_error!(WasmErrorInner::Guest(String::from("Could not find the invite"))))?;
+    let invite_record =
+        get(invite_acceptance.invite.clone(), GetOptions::default())?.ok_or(wasm_error!(
+            WasmErrorInner::Guest(String::from("Could not find the invite"))
+        ))?;
+    let invite = invite_record
+        .entry
+        .to_app_option::<DeviceInvite>()
+        .map_err(|e| {
+            wasm_error!(WasmErrorInner::Guest(format!(
+                "Could not convert entry to DeviceInvite: {:?}",
+                e
+            )))
+        })?
+        .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Could not find the invite"
+        ))))?;
 
     let acceptance_hash = create_entry(EntryTypes::DeviceInviteAcceptance(
         invite_acceptance.clone(),
@@ -81,4 +91,14 @@ pub fn accept_invite(invite_acceptance: DeviceInviteAcceptance) -> ExternResult<
     )?;
 
     Ok(acceptance_hash)
+}
+
+// Call the Deepkey Agent on another device, and send them the invitation.
+#[hdk_extern]
+pub fn send_device_invitation(
+    (agent, dia): (AgentPubKey, DeviceInviteAcceptance),
+) -> ExternResult<ZomeCallResponse> {
+    let z = zome_info()?;
+    let response = call_remote(agent, z.name, "receive_device_invitation".into(), None, dia)?;
+    Ok(response)
 }
