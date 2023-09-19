@@ -22,7 +22,7 @@
 
 <div class="card p-4 m-5">
 	<h3 class="text-2xl mb-4">Devices in this Keyset</h3>
-	<InviteAgent deepkey={$deepkey} />
+	<InviteAgent />
 
 	<ul class="list flex flex-col mt-6">
 		{#each keysetMembers as member}
@@ -31,11 +31,11 @@
 				{#if member}
 					<CryptographicHash hash={member} />
 				{/if}
-				<EditableName deepkey={$deepkey} pubkey={member} />
+				<EditableName pubkey={member} />
 
 				{#if Base64.fromUint8Array(member) === Base64.fromUint8Array(deepkeyAgentPubkey ?? Uint8Array.from([]))}
 					<span class="chip bg-gradient-to-br variant-gradient-secondary-tertiary">
-						This Device Key
+						This Device's Deepkey Agent Key
 					</span>
 				{/if}
 			</li>

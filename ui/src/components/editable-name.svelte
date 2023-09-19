@@ -6,9 +6,9 @@
 	import { TwelveDotsScaleRotate } from 'svelte-svg-spinners';
 	import type { AgentPubKey } from '@holochain/client';
 	import { onMount } from 'svelte';
+	import { deepkey } from '$lib/store/deepkey-client-store';
 
 	export let pubkey: AgentPubKey;
-	export let deepkey: DeepkeyClient | undefined;
 
 	let name: string = 'unnamed';
 	let savedName = name;
@@ -23,7 +23,7 @@
 
 	async function save() {
 		saving = true;
-		await deepkey?.name_device(name);
+		await $deepkey?.name_device(name);
 		saving = false;
 		dirty = false;
 		savedName = name;
@@ -31,7 +31,7 @@
 	}
 
 	async function getName() {
-		name = (await deepkey?.get_device_name(pubkey)) ?? name;
+		name = (await $deepkey?.get_device_name(pubkey)) ?? name;
 	}
 
 	onMount(() => {

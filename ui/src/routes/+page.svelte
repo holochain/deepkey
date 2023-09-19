@@ -15,6 +15,8 @@
 	import type { UnsubscribeFunction } from 'emittery';
 	import KeysetDevices from './keyset-devices.svelte';
 	import { deepkey } from '$lib/store/deepkey-client-store';
+	import ManualInviteAcceptance from '../components/manual-invite-acceptance.svelte';
+	import { messages } from '$lib/store/messages';
 
 	let client: AppAgentClient | undefined;
 	let deepkeyClient: DeepkeyClient | undefined;
@@ -23,19 +25,23 @@
 	let keysetKeys: KeyAnchor[] = [];
 	let unsubscribe: UnsubscribeFunction | undefined;
 
+	messages.subscribe(() => {
+		console.log($messages);
+	})
 	onMount(async () => {
 		let app_role = 'deepkey';
 
+		// TODO: Maybe this init could be done in the $deepkey store.
 		client = await setupHolochain();
 		deepkeyClient = new DeepkeyClient(client, app_role);
 		$deepkey = deepkeyClient;
 
 		unsubscribe = deepkeyClient.on((data: any) => {
+			console.log(data);
 			if (data.type === 'InvitationReceived') {
 				const dia = data.device_invite_acceptance;
-				// TODO: Write this to memory store, to show in the alert
+				$messages = [...$messages, { type: 'device_invite_acceptance', base64: dia }];
 			}
-			console.log(data);
 		});
 
 		keysetRootAuthority = await deepkeyClient.keyset_authority();
@@ -48,6 +54,7 @@
 		deepkeyAgentPubkey = appInfo.agent_pub_key;
 
 		keysetKeys = await deepkeyClient.query_keyset_keys(keysetRootAuthority);
+
 	});
 
 	onDestroy(async () => {
@@ -86,11 +93,11 @@
 	</div>
 	<p>All devices managed under this keyset root are under the same key management rules.</p>
 
-	<div class="flex items-center gap-3">
+	<div class="flex items-center gap-3 mt-4">
 		{#if deepkeyAgentPubkey}
 			<CryptographicHash hash={deepkeyAgentPubkey} />
 		{/if}
-		<h1 class="text-2xl font-bold">This Device's Deepkey Agent Key</h1>
+		<h1 class="text-2xl">This Device's Deepkey Agent Key</h1>
 	</div>
 </div>
 
@@ -117,4 +124,7 @@
 	</ul>
 </div>
 
+<div class="m-5">
+	<ManualInviteAcceptance />
+</div>
 <footer class="h-32 m-12" />
