@@ -89,9 +89,7 @@ export class DeepkeyClient {
 	}
 
 	async send_device_invitation(agent: AgentPubKey, dia: DeviceInviteAcceptance): Promise<null> {
-		const res = await this.callZome('send_device_invitation', [agent, dia]);
-		console.log(res);
-		return null;
+		return this.callZome('send_device_invitation', [agent, dia]);
 	}
 
 	// Return the ActionHash of the Keyset Root

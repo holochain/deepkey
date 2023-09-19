@@ -1,12 +1,4 @@
-import {
-	type AppInfo,
-	AdminWebsocket,
-	CellType,
-	AppAgentWebsocket,
-	type AppAgentClient,
-	type AppSignal,
-	type CellId
-} from '@holochain/client';
+import { type AppInfo, AdminWebsocket, CellType, AppAgentWebsocket } from '@holochain/client';
 
 export const HOLOCHAIN_APP_ID = 'deepkey';
 export const HOLOCHAIN_URL = `ws://localhost:${import.meta.env.VITE_HC_PORT}`;

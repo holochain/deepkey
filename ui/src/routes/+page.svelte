@@ -8,18 +8,18 @@
 	import { setupHolochain } from '$lib/holochain-client';
 	import InviteAgent from '../components/invite-agent.svelte';
 	import RegisterKey from '../components/register-key.svelte';
-	import CryptographicHash from '../components/cryptographicHash.svelte';
-	import EditableName from '../components/editableName.svelte';
-	import RecovationAlert from '../components/recovationAlert.svelte';
-	import InvitationAlert from '../components/invitationAlert.svelte';
+	import CryptographicHash from '../components/cryptographic-hash.svelte';
+	import EditableName from '../components/editable-name.svelte';
+	import RevocationAlert from '../components/revocation-alert.svelte';
+	import InvitationAlert from '../components/invitation-alert.svelte';
 	import type { UnsubscribeFunction } from 'emittery';
-	import { decode } from '@msgpack/msgpack';
+	import KeysetDevices from './keyset-devices.svelte';
+	import { deepkey } from '$lib/store/deepkey-client-store';
 
 	let client: AppAgentClient | undefined;
-	let deepkey: DeepkeyClient | undefined;
+	let deepkeyClient: DeepkeyClient | undefined;
 	let deepkeyAgentPubkey: AgentPubKey | undefined;
 	let keysetRootAuthority: ActionHash | undefined;
-	let keysetMembers: AgentPubKey[] = [];
 	let keysetKeys: KeyAnchor[] = [];
 	let unsubscribe: UnsubscribeFunction | undefined;
 
@@ -27,29 +27,27 @@
 		let app_role = 'deepkey';
 
 		client = await setupHolochain();
-		deepkey = new DeepkeyClient(client, app_role);
+		deepkeyClient = new DeepkeyClient(client, app_role);
+		$deepkey = deepkeyClient;
 
-		unsubscribe = deepkey.on((data: any) => {
-			if (data.type === "InvitationReceived") {
+		unsubscribe = deepkeyClient.on((data: any) => {
+			if (data.type === 'InvitationReceived') {
 				const dia = data.device_invite_acceptance;
 				// TODO: Write this to memory store, to show in the alert
 			}
 			console.log(data);
 		});
 
-		keysetRootAuthority = await deepkey.keyset_authority();
-		console.log('keysetRootAuthority', Base64.fromUint8Array(keysetRootAuthority));
+		keysetRootAuthority = await deepkeyClient.keyset_authority();
+		// console.log('keysetRootAuthority', Base64.fromUint8Array(keysetRootAuthority));
 
 		// const res2 = await deepkey.key_state(client.myPubKey);
 		// console.log('res2', res2);
 
 		const appInfo = await client.appInfo();
-
 		deepkeyAgentPubkey = appInfo.agent_pub_key;
 
-		keysetMembers = await deepkey.query_keyset_members(keysetRootAuthority);
-
-		keysetKeys = await deepkey.query_keyset_keys(keysetRootAuthority);
+		keysetKeys = await deepkeyClient.query_keyset_keys(keysetRootAuthority);
 	});
 
 	onDestroy(async () => {
@@ -70,7 +68,7 @@
 </div>
 
 {#if visible}
-	<RecovationAlert />
+	<RevocationAlert />
 {/if}
 
 {#if showInvitationAlert}
@@ -81,43 +79,22 @@
 	<!-- identicon on the left -->
 
 	<div class="flex items-center gap-3">
-		<h3 class="text-2xl font-bold">Keyset Root Hash</h3>
 		{#if keysetRootAuthority}
 			<CryptographicHash hash={keysetRootAuthority} />
 		{/if}
+		<h3 class="text-2xl font-bold">Keyset Root Hash</h3>
 	</div>
 	<p>All devices managed under this keyset root are under the same key management rules.</p>
 
 	<div class="flex items-center gap-3">
-		<h1 class="text-2xl font-bold">This Device's Agent Key</h1>
 		{#if deepkeyAgentPubkey}
 			<CryptographicHash hash={deepkeyAgentPubkey} />
 		{/if}
+		<h1 class="text-2xl font-bold">This Device's Deepkey Agent Key</h1>
 	</div>
 </div>
 
-<div class="card p-4 m-5">
-	<h3 class="text-2xl mb-4">Devices in this Keyset</h3>
-	<InviteAgent {deepkey} />
-
-	<ul class="list flex flex-col mt-6">
-		{#each keysetMembers as member}
-			<li>
-				<span> <AgentIcon class="h-6 w-6" /> </span>
-				<EditableName {deepkey} pubkey={member} />
-				{#if member}
-					<CryptographicHash hash={member} />
-				{/if}
-
-				{#if Base64.fromUint8Array(member) === Base64.fromUint8Array(deepkeyAgentPubkey ?? Uint8Array.from([]))}
-					<span class="chip bg-gradient-to-br variant-gradient-secondary-tertiary"
-						>This device's key</span
-					>
-				{/if}
-			</li>
-		{/each}
-	</ul>
-</div>
+<KeysetDevices />
 
 <div class="card p-4 m-5">
 	<h3 class="text-2xl mb-4">All Keys within this Keyset</h3>
@@ -129,7 +106,7 @@
 	dual-encrypted: password, security questions
 	https://github.com/holochain/lair/tree/main/crates/hc_seed_bundle
 -->
-	<RegisterKey {deepkey} />
+	<RegisterKey deepkey={deepkeyClient} />
 	<ul class="list flex flex-col mt-6">
 		{#each keysetKeys as key}
 			<li>
