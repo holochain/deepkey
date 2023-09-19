@@ -12,8 +12,8 @@ pub mod keyset_root;
 pub mod source_of_authority;
 use deepkey_integrity::*;
 use hdk::prelude::*;
-#[allow(unused_imports)]
 use keyset_root::create_keyset_root;
+
 #[hdk_extern]
 pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
     create_keyset_root(())?;
@@ -57,7 +57,7 @@ pub enum Signal {
         link_type: LinkTypes,
     },
     InvitationReceived {
-        device_invite_acceptance: DeviceInviteAcceptance,
+        device_invite_acceptance: Vec<u8>,
     },
 }
 #[hdk_extern(infallible)]
@@ -164,8 +164,15 @@ fn get_entry_for_action(action_hash: &ActionHash) -> ExternResult<Option<EntryTy
 
 #[hdk_extern]
 pub fn receive_device_invitation(dia: DeviceInviteAcceptance) -> ExternResult<()> {
+    let dia_bytes: SerializedBytes = dia.try_into().map_err(|err| {
+        wasm_error!(WasmErrorInner::Guest(format!(
+            "Can't serialize object: {:?}",
+            err
+        )))
+    })?;
+
     emit_signal(Signal::InvitationReceived {
-        device_invite_acceptance: dia.clone(),
+        device_invite_acceptance: dia_bytes.bytes().to_owned(),
     })?;
     Ok(())
 }

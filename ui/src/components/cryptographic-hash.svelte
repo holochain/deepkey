@@ -6,13 +6,14 @@
 	import { Base64 } from 'js-base64';
 	import Identicon from './identicon.svelte';
 	export let hash: Uint8Array;
+	// console.log(hash);
 	const base64Hash = Base64.fromUint8Array(hash);
 
 	let copiedConfirm = false;
 
 	function showCopied() {
 		copiedConfirm = true;
-		setTimeout(() => (copiedConfirm = false), 700);
+		setTimeout(() => (copiedConfirm = false), 900);
 	}
 </script>
 
@@ -31,7 +32,7 @@
 			{/if}
 			<!-- Message -->
 			<div class="alert-message">
-				{Base64.fromUint8Array(hash)}
+				{base64Hash}
 			</div>
 		</aside>
 	</div>

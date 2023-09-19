@@ -1,22 +1,21 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
 	import type { ActionHash, AgentPubKey, AppAgentClient } from '@holochain/client';
+	import type { UnsubscribeFunction } from 'emittery';
 	import { Base64 } from 'js-base64';
 	import AgentIcon from '~icons/iconoir/laptop';
-
-	import { DeepkeyClient, type KeyAnchor } from '../lib/deepkey-client';
 	import { setupHolochain } from '$lib/holochain-client';
-	import InviteAgent from '../components/invite-agent.svelte';
+	import { DeepkeyClient, type KeyAnchor } from '../lib/deepkey-client';
 	import RegisterKey from '../components/register-key.svelte';
 	import CryptographicHash from '../components/cryptographic-hash.svelte';
-	import EditableName from '../components/editable-name.svelte';
 	import RevocationAlert from '../components/revocation-alert.svelte';
 	import InvitationAlert from '../components/invitation-alert.svelte';
-	import type { UnsubscribeFunction } from 'emittery';
 	import KeysetDevices from './keyset-devices.svelte';
 	import { deepkey } from '$lib/store/deepkey-client-store';
 	import ManualInviteAcceptance from '../components/manual-invite-acceptance.svelte';
 	import { messages } from '$lib/store/messages';
+	import { decode } from '@msgpack/msgpack';
+	import Invitations from '../components/invitations.svelte';
 
 	let client: AppAgentClient | undefined;
 	let deepkeyClient: DeepkeyClient | undefined;
@@ -25,9 +24,6 @@
 	let keysetKeys: KeyAnchor[] = [];
 	let unsubscribe: UnsubscribeFunction | undefined;
 
-	messages.subscribe(() => {
-		console.log($messages);
-	})
 	onMount(async () => {
 		let app_role = 'deepkey';
 
@@ -37,10 +33,10 @@
 		$deepkey = deepkeyClient;
 
 		unsubscribe = deepkeyClient.on((data: any) => {
-			console.log(data);
+			// console.log(data);
 			if (data.type === 'InvitationReceived') {
 				const dia = data.device_invite_acceptance;
-				$messages = [...$messages, { type: 'device_invite_acceptance', base64: dia }];
+				$messages = [...$messages, { type: 'device_invite_acceptance', bytes: dia }];
 			}
 		});
 
@@ -54,7 +50,6 @@
 		deepkeyAgentPubkey = appInfo.agent_pub_key;
 
 		keysetKeys = await deepkeyClient.query_keyset_keys(keysetRootAuthority);
-
 	});
 
 	onDestroy(async () => {
@@ -79,7 +74,7 @@
 {/if}
 
 {#if showInvitationAlert}
-	<InvitationAlert />
+	<Invitations />
 {/if}
 
 <div class="card p-4 m-5">

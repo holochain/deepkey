@@ -2,7 +2,6 @@
 	import EditIcon from '~icons/iconoir/edit';
 	import CancelIcon from '~icons/iconoir/cancel';
 	import SaveIcon from '~icons/iconoir/save-floppy-disk';
-	import type { DeepkeyClient } from '$lib/deepkey-client';
 	import { TwelveDotsScaleRotate } from 'svelte-svg-spinners';
 	import type { AgentPubKey } from '@holochain/client';
 	import { onMount } from 'svelte';
