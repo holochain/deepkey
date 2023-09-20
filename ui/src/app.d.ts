@@ -11,4 +11,9 @@ declare global {
 	}
 }
 
-export {};
+type Invitation = {
+	id: string;
+	dia: DeviceInviteAcceptance;
+};
+
+export { Invitation };

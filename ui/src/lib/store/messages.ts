@@ -3,6 +3,7 @@ import type { DeviceInviteAcceptance } from '$lib/deepkey-client';
 import { writable } from 'svelte/store';
 
 export type Message = {
+	id: string;
 	type: 'device_invite_acceptance';
 	bytes: Uint8Array;
 };
@@ -22,6 +23,12 @@ export const messages = writable<Message[]>(
 		return [];
 	})()
 );
+
+export function removeMessage(id: string) {
+	messages.update((msgs) => {
+		return msgs.filter((msg) => msg.id !== id);
+	});
+}
 
 if (browser) {
 	messages.subscribe((messages) => {

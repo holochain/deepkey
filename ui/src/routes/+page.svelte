@@ -2,6 +2,7 @@
 	import { onDestroy, onMount } from 'svelte';
 	import type { ActionHash, AgentPubKey, AppAgentClient } from '@holochain/client';
 	import type { UnsubscribeFunction } from 'emittery';
+	import { nanoid } from 'nanoid';
 	import { Base64 } from 'js-base64';
 	import AgentIcon from '~icons/iconoir/laptop';
 	import { setupHolochain } from '$lib/holochain-client';
@@ -9,12 +10,10 @@
 	import RegisterKey from '../components/register-key.svelte';
 	import CryptographicHash from '../components/cryptographic-hash.svelte';
 	import RevocationAlert from '../components/revocation-alert.svelte';
-	import InvitationAlert from '../components/invitation-alert.svelte';
 	import KeysetDevices from './keyset-devices.svelte';
 	import { deepkey } from '$lib/store/deepkey-client-store';
 	import ManualInviteAcceptance from '../components/manual-invite-acceptance.svelte';
 	import { messages } from '$lib/store/messages';
-	import { decode } from '@msgpack/msgpack';
 	import Invitations from '../components/invitations.svelte';
 
 	let client: AppAgentClient | undefined;
@@ -36,7 +35,7 @@
 			// console.log(data);
 			if (data.type === 'InvitationReceived') {
 				const dia = data.device_invite_acceptance;
-				$messages = [...$messages, { type: 'device_invite_acceptance', bytes: dia }];
+				$messages = [...$messages, { id: nanoid(), type: 'device_invite_acceptance', bytes: dia }];
 			}
 		});
 
