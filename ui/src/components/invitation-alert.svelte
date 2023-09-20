@@ -23,6 +23,10 @@
 		}
 		// showAcceptInput = false;
 	}
+
+	async function refuseInvitation() {
+		removeMessage(invite.id);
+	}
 </script>
 
 <aside class="alert variant-ghost m-5 bg-gradient-to-br variant-gradient-secondary-primary">
@@ -43,6 +47,8 @@
 		<button type="button" on:click={acceptInvitation} class="btn variant-ghost-success"
 			>Accept Invitation</button
 		>
-		<button type="button" class="btn variant-ghost-surface">Delete Request</button>
+		<button type="button" on:click={refuseInvitation} class="btn variant-ghost-surface"
+			>Delete Request</button
+		>
 	</div>
 </aside>

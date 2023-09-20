@@ -6,6 +6,7 @@
 	import type { AgentPubKey } from '@holochain/client';
 	import { onMount } from 'svelte';
 	import { deepkey } from '$lib/store/deepkey-client-store';
+	import { Base64 } from 'js-base64';
 
 	export let pubkey: AgentPubKey;
 
@@ -14,6 +15,7 @@
 	let editing = false;
 	let dirty = false;
 	let saving = false;
+	let canEdit = false;
 
 	function toggleEdit() {
 		editing = !editing;
@@ -33,8 +35,13 @@
 		name = (await $deepkey?.get_device_name(pubkey)) ?? name;
 	}
 
-	onMount(() => {
+	onMount(async () => {
 		getName();
+
+		// TODO: appinfo should be stored on a shared sveltestore, so we don't keep querying in different components.
+		const appInfo = await $deepkey.client.appInfo();
+		const deepkeyAgentPubkey = appInfo.agent_pub_key;
+		canEdit = Base64.fromUint8Array(deepkeyAgentPubkey) === Base64.fromUint8Array(pubkey);
 	});
 </script>
 
@@ -56,7 +63,9 @@
 	</button>
 {:else}
 	<p class="text-gray-350 text-lg">{name}</p>
-	<button on:click={toggleEdit}>
-		<EditIcon />
-	</button>
+	{#if canEdit}
+		<button on:click={toggleEdit}>
+			<EditIcon />
+		</button>
+	{/if}
 {/if}

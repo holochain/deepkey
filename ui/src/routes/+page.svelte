@@ -26,7 +26,7 @@
 	onMount(async () => {
 		let app_role = 'deepkey';
 
-		// TODO: Maybe this init could be done in the $deepkey store.
+		// Maybe this init could be done in the $deepkey store.
 		client = await setupHolochain();
 		deepkeyClient = new DeepkeyClient(client, app_role);
 		$deepkey = deepkeyClient;
