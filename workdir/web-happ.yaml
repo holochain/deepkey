@@ -1,0 +1,6 @@
+manifest_version: '1'
+name: deepkey
+ui:
+  bundled: ../ui/build.zip
+happ_manifest:
+  bundled: ./deepkey.happ
