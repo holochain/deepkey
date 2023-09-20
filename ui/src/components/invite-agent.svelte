@@ -24,11 +24,11 @@
 		const dia = await $deepkey?.invite_agent(agentKeyToInvite);
 		if (dia) {
 			await $deepkey?.send_device_invitation(agentKeyToInvite, dia);
+			showInviteInput = false;
 		} else {
 			console.error('Failed to invite agent. Please check the agent key.');
 		}
 	}
-
 </script>
 
 {#if showInviteInput}
@@ -69,7 +69,6 @@
 		on:click={() => (showInviteInput = true)}
 	>
 		<span><AddAgentIcon class="h-6 w-6" /></span>
-		<span>Invite a New Agent</span>
+		<span>Invite a Device</span>
 	</button>
-
 {/if}

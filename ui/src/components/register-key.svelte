@@ -1,12 +1,12 @@
 <script lang="ts">
 	import type { DeepkeyClient, DeviceInviteAcceptance } from '$lib/deepkey-client';
+	import { deepkey } from '$lib/store/deepkey-client-store';
 	import type { AgentPubKey } from '@holochain/client';
 	import { encode, decode } from '@msgpack/msgpack';
 	import { Base64 } from 'js-base64';
 
 	import RegisterKeyIcon from '~icons/iconoir/key-alt-plus';
 
-	export let deepkey: DeepkeyClient | undefined;
 	let showRegisterInput = false;
 
 	let privateKeyToInvite = '';
@@ -17,11 +17,11 @@
 
 	async function registerKey() {
 		// const agentKeyToInvite: AgentPubKey = Base64.toUint8Array(privateKeyToInvite);
-        privateKeyToInvite
-        // make a keypair / derive public key
-        // create keyRegistration, with self-signed signature from private key
-        // register the keyRegistration
-        
+		privateKeyToInvite;
+		// make a keypair / derive public key
+		// create keyRegistration, with self-signed signature from private key
+		// register the keyRegistration
+
 		// TODO: Validate input here
 		// const dia = await deepkey?.invite_agent(agentKeyToInvite);
 		// diaPayload = Base64.fromUint8Array(encode(dia));
@@ -66,4 +66,5 @@
 		<span><RegisterKeyIcon class="h-6 w-6" /></span>
 		<span>Register a new key</span>
 	</button>
+
 {/if}

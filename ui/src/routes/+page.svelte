@@ -7,7 +7,6 @@
 	import AgentIcon from '~icons/iconoir/laptop';
 	import { setupHolochain } from '$lib/holochain-client';
 	import { DeepkeyClient, type KeyAnchor } from '../lib/deepkey-client';
-	import RegisterKey from '../components/register-key.svelte';
 	import CryptographicHash from '../components/cryptographic-hash.svelte';
 	import RevocationAlert from '../components/revocation-alert.svelte';
 	import KeysetDevices from './keyset-devices.svelte';
@@ -15,6 +14,7 @@
 	import ManualInviteAcceptance from '../components/manual-invite-acceptance.svelte';
 	import { messages } from '$lib/store/messages';
 	import Invitations from '../components/invitations.svelte';
+	import KeysetKeys from './keyset-keys.svelte';
 
 	let client: AppAgentClient | undefined;
 	let deepkeyClient: DeepkeyClient | undefined;
@@ -22,6 +22,11 @@
 	let keysetRootAuthority: ActionHash | undefined;
 	let keysetKeys: KeyAnchor[] = [];
 	let unsubscribe: UnsubscribeFunction | undefined;
+
+	async function registerTestKey() {
+		const keyreg = await $deepkey.callZome('register_test_key', null);
+		console.log(keyreg);
+	}
 
 	onMount(async () => {
 		let app_role = 'deepkey';
@@ -32,7 +37,6 @@
 		$deepkey = deepkeyClient;
 
 		unsubscribe = deepkeyClient.on((data: any) => {
-			// console.log(data);
 			if (data.type === 'InvitationReceived') {
 				const dia = data.device_invite_acceptance;
 				$messages = [...$messages, { id: nanoid(), type: 'device_invite_acceptance', bytes: dia }];
@@ -97,28 +101,15 @@
 
 <KeysetDevices />
 
-<div class="card p-4 m-5">
-	<h3 class="text-2xl mb-4">All Keys within this Keyset</h3>
-	<!-- 
-	generate random keypair
-	derive new key from seed, derivation path 
-	make a lair call, gen new keypair or provide derivation string
-	export a seed bundle; save the seed. lair saves it as encrypted thing
-	dual-encrypted: password, security questions
-	https://github.com/holochain/lair/tree/main/crates/hc_seed_bundle
--->
-	<RegisterKey deepkey={deepkeyClient} />
-	<ul class="list flex flex-col mt-6">
-		{#each keysetKeys as key}
-			<li>
-				<span> <AgentIcon class="h-6 w-6" /> </span>
-				<p class="text-gray-500 text-lg">{Base64.fromUint8Array(key.bytes)}</p>
-			</li>
-		{/each}
-	</ul>
-</div>
+<KeysetKeys />
 
 <div class="m-5">
 	<ManualInviteAcceptance />
 </div>
+<div class="m-5">
+	<button type="button" class="btn btn-sm variant-ghost-tertiary" on:click={registerTestKey}>
+		<span>Register a test key</span>
+	</button>
+</div>
+
 <footer class="h-32 m-12" />

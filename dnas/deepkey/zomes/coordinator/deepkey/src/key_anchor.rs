@@ -9,18 +9,15 @@ pub enum KeyState {
 }
 
 #[hdk_extern]
-pub fn key_state((agent_key, _timestamp): (AgentPubKey, Timestamp)) -> ExternResult<KeyState> {
-    // let key_anchor_bytes = key_anchor_vec.try_into().map_err(|_| {
-    //     wasm_error!(WasmErrorInner::Guest(
-    //         "Could not convert key_anchor_vec to [u8; 32]".into()
-    //     ))
-    // })?;
-    // let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(KeyAnchor {
-    //     bytes: key_anchor_bytes,
-    // }))?;
-    // TODO: should pass in the actual key anchor, but can't deserialize [u8; 32] from JS.
-    // Reference: https://docs.rs/serde_with/1.10.0/serde_with/struct.Bytes.html
-    let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(KeyAnchor::from_agent_key(agent_key)))?;
+pub fn key_state((key_anchor_vec, _timestamp): (Vec<u8>, Timestamp)) -> ExternResult<KeyState> {
+    let key_anchor_bytes = key_anchor_vec.try_into().map_err(|_| {
+        wasm_error!(WasmErrorInner::Guest(
+            "Could not convert key_anchor_vec to [u8; 32]".into()
+        ))
+    })?;
+    let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(KeyAnchor {
+        bytes: key_anchor_bytes,
+    }))?;
 
     // find any deletes, anything pointing to this key anchor
     let key_anchor_details_opt = get_details(key_anchor_hash.clone(), GetOptions::default())?;
