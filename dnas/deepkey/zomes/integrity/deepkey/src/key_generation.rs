@@ -21,20 +21,16 @@ pub fn validate_update_key_generation(
     _original_action: EntryCreationAction,
     _original_key_generation: KeyGeneration,
 ) -> ExternResult<ValidateCallbackResult> {
-    Ok(
-        ValidateCallbackResult::Invalid(
-            String::from("Key Generations cannot be updated"),
-        ),
-    )
+    Ok(ValidateCallbackResult::Invalid(String::from(
+        "Key Generations cannot be updated",
+    )))
 }
 pub fn validate_delete_key_generation(
     _action: Delete,
     _original_action: EntryCreationAction,
     _original_key_generation: KeyGeneration,
 ) -> ExternResult<ValidateCallbackResult> {
-    Ok(
-        ValidateCallbackResult::Invalid(
-            String::from("Key Generations cannot be deleted"),
-        ),
-    )
+    Ok(ValidateCallbackResult::Invalid(String::from(
+        "Key Generations cannot be deleted",
+    )))
 }

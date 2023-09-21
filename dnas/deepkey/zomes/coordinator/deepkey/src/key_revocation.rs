@@ -35,47 +35,6 @@ pub fn authorize_key_revocation(key_revocation: KeyRevocation) -> ExternResult<K
 }
 
 #[hdk_extern]
-// TODO: Couldn't revoke, update, and create just be in a single save_key_registration function?
-pub fn revoke_key(key_revocation: KeyRevocation) -> ExternResult<()> {
-    let registration = get(
-        key_revocation.prior_key_registration.clone(),
-        GetOptions::default(),
-    )?
-    .map(|record| record.entry().to_app_option::<KeyRegistration>())
-    .transpose()
-    .map_err(|err| wasm_error!(WasmErrorInner::Guest(err.to_string())))?
-    .flatten()
-    .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
-        "Cannot find the KeyRegistration to be revoked"
-    ))))?;
-    let agent_pubkey = match registration {
-        KeyRegistration::Create(key_generation) => Ok(key_generation.new_key),
-        KeyRegistration::CreateOnly(_) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
-            "CreateOnly is Unimplemented"
-        ))))?,
-        KeyRegistration::Update(_, _) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
-            "Cannot revoke: this key has already been revoked and updated to a new key."
-        ))))?,
-        KeyRegistration::Delete(_) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
-            "Cannot revoke: Key is already revoked"
-        )))),
-    }?;
-    let key_anchor = KeyAnchor::from_agent_key(agent_pubkey);
-    let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(key_anchor.clone()))?;
-    let old_key_anchor_record =
-        get(key_anchor_hash, GetOptions::default())?.ok_or(wasm_error!(WasmErrorInner::Guest(
-            String::from("Could not find the KeyAnchor for the KeyRegistration to be revoked")
-        )))?;
-
-    update_entry(
-        key_revocation.prior_key_registration.clone(),
-        &EntryTypes::KeyRegistration(KeyRegistration::Delete(key_revocation.clone())),
-    )?;
-    delete_entry(old_key_anchor_record.action_address().clone())?;
-    Ok(())
-}
-
-#[hdk_extern]
 pub fn get_key_revocation(
     original_key_revocation_hash: ActionHash,
 ) -> ExternResult<Option<Record>> {
