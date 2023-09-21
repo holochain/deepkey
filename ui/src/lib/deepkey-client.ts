@@ -16,12 +16,12 @@ export function getKeyAnchor(pubkey: AgentPubKey): KeyAnchor {
 
 export type Authorization = [number, Buffer]; // u8 index, 64 byte signature
 
-type KeyGeneration = {
+export type KeyGeneration = {
 	new_key: AgentPubKey;
-	new_key_signing_of_author: Buffer; // 64 bytes
+	new_key_signing_of_author: Uint8Array; // 64 byte signature
 };
 
-type KeyRevocation = {
+export type KeyRevocation = {
 	prior_key_registration: ActionHash;
 	revocation_authorization: Authorization[];
 };

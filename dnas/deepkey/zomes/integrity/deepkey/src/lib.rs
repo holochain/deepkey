@@ -26,6 +26,10 @@ pub mod source_of_authority;
 pub use source_of_authority::*;
 pub mod device_name;
 pub use device_name::*;
+pub mod key_meta;
+pub use key_meta::*;
+pub mod dna_binding;
+pub use dna_binding::*;
 use hdi::prelude::*;
 
 #[derive(Serialize, Deserialize)]
@@ -44,6 +48,8 @@ pub enum EntryTypes {
     KeyRevocation(KeyRevocation),
     KeyRegistration(KeyRegistration),
     KeyAnchor(KeyAnchor),
+    KeyMeta(KeyMeta),
+    DnaBinding(DnaBinding),
 }
 #[derive(Serialize, Deserialize)]
 #[hdk_link_types]
@@ -112,6 +118,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 EntryTypes::KeyAnchor(key_anchor) => {
                     validate_create_key_anchor(EntryCreationAction::Create(action), key_anchor)
                 }
+                EntryTypes::KeyMeta(key_meta) => {
+                    validate_create_key_meta(EntryCreationAction::Create(action), key_meta)
+                }
+                EntryTypes::DnaBinding(dna_binding) => {
+                    validate_create_dna_binding(EntryCreationAction::Create(action), dna_binding)
+                }
             },
             OpEntry::UpdateEntry {
                 app_entry, action, ..
@@ -156,6 +168,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 ),
                 EntryTypes::KeyAnchor(key_anchor) => {
                     validate_create_key_anchor(EntryCreationAction::Update(action), key_anchor)
+                }
+                EntryTypes::KeyMeta(key_meta) => {
+                    validate_create_key_meta(EntryCreationAction::Update(action), key_meta)
+                }
+                EntryTypes::DnaBinding(dna_binding) => {
+                    validate_create_dna_binding(EntryCreationAction::Update(action), dna_binding)
                 }
             },
             _ => Ok(ValidateCallbackResult::Valid),
@@ -305,6 +323,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 }
                 EntryTypes::KeyAnchor(key_anchor) => {
                     validate_delete_key_anchor(action, original_action, key_anchor)
+                }
+                EntryTypes::KeyMeta(key_meta) => {
+                    validate_delete_key_meta(action, original_action, key_meta)
+                }
+                EntryTypes::DnaBinding(dna_binding) => {
+                    validate_delete_dna_binding(action, original_action, dna_binding)
                 }
             },
             _ => Ok(ValidateCallbackResult::Valid),
@@ -456,7 +480,13 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 ),
                 EntryTypes::KeyAnchor(key_anchor) => {
                     validate_create_key_anchor(EntryCreationAction::Create(action), key_anchor)
-                }
+                },
+                EntryTypes::KeyMeta(key_meta) => {
+                    validate_create_key_meta(EntryCreationAction::Create(action), key_meta)
+                },
+                EntryTypes::DnaBinding(dna_binding) => {
+                    validate_create_dna_binding(EntryCreationAction::Create(action), dna_binding)
+                },
             },
             OpRecord::UpdateEntry {
                 original_action_hash,
@@ -792,6 +822,68 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                             Ok(result)
                         }
                     }
+                    EntryTypes::KeyMeta(key_meta) => {
+                        let result = validate_create_key_meta(
+                            EntryCreationAction::Update(action.clone()),
+                            key_meta.clone(),
+                        )?;
+                        if let ValidateCallbackResult::Valid = result {
+                            let original_key_meta: Option<KeyMeta> = original_record
+                                .entry()
+                                .to_app_option()
+                                .map_err(|e| wasm_error!(e))?;
+                            let original_key_anchor = match original_key_meta {
+                                Some(key_meta) => key_meta,
+                                None => {
+                                    return Ok(
+                                        ValidateCallbackResult::Invalid(
+                                            "The updated entry type must be the same as the original entry type"
+                                                .to_string(),
+                                        ),
+                                    );
+                                }
+                            };
+                            validate_update_key_meta(
+                                action,
+                                key_meta,
+                                original_action,
+                                original_key_anchor,
+                            )
+                        } else {
+                            Ok(result)
+                        }
+                    }
+                    EntryTypes::DnaBinding(dna_binding) => {
+                        let result = validate_create_dna_binding(
+                            EntryCreationAction::Update(action.clone()),
+                            dna_binding.clone(),
+                        )?;
+                        if let ValidateCallbackResult::Valid = result {
+                            let original_dna_binding: Option<DnaBinding> = original_record
+                                .entry()
+                                .to_app_option()
+                                .map_err(|e| wasm_error!(e))?;
+                            let original_dna_binding = match original_dna_binding {
+                                Some(dna_binding) => dna_binding,
+                                None => {
+                                    return Ok(
+                                        ValidateCallbackResult::Invalid(
+                                            "The updated entry type must be the same as the original entry type"
+                                                .to_string(),
+                                        ),
+                                    );
+                                }
+                            };
+                            validate_update_dna_binding(
+                                action,
+                                dna_binding,
+                                original_action,
+                                original_dna_binding,
+                            )
+                        } else {
+                            Ok(result)
+                        }
+                    }
                 }
             }
             OpRecord::DeleteEntry {
@@ -905,7 +997,13 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     }
                     EntryTypes::KeyAnchor(original_key_anchor) => {
                         validate_delete_key_anchor(action, original_action, original_key_anchor)
-                    }
+                    },
+                    EntryTypes::KeyMeta(original_key_meta) => {
+                        validate_delete_key_meta(action, original_action, original_key_meta)
+                    },
+                    EntryTypes::DnaBinding(original_dna_binding) => {
+                        validate_delete_dna_binding(action, original_action, original_dna_binding)
+                    },
                 }
             }
             OpRecord::CreateLink {
