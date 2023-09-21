@@ -6,7 +6,9 @@ import type {
 	AppAgentCallZomeRequest,
 	AppAgentClient,
 	AppSignal,
-	HoloHashed
+	DnaHash,
+	HoloHashed,
+	Signature
 } from '@holochain/client';
 
 export type KeyAnchor = { bytes: Uint8Array };
@@ -39,6 +41,23 @@ export type KeyRegistration =
 	| {
 			Delete: KeyRevocation;
 	  };
+
+export function getKeyFromKeyRegistration(registration: KeyRegistration): AgentPubKey | null {
+	if ('Create' in registration) {
+		const keyGen = registration.Create;
+		return keyGen.new_key;
+	} else if ('CreateOnly' in registration) {
+		const keyGen = registration.CreateOnly;
+		return keyGen.new_key;
+	} else if ('Update' in registration) {
+		const [keyRev, keyGen] = registration.Update;
+		return keyGen.new_key;
+	} else if ('Delete' in registration) {
+		const keyRev = registration.Delete;
+		return null;
+	}
+	return null;
+}
 
 export type KeyState =
 	| {
@@ -76,8 +95,8 @@ export class DeepkeyClient {
 		});
 	}
 
-	async key_state(agentKey: AgentPubKey): Promise<KeyState> {
-		return this.callZome('key_state', [agentKey, Date.now()]);
+	async key_state(keyAnchor: Array<number>): Promise<KeyState> {
+		return this.callZome('key_state', [keyAnchor, Date.now()]);
 	}
 
 	async name_device(name: string): Promise<null> {
@@ -103,8 +122,11 @@ export class DeepkeyClient {
 		return this.callZome('query_keyset_members', ksr);
 	}
 
-	async query_keyset_keys(ksr: ActionHash): Promise<KeyAnchor[]> {
+	async query_keyset_keys(ksr: ActionHash): Promise<KeyRegistration[]> {
 		return this.callZome('query_keyset_keys', ksr);
+	}
+	async query_keyset_key_anchors(ksr: ActionHash): Promise<KeyAnchor[]> {
+		return this.callZome('query_keyset_key_anchors', ksr);
 	}
 
 	async invite_agent(agentKey: AgentPubKey): Promise<DeviceInviteAcceptance> {
@@ -113,8 +135,35 @@ export class DeepkeyClient {
 	async accept_invitation(dia: DeviceInviteAcceptance): Promise<ActionHash> {
 		return this.callZome('accept_invite', dia);
 	}
-	async register_key(keyRegistration: KeyRegistration): Promise<ActionHash> {
-		return this.callZome('new_key_registration', keyRegistration);
+
+	// Returns the ActionHash of the created KeyRegistration
+	async register_key(
+		newKey: AgentPubKey,
+		newKeySignature: Signature,
+		dnaHash: DnaHash,
+		appName: string
+	): Promise<ActionHash> {
+		return this.callZome('register_key', [newKey, newKeySignature, dnaHash, appName]);
+	}
+
+	// Returns the ActionHash of the created KeyRegistration
+	async update_key(
+		priorKeyRegistration: ActionHash,
+		revocationAuthorization: [number, Signature][],
+		newKey: AgentPubKey,
+		newKeySignature: Signature,
+		dnaHash: DnaHash,
+		appName: string
+	): Promise<ActionHash> {
+		return this.callZome('update_key', [newKey, newKeySignature, dnaHash, appName]);
+	}
+
+	// Returns the ActionHash of the created KeyRegistration
+	async revoke_key(
+		keyRegistrationToRevoke: ActionHash,
+		revocationAuthorization: [number, Signature][]
+	): Promise<ActionHash> {
+		return this.callZome('revoke_key', [keyRegistrationToRevoke, revocationAuthorization]);
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any

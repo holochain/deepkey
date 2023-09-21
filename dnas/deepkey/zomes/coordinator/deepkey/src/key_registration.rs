@@ -126,11 +126,11 @@ pub fn revoke_key(
     let revocation_registration = KeyRegistration::Delete(key_revocation);
 
     // TODO: Fill out the validation for KeyRevocation so it actually validates the revocation_authorization signatures.
-    let key_revocation_action_hash = update_entry(
+    let key_registration_action_hash = update_entry(
         key_registration_to_revoke,
         EntryTypes::KeyRegistration(revocation_registration),
     )?;
-    Ok(key_revocation_action_hash)
+    Ok(key_registration_action_hash)
 }
 
 // TODO: check if we need to do the `match registration` as in the old method below:

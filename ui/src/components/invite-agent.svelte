@@ -45,9 +45,9 @@
 			<button type="button" class="btn variant-filled-primary" on:click={inviteAgent}>
 				Invite
 			</button>
-			<button type="button" class="btn variant-filled-tertiary" on:click={inviteAgentOffline}>
+			<!-- <button type="button" class="btn variant-filled-tertiary" on:click={inviteAgentOffline}>
 				Invite Offline
-			</button>
+			</button> -->
 			<button
 				type="button"
 				class="btn variant-filled-surface"

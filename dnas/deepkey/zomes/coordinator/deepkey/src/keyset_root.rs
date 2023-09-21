@@ -117,3 +117,30 @@ pub fn query_keyset_keys(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyRe
     Ok(key_registrations)
 }
 
+#[hdk_extern]
+pub fn query_keyset_key_anchors(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyAnchor>> {
+    let key_anchors = get_links(keyset_root_hash, LinkTypes::KeysetRootToKeyAnchors, None)?
+        .into_iter()
+        .map(|link| link.target.into())
+        .map(|key_anchor_hash: EntryHash| get(key_anchor_hash, GetOptions::default()))
+        .collect::<ExternResult<Vec<Option<Record>>>>()?
+        .into_iter()
+        .filter_map(|x| x)
+        .map(|key_anchor_record| {
+            key_anchor_record
+                .entry
+                .to_app_option::<KeyAnchor>()
+                .map_err(|e| {
+                    wasm_error!(WasmErrorInner::Guest(format!(
+                        "Could not deserialize KeyAnchor entry: {}",
+                        e
+                    )))
+                })
+        })
+        .collect::<ExternResult<Vec<Option<KeyAnchor>>>>()?
+        .into_iter()
+        .filter_map(|x| x)
+        .collect::<Vec<KeyAnchor>>();
+
+    Ok(key_anchors)
+}

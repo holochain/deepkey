@@ -20,7 +20,6 @@
 	let deepkeyClient: DeepkeyClient | undefined;
 	let deepkeyAgentPubkey: AgentPubKey | undefined;
 	let keysetRootAuthority: ActionHash | undefined;
-	let keysetKeys: KeyAnchor[] = [];
 	let unsubscribe: UnsubscribeFunction | undefined;
 
 	async function registerTestKey() {
@@ -51,8 +50,6 @@
 
 		const appInfo = await client.appInfo();
 		deepkeyAgentPubkey = appInfo.agent_pub_key;
-
-		keysetKeys = await deepkeyClient.query_keyset_keys(keysetRootAuthority);
 	});
 
 	onDestroy(async () => {
@@ -105,11 +102,6 @@
 
 <div class="m-5">
 	<ManualInviteAcceptance />
-</div>
-<div class="m-5">
-	<button type="button" class="btn btn-sm variant-ghost-tertiary" on:click={registerTestKey}>
-		<span>Register a test key</span>
-	</button>
 </div>
 
 <footer class="h-32 m-12" />
