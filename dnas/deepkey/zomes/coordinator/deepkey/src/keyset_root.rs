@@ -84,27 +84,36 @@ pub fn query_keyset_members(keyset_root_hash: ActionHash) -> ExternResult<Vec<Ag
 
 // Get all of the keys registered on the keyset, across all the deepkey agents
 #[hdk_extern]
-pub fn query_keyset_keys(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyAnchor>> {
-    let key_anchors = get_links(keyset_root_hash, LinkTypes::KeysetRootToKeyAnchors, None)?
+pub fn query_keyset_keys(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyRegistration>> {
+    let key_registrations = get_links(keyset_root_hash, LinkTypes::KeysetRootToKeyAnchors, None)?
         .into_iter()
         .map(|link| link.target.into())
         .map(|key_anchor_hash: EntryHash| get(key_anchor_hash, GetOptions::default()))
         .collect::<ExternResult<Vec<Option<Record>>>>()?
         .into_iter()
         .filter_map(|x| x)
-        .map(|record| {
-            record.entry.to_app_option::<KeyAnchor>().map_err(|e| {
-                wasm_error!(WasmErrorInner::Guest(format!(
-                    "Could not deserialize KeyAnchor: {}",
-                    e
-                )))
-            })
-        })
-        .collect::<ExternResult<Vec<Option<KeyAnchor>>>>()?
+        .map(|record| record.action().prev_action().cloned())
+        .filter_map(|x| x)
+        .map(|key_reg_actionhash| get(key_reg_actionhash, GetOptions::default()))
+        .collect::<ExternResult<Vec<Option<Record>>>>()?
         .into_iter()
         .filter_map(|x| x)
-        .collect::<Vec<KeyAnchor>>();
+        .map(|key_reg_record| {
+            key_reg_record
+                .entry
+                .to_app_option::<KeyRegistration>()
+                .map_err(|e| {
+                    wasm_error!(WasmErrorInner::Guest(format!(
+                        "Could not deserialize KeyRegistration entry: {}",
+                        e
+                    )))
+                })
+        })
+        .collect::<ExternResult<Vec<Option<KeyRegistration>>>>()?
+        .into_iter()
+        .filter_map(|x| x)
+        .collect::<Vec<KeyRegistration>>();
 
-    // We'll probably want another method that filters by key_state for active keys only
-    Ok(key_anchors)
+    Ok(key_registrations)
 }
+

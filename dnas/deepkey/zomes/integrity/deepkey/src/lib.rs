@@ -48,7 +48,9 @@ pub enum EntryTypes {
     KeyRevocation(KeyRevocation),
     KeyRegistration(KeyRegistration),
     KeyAnchor(KeyAnchor),
+    #[entry_def(visibility = "private")]
     KeyMeta(KeyMeta),
+    #[entry_def(visibility = "private")]
     DnaBinding(DnaBinding),
 }
 #[derive(Serialize, Deserialize)]
@@ -480,13 +482,13 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 ),
                 EntryTypes::KeyAnchor(key_anchor) => {
                     validate_create_key_anchor(EntryCreationAction::Create(action), key_anchor)
-                },
+                }
                 EntryTypes::KeyMeta(key_meta) => {
                     validate_create_key_meta(EntryCreationAction::Create(action), key_meta)
-                },
+                }
                 EntryTypes::DnaBinding(dna_binding) => {
                     validate_create_dna_binding(EntryCreationAction::Create(action), dna_binding)
-                },
+                }
             },
             OpRecord::UpdateEntry {
                 original_action_hash,
@@ -997,13 +999,13 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     }
                     EntryTypes::KeyAnchor(original_key_anchor) => {
                         validate_delete_key_anchor(action, original_action, original_key_anchor)
-                    },
+                    }
                     EntryTypes::KeyMeta(original_key_meta) => {
                         validate_delete_key_meta(action, original_action, original_key_meta)
-                    },
+                    }
                     EntryTypes::DnaBinding(original_dna_binding) => {
                         validate_delete_dna_binding(action, original_action, original_dna_binding)
-                    },
+                    }
                 }
             }
             OpRecord::CreateLink {
