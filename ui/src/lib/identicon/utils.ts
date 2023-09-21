@@ -51,7 +51,9 @@ export function encodeColor({ h, s, l }) {
 // @ts-ignore
 export function stringToBits(string) {
 	return (
+		// @ts-ignore
 		Array.from(string)
+			// @ts-ignore
 			.reduce((acc, char) => acc.concat(char.charCodeAt().toString(2)), [])
 			// @ts-ignore
 			.map((bin) => '0'.repeat(8 - bin.length) + bin)

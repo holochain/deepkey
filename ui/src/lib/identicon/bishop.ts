@@ -72,7 +72,7 @@ export default function renderIcon(opts, outputCanvas) {
 
 	const maxHeight = imageData.reduce((a, b) => Math.max(a, b));
 
-	var canvas = document.createElement('canvas');
+	const canvas = document.createElement('canvas');
 
 	canvas.width = canvas.height = size;
 
