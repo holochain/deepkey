@@ -17,7 +17,7 @@
 	});
 
 	invitations.subscribe((i) => {
-		console.log(i);
+		// console.log(i);
 	});
 </script>
 

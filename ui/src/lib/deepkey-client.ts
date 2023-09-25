@@ -1,15 +1,17 @@
 import type { UnsubscribeFunction } from 'emittery';
-import { isSignalFromCellWithRole } from '@holochain-open-dev/utils';
 import type {
 	ActionHash,
 	AgentPubKey,
 	AppAgentCallZomeRequest,
-	AppAgentClient,
 	AppSignal,
+	CellId,
 	DnaHash,
+	HoloHash,
 	HoloHashed,
 	Signature
 } from '@holochain/client';
+import { locallySignZomeCall } from './holochain-client';
+import type { SelfAuthorizedHolochainWebsocket } from './store/holochain-client-store';
 
 export type KeyAnchor = { bytes: Uint8Array };
 export function getKeyAnchor(pubkey: AgentPubKey): KeyAnchor {
@@ -75,19 +77,35 @@ export type DeviceInviteAcceptance = {
 	invite: ActionHash;
 };
 
+export type DnaBinding = {
+	key_meta: ActionHash; // Referencing a KeyMeta by its ActionHash
+	dna_hash: HoloHash; //The hash of the DNA the key is bound to
+	app_name: string;
+};
+export type KeyMeta = {
+	new_key: ActionHash; // Referencing a KeyRegistration by its ActionHash
+	derivation_path: Uint8Array;
+	derivation_index: number;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	key_type: any;
+};
+
 export class DeepkeyClient {
+	public cellId: CellId;
 	constructor(
-		public client: AppAgentClient,
-		public roleName: string,
-		// public cellId: CellId,
+		public client: SelfAuthorizedHolochainWebsocket,
+		// public roleName: string,
 		public zomeName = 'deepkey'
-	) {}
+	) {
+		this.cellId = client.cellId;
+	}
 
 	on<D>(listener: (eventData: D) => void | Promise<void>): UnsubscribeFunction {
 		const eventName = 'signal'; // it's always 'signal'.
 		return this.client.on(eventName, async (signal: AppSignal) => {
 			if (
-				(await isSignalFromCellWithRole(this.client, this.roleName, signal)) &&
+				// (await isSignalFromCellWithRole(this.client, this.roleName, signal)) &&
+				signal.cell_id === this.cellId &&
 				this.zomeName === signal.zome_name
 			) {
 				listener(signal.payload as D);
@@ -95,45 +113,53 @@ export class DeepkeyClient {
 		});
 	}
 
-	async key_state(keyAnchor: Array<number>): Promise<KeyState> {
+	async keyState(keyAnchor: Array<number>): Promise<KeyState> {
 		return this.callZome('key_state', [keyAnchor, Date.now()]);
 	}
 
-	async name_device(name: string): Promise<null> {
+	async nameDevice(name: string): Promise<null> {
 		return this.callZome('name_device', name);
 	}
 
-	async get_device_name(key: AgentPubKey): Promise<null> {
+	async getDeviceName(key: AgentPubKey): Promise<null> {
 		return this.callZome('get_device_name', key);
 	}
 
-	async send_device_invitation(agent: AgentPubKey, dia: DeviceInviteAcceptance): Promise<null> {
+	async sendDeviceInvitation(agent: AgentPubKey, dia: DeviceInviteAcceptance): Promise<null> {
 		return this.callZome('send_device_invitation', [agent, dia]);
 	}
 
 	// Return the ActionHash of the Keyset Root
-	async keyset_authority(): Promise<ActionHash> {
+	async queryKeysetRoot(): Promise<ActionHash> {
 		return this.callZome('query_keyset_authority_action_hash', null);
 	}
 
 	// Take the ActionHash of the Keyset Root,
 	// return the members of the Keyset by their AgentPubKey
-	async query_keyset_members(ksr: ActionHash): Promise<AgentPubKey[]> {
+	async queryKeysetMembers(ksr: ActionHash): Promise<AgentPubKey[]> {
 		return this.callZome('query_keyset_members', ksr);
 	}
 
-	async query_keyset_keys(ksr: ActionHash): Promise<KeyRegistration[]> {
+	async queryKeysetKeys(ksr: ActionHash): Promise<KeyRegistration[]> {
 		return this.callZome('query_keyset_keys', ksr);
 	}
-	async query_keyset_key_anchors(ksr: ActionHash): Promise<KeyAnchor[]> {
+	async queryKeysetKeyAnchors(ksr: ActionHash): Promise<KeyAnchor[]> {
 		return this.callZome('query_keyset_key_anchors', ksr);
 	}
 
-	async invite_agent(agentKey: AgentPubKey): Promise<DeviceInviteAcceptance> {
+	async inviteAgent(agentKey: AgentPubKey): Promise<DeviceInviteAcceptance> {
 		return this.callZome('invite_agent', agentKey);
 	}
-	async accept_invitation(dia: DeviceInviteAcceptance): Promise<ActionHash> {
+	async acceptInvitation(dia: DeviceInviteAcceptance): Promise<ActionHash> {
 		return this.callZome('accept_invite', dia);
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	async queryLocalKeyInfo(): Promise<any> {
+		// Array<[DnaBinding, KeyMeta, KeyRegistration]>
+		// return this.callZome('name_device', 'Test');
+
+		return this.callZome('query_local_key_info', null);
 	}
 
 	// Returns the ActionHash of the created KeyRegistration
@@ -167,14 +193,28 @@ export class DeepkeyClient {
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	callZome(fn_name: string, payload: any) {
-		const req: AppAgentCallZomeRequest = {
-			role_name: this.roleName,
-			// cell_id: this.cellId,
+	async callZome(fn_name: string, payload: any) {
+		// CallZomeRequest
+		// CallZomeRequestUnsigned
+		// CallZomeRequestSigned
+
+		let req = {
+			cell_id: this.cellId,
 			zome_name: this.zomeName,
 			fn_name,
 			payload
 		};
+
+		const creds = this.client?.creds;
+		if (creds) {
+			req = await locallySignZomeCall({ ...req, provenance: creds.signingKey }, creds);
+		}
+
 		return this.client.callZome(req, 30000);
+	}
+
+	signZomeRequest(req: AppAgentCallZomeRequest): AppAgentCallZomeRequest {
+		const signature: Uint8Array = Uint8Array.from([0, 0, 0, 0, 0]);
+		return { ...req, signature };
 	}
 }

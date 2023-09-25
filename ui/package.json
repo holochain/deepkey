@@ -16,9 +16,8 @@
 	"devDependencies": {
 		"@iconify-json/iconoir": "^1.1.28",
 		"@skeletonlabs/skeleton": "^1.6.2",
-		"@sveltejs/adapter-auto": "^2.0.0",
 		"@sveltejs/adapter-static": "^2.0.2",
-		"@sveltejs/kit": "^1.5.0",
+		"@sveltejs/kit": "^1.25.1",
 		"@tailwindcss/forms": "^0.5.4",
 		"@types/lodash": "^4.14.197",
 		"@typescript-eslint/eslint-plugin": "^5.45.0",
@@ -39,14 +38,17 @@
 		"tslib": "^2.4.1",
 		"typescript": "^5.0.0",
 		"unplugin-icons": "^0.16.2",
-		"vitest": "^0.25.3"
+		"vite": "^4.4.9",
+		"vitest": "^0.31.0"
 	},
 	"type": "module",
 	"dependencies": {
 		"@holo-host/identicon": "^0.1.0",
 		"@holochain-open-dev/utils": "^0.14.2",
-		"@holochain/client": "^0.14.1",
+		"@holochain/client": "../../holochain-client-js",
 		"@msgpack/msgpack": "^2.8.0",
+		"@noble/ed25519": "^2.0.0",
+		"@square/svelte-store": "^1.0.17",
 		"emittery": "^1.0.1",
 		"js-base64": "^3.7.5",
 		"locally-unique-id-generator": "^0.1.5",

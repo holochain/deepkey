@@ -10,6 +10,20 @@
 	import '../app.postcss';
 
 	import { AppShell, AppBar } from '@skeletonlabs/skeleton';
+
+	import { onMount } from 'svelte';
+	import { holochain } from '$lib/store/holochain-client-store';
+	import { DeepkeyClient } from '$lib/deepkey-client';
+	import type { AppAgentWebsocket } from '@holochain/client';
+
+	onMount(async () => {
+		await holochain.init();
+		await $holochain?.appInfo();
+		// const dk = new DeepkeyClient($holochain as AppAgentWebsocket, 'deepkey');
+		// await dk.keyset_authority();
+	});
+
+	$: console.log($holochain, holochain.initComplete);
 </script>
 
 <AppShell>

@@ -1,60 +1,24 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
-	import type { ActionHash, AgentPubKey, AppAgentClient } from '@holochain/client';
-	import type { UnsubscribeFunction } from 'emittery';
-	import { nanoid } from 'nanoid';
-	import { Base64 } from 'js-base64';
-	import AgentIcon from '~icons/iconoir/laptop';
-	import { setupHolochain } from '$lib/holochain-client';
-	import { DeepkeyClient, type KeyAnchor } from '../lib/deepkey-client';
+	import type {
+		AgentPubKey,
+		AppAgentClient,
+	} from '@holochain/client';
 	import CryptographicHash from '../components/cryptographic-hash.svelte';
 	import RevocationAlert from '../components/revocation-alert.svelte';
 	import KeysetDevices from './keyset-devices.svelte';
-	import { deepkey } from '$lib/store/deepkey-client-store';
+	import { deepkey, keysetRootAuthority } from '$lib/store/deepkey-client-store';
 	import ManualInviteAcceptance from '../components/manual-invite-acceptance.svelte';
 	import { messages } from '$lib/store/messages';
 	import Invitations from '../components/invitations.svelte';
 	import KeysetKeys from './keyset-keys.svelte';
 
 	let client: AppAgentClient | undefined;
-	let deepkeyClient: DeepkeyClient | undefined;
 	let deepkeyAgentPubkey: AgentPubKey | undefined;
-	let keysetRootAuthority: ActionHash | undefined;
-	let unsubscribe: UnsubscribeFunction | undefined;
-
-	async function registerTestKey() {
-		const keyreg = await $deepkey.callZome('register_test_key', null);
-		console.log(keyreg);
-	}
-
-	onMount(async () => {
-		let app_role = 'deepkey';
-
-		// Maybe this init could be done in the $deepkey store.
-		client = await setupHolochain();
-		deepkeyClient = new DeepkeyClient(client, app_role);
-		$deepkey = deepkeyClient;
-
-		unsubscribe = deepkeyClient.on((data: any) => {
-			if (data.type === 'InvitationReceived') {
-				const dia = data.device_invite_acceptance;
-				$messages = [...$messages, { id: nanoid(), type: 'device_invite_acceptance', bytes: dia }];
-			}
-		});
-
-		keysetRootAuthority = await deepkeyClient.keyset_authority();
-		// console.log('keysetRootAuthority', Base64.fromUint8Array(keysetRootAuthority));
-
-		// const res2 = await deepkey.key_state(client.myPubKey);
-		// console.log('res2', res2);
-
-		const appInfo = await client.appInfo();
-		deepkeyAgentPubkey = appInfo.agent_pub_key;
-	});
-
-	onDestroy(async () => {
-		unsubscribe && unsubscribe();
-	});
+	
+	// async function registerTestKey() {
+	// 	const keyreg = await $deepkey.callZome('register_test_key', null);
+	// 	console.log(keyreg);
+	// }
 
 	let showInvitationAlert: boolean = true;
 	let visible: boolean = false;
@@ -81,8 +45,8 @@
 	<!-- identicon on the left -->
 
 	<div class="flex items-center gap-3">
-		{#if keysetRootAuthority}
-			<CryptographicHash hash={keysetRootAuthority} />
+		{#if $keysetRootAuthority}
+			<CryptographicHash hash={$keysetRootAuthority} />
 		{/if}
 		<h3 class="text-2xl font-bold">Keyset Root Hash</h3>
 	</div>

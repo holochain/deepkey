@@ -1,6 +1,33 @@
 use deepkey_integrity::*;
 use hdk::prelude::*;
 
+// This returns DnaBindings on the local chain.
+#[hdk_extern]
+pub fn query_local_dna_bindings(_: ()) -> ExternResult<Vec<DnaBinding>> {
+    let local_dna_bindings = query(
+        ChainQueryFilter::new()
+            .entry_type(EntryType::App(UnitEntryTypes::DnaBinding.try_into()?))
+            .include_entries(true),
+    )?
+    .into_iter()
+    .map(|dna_binding_record| {
+        dna_binding_record
+            .entry
+            .to_app_option::<DnaBinding>()
+            .map_err(|err| {
+                wasm_error!(WasmErrorInner::Guest(format!(
+                    "Error deserializing DnaBinding. {:?}",
+                    err
+                )))
+            })
+    })
+    .collect::<ExternResult<Vec<Option<DnaBinding>>>>()?
+    .into_iter()
+    .filter_map(|x| x)
+    .collect::<Vec<DnaBinding>>();
+    Ok(local_dna_bindings)
+}
+
 // This returns Private Entries and Metadata for the registered keys.
 // It is the more sensitive version of the public `query_keyset_keys` in keyset_root.rs
 #[hdk_extern]
