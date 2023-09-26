@@ -2,7 +2,6 @@ import type { UnsubscribeFunction } from 'emittery';
 import type {
 	ActionHash,
 	AgentPubKey,
-	AppAgentCallZomeRequest,
 	AppSignal,
 	CellId,
 	DnaHash,
@@ -163,7 +162,7 @@ export class DeepkeyClient {
 	}
 
 	// Returns the ActionHash of the created KeyRegistration
-	async register_key(
+	async registerKey(
 		newKey: AgentPubKey,
 		newKeySignature: Signature,
 		dnaHash: DnaHash,
@@ -173,7 +172,7 @@ export class DeepkeyClient {
 	}
 
 	// Returns the ActionHash of the created KeyRegistration
-	async update_key(
+	async updateKey(
 		priorKeyRegistration: ActionHash,
 		revocationAuthorization: [number, Signature][],
 		newKey: AgentPubKey,
@@ -185,7 +184,7 @@ export class DeepkeyClient {
 	}
 
 	// Returns the ActionHash of the created KeyRegistration
-	async revoke_key(
+	async revokeKey(
 		keyRegistrationToRevoke: ActionHash,
 		revocationAuthorization: [number, Signature][]
 	): Promise<ActionHash> {
@@ -194,10 +193,6 @@ export class DeepkeyClient {
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	async callZome(fn_name: string, payload: any) {
-		// CallZomeRequest
-		// CallZomeRequestUnsigned
-		// CallZomeRequestSigned
-
 		let req = {
 			cell_id: this.cellId,
 			zome_name: this.zomeName,
@@ -210,11 +205,7 @@ export class DeepkeyClient {
 			req = await locallySignZomeCall({ ...req, provenance: creds.signingKey }, creds);
 		}
 
+		console.log("deepkey callZome!", fn_name);
 		return this.client.callZome(req, 30000);
-	}
-
-	signZomeRequest(req: AppAgentCallZomeRequest): AppAgentCallZomeRequest {
-		const signature: Uint8Array = Uint8Array.from([0, 0, 0, 0, 0]);
-		return { ...req, signature };
 	}
 }

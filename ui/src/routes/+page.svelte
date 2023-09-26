@@ -1,20 +1,17 @@
 <script lang="ts">
-	import type {
-		AgentPubKey,
-		AppAgentClient,
-	} from '@holochain/client';
+	import type { ActionHash, AgentPubKey, AppAgentClient } from '@holochain/client';
 	import CryptographicHash from '../components/cryptographic-hash.svelte';
 	import RevocationAlert from '../components/revocation-alert.svelte';
 	import KeysetDevices from './keyset-devices.svelte';
-	import { deepkey, keysetRootAuthority } from '$lib/store/deepkey-client-store';
+	import { deepkey, keysetRoot } from '$lib/store/deepkey-client-store';
 	import ManualInviteAcceptance from '../components/manual-invite-acceptance.svelte';
 	import { messages } from '$lib/store/messages';
 	import Invitations from '../components/invitations.svelte';
 	import KeysetKeys from './keyset-keys.svelte';
+	import { onMount } from 'svelte/internal';
 
-	let client: AppAgentClient | undefined;
 	let deepkeyAgentPubkey: AgentPubKey | undefined;
-	
+
 	// async function registerTestKey() {
 	// 	const keyreg = await $deepkey.callZome('register_test_key', null);
 	// 	console.log(keyreg);
@@ -22,6 +19,9 @@
 
 	let showInvitationAlert: boolean = true;
 	let visible: boolean = false;
+
+	onMount(async () => {
+	});
 </script>
 
 <!-- Top section -->
@@ -45,9 +45,9 @@
 	<!-- identicon on the left -->
 
 	<div class="flex items-center gap-3">
-		{#if $keysetRootAuthority}
-			<CryptographicHash hash={$keysetRootAuthority} />
-		{/if}
+		{#await keysetRoot.load then $keysetRoot}
+			<CryptographicHash hash={$keysetRoot} />
+		{/await}
 		<h3 class="text-2xl font-bold">Keyset Root Hash</h3>
 	</div>
 	<p>All devices managed under this keyset root are under the same key management rules.</p>

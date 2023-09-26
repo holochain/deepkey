@@ -48,7 +48,6 @@
 		"@holochain/client": "../../holochain-client-js",
 		"@msgpack/msgpack": "^2.8.0",
 		"@noble/ed25519": "^2.0.0",
-		"@square/svelte-store": "^1.0.17",
 		"emittery": "^1.0.1",
 		"js-base64": "^3.7.5",
 		"locally-unique-id-generator": "^0.1.5",

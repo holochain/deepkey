@@ -1,28 +1,27 @@
 import { DeepkeyClient } from '$lib/deepkey-client';
-import { asyncDerived } from '@square/svelte-store';
-import { holochain } from './holochain-client-store';
+import { holochain, type SelfAuthorizedHolochainWebsocket } from './holochain-client-store';
+import { asyncDerived } from './loadable';
 
 const app_role = 'deepkey';
 
-export const deepkey = asyncDerived(holochain, async ($holochain) => {
-	const hc = await $holochain;
-	if (hc) {
-		return new DeepkeyClient(hc, app_role);
-	} else {
-		throw 'Holochain client not defined.';
+export const deepkey = asyncDerived<[SelfAuthorizedHolochainWebsocket], DeepkeyClient>(
+	[holochain.load],
+	async ([$holochain]) => {
+		const deepkey = new DeepkeyClient($holochain, app_role);
+		return deepkey;
 	}
-});
+);
 
-export const keysetRootAuthority = asyncDerived(deepkey, async ($deepkey) => {
+export const keysetRoot = asyncDerived([deepkey.load], async ([$deepkey]) => {
 	return await $deepkey.queryKeysetRoot();
 });
 
-export const keysetMembers = asyncDerived(
-	[deepkey, keysetRootAuthority],
-	async ([$deepkey, $keysetRootAuthority]) => {
-		return await $deepkey.queryKeysetMembers($keysetRootAuthority);
-	}
-);
+// export const keysetMembers = asyncDerived(
+// 	[deepkey, keysetRootAuthority],
+// 	async ([$deepkey, $keysetRootAuthority]) => {
+// 		return await $deepkey.queryKeysetMembers($keysetRootAuthority);
+// 	}
+// );
 
 // Messages:
 
