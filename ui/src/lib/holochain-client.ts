@@ -1,10 +1,7 @@
 import * as ed from '@noble/ed25519';
 import {
-	type AppInfo,
 	AdminWebsocket,
-	CellType,
 	AppAgentWebsocket,
-	type CapSecret,
 	type AgentPubKey,
 	type CellId,
 	type GrantedFunctions,
@@ -19,7 +16,6 @@ import {
 	type SigningCredentials
 } from '@holochain/client';
 import { encode } from '@msgpack/msgpack';
-import type { Sign } from 'crypto';
 
 export const HOLOCHAIN_APP_ID = 'deepkey';
 export const HOLOCHAIN_URL = new URL(`ws://localhost:${import.meta.env.VITE_HC_PORT}`);
@@ -42,6 +38,20 @@ export const setupHolochain = async () => {
 
 // set up zome call signing when run outside of launcher
 export const authorizeClient = async (cellId: CellId) => {
+	if (typeof window === 'object' && !('__HC_LAUNCHER_ENV__' in window)) {
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+		// @ts-ignore
+		// const { cell_id: cellId } = appInfo.cell_info[HOLOCHAIN_APP_ID][0][CellType.Provisioned];
+		const adminWs = await AdminWebsocket.connect(
+			new URL(`ws://localhost:${import.meta.env.VITE_HC_ADMIN_PORT}`)
+		);
+
+		await adminWs.authorizeSigningCredentials(cellId);
+		console.log('Holochain app client authorized for zome calls');
+	}
+};
+
+export const locallyAuthorizeClient = async (cellId: CellId) => {
 	if (typeof window === 'object' && !('__HC_LAUNCHER_ENV__' in window)) {
 		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-ignore
@@ -76,7 +86,7 @@ const locallyGenerateSigningKeyPair: (
 export const locallyAuthorizeSigningCredentials = async (
 	adminWs: AdminWebsocket,
 	cellId: CellId,
-	functions?: GrantedFunctions,
+	functions?: GrantedFunctions
 ) => {
 	const [keyPair, signingKey] = await locallyGenerateSigningKeyPair();
 	const capSecret = await adminWs.grantSigningKey(

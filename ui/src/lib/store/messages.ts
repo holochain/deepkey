@@ -43,10 +43,10 @@ function createMessages() {
 
 export const messages = createMessages();
 
-deepkey.load.then($deepkey => {
+deepkey.load.then(($deepkey) => {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	$deepkey.on((data: any) => {
-		console.log(data);
+		console.log('deepkey emitted signal: ', data);
 		if (data.type === 'InvitationReceived') {
 			const dia = data.device_invite_acceptance;
 			const message: Message = { id: nanoid(), type: 'device_invite_acceptance', bytes: dia };

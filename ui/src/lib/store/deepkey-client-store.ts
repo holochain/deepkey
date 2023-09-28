@@ -1,21 +1,20 @@
 import { DeepkeyClient } from '$lib/deepkey-client';
-import { writable } from 'svelte/store';
-import { holochain } from './holochain-client-store';
+import { cellId, holochain } from './holochain-client-store';
 import { asyncDerived } from './loadable';
 
 const app_role = 'deepkey';
 
-export const deepkey = asyncDerived([holochain.load], async ([$holochain]) => {
-	const deepkey = new DeepkeyClient($holochain, app_role);
+export const deepkey = asyncDerived([holochain, cellId] as const, async ([$holochain, $cellId]) => {
+	const deepkey = new DeepkeyClient($holochain, $cellId, app_role);
 	return deepkey;
 });
 
-export const keysetRoot = asyncDerived([deepkey.load], async ([$deepkey]) => {
+export const keysetRoot = asyncDerived([deepkey], async ([$deepkey]) => {
 	return await $deepkey.queryKeysetRoot();
 });
 
 export const keysetMembers = asyncDerived(
-	[deepkey.load, keysetRoot.load] as const,
+	[deepkey, keysetRoot] as const,
 	async ([$deepkey, $keysetRoot]) => {
 		return await $deepkey.queryKeysetMembers($keysetRoot);
 	}

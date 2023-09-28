@@ -2,6 +2,7 @@ import type { UnsubscribeFunction } from 'emittery';
 import type {
 	ActionHash,
 	AgentPubKey,
+	AppAgentWebsocket,
 	AppSignal,
 	CellId,
 	DnaHash,
@@ -11,6 +12,7 @@ import type {
 } from '@holochain/client';
 import { locallySignZomeCall } from './holochain-client';
 import type { SelfAuthorizedHolochainWebsocket } from './store/holochain-client-store';
+import { Base64 } from 'js-base64';
 
 export type KeyAnchor = { bytes: Uint8Array };
 export function getKeyAnchor(pubkey: AgentPubKey): KeyAnchor {
@@ -90,21 +92,19 @@ export type KeyMeta = {
 };
 
 export class DeepkeyClient {
-	public cellId: CellId;
 	constructor(
-		public client: SelfAuthorizedHolochainWebsocket,
+		public client: SelfAuthorizedHolochainWebsocket | AppAgentWebsocket,
 		// public roleName: string,
+		public cellId: CellId,
 		public zomeName = 'deepkey'
-	) {
-		this.cellId = client.cellId;
-	}
+	) {}
 
 	on<D>(listener: (eventData: D) => void | Promise<void>): UnsubscribeFunction {
 		const eventName = 'signal'; // it's always 'signal'.
 		return this.client.on(eventName, async (signal: AppSignal) => {
 			if (
 				// (await isSignalFromCellWithRole(this.client, this.roleName, signal)) &&
-				signal.cell_id === this.cellId &&
+				cellIdsAreEqual(signal.cell_id, this.cellId) &&
 				this.zomeName === signal.zome_name
 			) {
 				listener(signal.payload as D);
@@ -200,12 +200,20 @@ export class DeepkeyClient {
 			payload
 		};
 
-		const creds = this.client?.creds;
-		if (creds) {
+		if ('creds' in this.client) {
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+			const creds = this.client.creds!;
 			req = await locallySignZomeCall({ ...req, provenance: creds.signingKey }, creds);
 		}
 
-		console.log("deepkey callZome!", fn_name);
+		// console.log('deepkey callZome!', fn_name);
 		return this.client.callZome(req, 30000);
 	}
+}
+
+function cellIdsAreEqual(cell1: CellId, cell2: CellId): boolean {
+	return (
+		Base64.fromUint8Array(new Uint8Array([...cell1[0], ...cell1[1]])) ===
+		Base64.fromUint8Array(new Uint8Array([...cell2[0], ...cell2[1]]))
+	);
 }

@@ -1,16 +1,25 @@
-import { writable, type Readable } from 'svelte/store';
+import { writable, type Readable, derived } from 'svelte/store';
 
 export type Loadable<T> = Readable<T> & { load: Promise<T> };
 export type LateInitLoadable<T> = Loadable<T> & { init: () => Promise<T> };
 
-export function asyncDerived<S extends readonly unknown[], T>(
-	deps: S,
-	cb: (values: { [K in keyof S]: Awaited<S[K]> }) => Promise<T>
+// type Types = unknown[];
+type Loadables = readonly Loadable<unknown>[];
+// type Promises<L> = { [K in keyof L]: L extends Loadable<infer U> ? Promise<U> : never };
+type Values<L> = {
+	[K in keyof L]: L[K] extends Loadable<infer U> | LateInitLoadable<infer U> ? Awaited<U> : never;
+};
+
+export function asyncDerived<L extends Loadables, T>(
+	deps: L,
+	cb: (values: Values<L>) => Promise<T>
 ): Loadable<T> {
+	// const d = derived()
 	const { subscribe, set } = writable<T>();
 	const load = new Promise<T>((resolve) => {
-		Promise.all(deps).then((resolvedDeps) => {
-			cb(resolvedDeps).then((value) => {
+		const promises = deps.map((l) => l.load);
+		Promise.all(promises).then((resolvedDeps) => {
+			cb(resolvedDeps as Values<L>).then((value) => {
 				resolve(value);
 				set(value);
 			});
