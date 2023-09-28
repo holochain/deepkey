@@ -206,7 +206,7 @@ export class DeepkeyClient {
 			req = await locallySignZomeCall({ ...req, provenance: creds.signingKey }, creds);
 		}
 
-		// console.log('deepkey callZome!', fn_name);
+		console.log('deepkey callZome!', fn_name);
 		return this.client.callZome(req, 30000);
 	}
 }

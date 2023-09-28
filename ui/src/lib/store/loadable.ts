@@ -14,8 +14,14 @@ export function asyncDerived<L extends Loadables, T>(
 	deps: L,
 	cb: (values: Values<L>) => Promise<T>
 ): Loadable<T> {
-	// const d = derived()
 	const { subscribe, set } = writable<T>();
+
+	derived(deps as unknown as Readable<unknown>[], (values) => {
+		console.log('Updating using derived');
+		cb(values as Values<L>).then((value) => {
+			set(value);
+		});
+	});
 	const load = new Promise<T>((resolve) => {
 		const promises = deps.map((l) => l.load);
 		Promise.all(promises).then((resolvedDeps) => {

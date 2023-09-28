@@ -1,25 +1,25 @@
-import { derived } from 'svelte/store';
-import { deepkey } from './deepkey-client-store';
-import { getKeyAnchor, getKeyFromKeyRegistration, type KeyAnchor } from '$lib/deepkey-client';
+import { deepkey, keysetRoot } from './deepkey-client-store';
+import { getKeyAnchor, getKeyFromKeyRegistration } from '$lib/deepkey-client';
+import { asyncDerived } from './loadable';
 
-export const keysetKeys = derived(deepkey, async (deepkey) => {
-	if (deepkey) {
-		const keysetRootAuthority = await deepkey.keyset_authority();
-		const keyAnchors = await deepkey.query_keyset_key_anchors(keysetRootAuthority);
-		const keyRegistrations = await deepkey.query_keyset_keys(keysetRootAuthority);
-		// console.log(keyAnchors[0].bytes);
-		// console.log(getKeyAnchor(getKeyFromKeyRegistration(keyRegistrations[0]) ?? Uint8Array.from([])).bytes);
+export const keyRegistrations = asyncDerived(
+	[deepkey, keysetRoot] as const,
+	async ([$deepkey, $keysetRoot]) => {
+		return await $deepkey.queryKeysetKeys($keysetRoot);
+	}
+);
 
+export const keysetKeys = asyncDerived(
+	[deepkey, keyRegistrations] as const,
+	async ([$deepkey, $keyRegistrations]) => {
 		return Promise.all(
-			// keyAnchors.map(async (keyAnchor) => {
-			keyRegistrations.map(async (keyRegistration) => {
+			$keyRegistrations.map(async (keyRegistration) => {
 				const key = getKeyFromKeyRegistration(keyRegistration);
 				const keyAnchor = getKeyAnchor(key ?? Uint8Array.from([]));
-				const keyState = await deepkey.key_state(Array.from(keyAnchor.bytes));
+				// It requires an Array, not a Uint8Array, because the Rust needs a Vec<u8> rather than [u8; 32]
+				const keyState = await $deepkey.keyState(Array.from(keyAnchor.bytes));
 				return { keyBytes: keyAnchor.bytes, keyState };
 			})
 		);
-	} else {
-		return [];
 	}
-});
+);

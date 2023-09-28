@@ -1,24 +1,12 @@
 <script lang="ts">
-	// Your selected Skeleton theme:
-	// import '@skeletonlabs/skeleton/themes/theme-skeleton.css';
-	import '@skeletonlabs/skeleton/themes/theme-rocket.css';
-	// This contains the bulk of Skeletons required styles:
-	// NOTE: this will be renamed skeleton.css in the v2.x release.
-	import '@skeletonlabs/skeleton/styles/skeleton.css';
-
-	// Finally, your application's global stylesheet (sometimes labeled 'app.css')
+	import { Toast, initializeStores } from '@skeletonlabs/skeleton';
 	import '../app.postcss';
-
 	import { AppShell, AppBar } from '@skeletonlabs/skeleton';
-	import { onMount } from 'svelte';
-	import { holochain } from '$lib/store/holochain-client-store';
-	import { deepkey } from '$lib/store/deepkey-client-store';
 
-	onMount(async () => {
-		// holochain.subscribe((hc) => console.log('hc change'));
-		// deepkey.subscribe((dk) => console.log('dk change'));
-	});
+	initializeStores();
 </script>
+
+<Toast />
 
 <AppShell>
 	<svelte:fragment slot="header"

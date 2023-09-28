@@ -3,19 +3,24 @@
 	import { deepkey } from '$lib/store/deepkey-client-store';
 	import { keysetKeys } from '$lib/store/keyset-keys';
 	import RegisterKey from '../components/register-key.svelte';
-	import { Base64 } from 'js-base64';
 	import CryptographicHash from '../components/cryptographic-hash.svelte';
 	import type { KeyState } from '$lib/deepkey-client';
 
-  function keyStateText(keyState: any): string {
-    if (keyState.Valid) {
-      return "Valid";
-    } else if (keyState.Invalidated) {
-      return "Invalidated";
-    } else {
-      return "Not Found";
-    }
-  }
+	function keyStateText(keyState: any): string {
+		if (keyState.Valid) {
+			return 'Valid';
+		} else if (keyState.Invalidated) {
+			return 'Invalidated';
+		} else {
+			return 'Not Found';
+		}
+	}
+
+	// $: console.log($keysetKeys);
+
+	// let localKeyInfo = asyncDerived(deepkey, async ($deepkey) => {
+	// 	return await $deepkey.query_local_key_info();
+	// });
 </script>
 
 <div class="card p-4 m-5">
@@ -32,12 +37,12 @@
 	<RegisterKey />
 
 	<ul class="list flex flex-col mt-6">
-		{#await $keysetKeys then keys}
-			{#each keys as key}
+		{#await keysetKeys.load then}
+			{#each $keysetKeys as key}
 				<li>
 					<span> <AgentIcon class="h-6 w-6" /> </span>
-          <CryptographicHash hash={key.keyBytes} />
-          <p>{keyStateText(key.keyState)}</p>
+					<CryptographicHash hash={key.keyBytes} />
+					<p>{keyStateText(key.keyState)}</p>
 				</li>
 			{/each}
 		{/await}

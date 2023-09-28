@@ -1,22 +1,22 @@
 <script lang="ts">
-	import type {
-		DeepkeyClient,
-		DeviceInviteAcceptance,
-		KeyGeneration,
-		KeyRegistration
-	} from '$lib/deepkey-client';
 	import { deepkey } from '$lib/store/deepkey-client-store';
 	import type { ActionHash, AgentPubKey } from '@holochain/client';
-	import { encode, decode } from '@msgpack/msgpack';
 	import { Base64 } from 'js-base64';
 
 	import RegisterKeyIcon from '~icons/iconoir/key-alt-plus';
+	import { getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
+
+	const toastStore = getToastStore();
 
 	let showRegisterInput = false;
 
-	let pubKeyB64 = 'uhCAknJ7xQSPhBZiy8mnEDrk07cqbcR27wIiVQ6bOAjB3KyxeeL77';
-	let appName = 'asdffffff';
-	let dnaHashB64 = 'uhC0kW585xNycWDHYPUj9Lw9a8xe5OxdPalhh5jNLta6Da1hJJlkU';
+	let pubKeyB64 = '';
+	let appName = '';
+	let dnaHashB64 = '';
+
+	pubKeyB64 = 'uhCAknJ7xQSPhBZiy8mnEDrk07cqbcR27wIiVQ6bOAjB3KyxeeL77';
+	appName = 'Holochain App!';
+	dnaHashB64 = 'uhC0kW585xNycWDHYPUj9Lw9a8xe5OxdPalhh5jNLta6Da1hJJlkU';
 
 	let keyError = '';
 	let dnaHashError = '';
@@ -26,28 +26,25 @@
 
 	async function registerKey() {
 		let key;
-		try {
-			console.log(pubKeyB64.replace(/[\-_]/g, ''));
-			key = Base64.toUint8Array(pubKeyB64.substring(1));
-		} catch (err) {
-			console.error(err);
-			keyError = err as string;
-		}
+		key = Base64.toUint8Array(pubKeyB64[0] === 'u' ? pubKeyB64.substring(1) : pubKeyB64);
 		let dnaHash;
-		try {
-			dnaHash = Base64.toUint8Array(dnaHashB64.substring(1));
-		} catch (err) {
-			console.error(err);
-			dnaHashError = err as string;
-		}
+		dnaHash = Base64.toUint8Array(dnaHashB64[0] === 'u' ? dnaHashB64.substring(1) : dnaHashB64);
 
 		// TODO: This should be a real signature
 		const signature = Uint8Array.from(new Array(64));
 
 		if (key && dnaHash) {
 			// register the keyRegistration
-			const keyRegHash: ActionHash = await $deepkey.register_key(key, signature, dnaHash, appName);
+			const keyRegHash: ActionHash = await $deepkey.registerKey(key, signature, dnaHash, appName);
 			console.log('Successfully registered key', keyRegHash);
+
+			const t: ToastSettings = {
+				message: 'Successfully registered key.',
+				hideDismiss: true,
+				timeout: 3000
+			};
+			toastStore.trigger(t);
+
 			showRegisterInput = false;
 		}
 	}
@@ -93,12 +90,12 @@
 				/>
 			</div>
 			<div class="flex items-center justify-between">
-				<button type="button" class="btn variant-ghost-primary" on:click={registerKey}>
+				<button type="button" class="btn variant-filled-secondary" on:click={registerKey}>
 					Register
 				</button>
 				<button
 					type="button"
-					class="btn variant-ghost-error"
+					class="btn variant-filled-error"
 					on:click={() => (showRegisterInput = false)}
 				>
 					Cancel
