@@ -5,7 +5,7 @@ import {
 	type CellId,
 	type SigningCredentials
 } from '@holochain/client';
-import { lateInitLoadable } from './loadable';
+import { asyncDerived, lateInitLoadable } from './loadable';
 
 const HOLOCHAIN_APP_ID = 'deepkey';
 // const HOLOCHAIN_URL = new URL(`ws://localhost:${import.meta.env.VITE_HC_PORT}`);
@@ -15,7 +15,7 @@ export type SelfAuthorizedHolochainWebsocket = AppAgentWebsocket & {
 	creds: SigningCredentials | undefined;
 };
 
-export const holochain = lateInitLoadable<SelfAuthorizedHolochainWebsocket>(async () => {
+export const holochain = lateInitLoadable(async () => {
 	const client = await setupHolochain();
 
 	const appInfo = await client.appInfo();
@@ -33,14 +33,11 @@ export const holochain = lateInitLoadable<SelfAuthorizedHolochainWebsocket>(asyn
 	return client as SelfAuthorizedHolochainWebsocket;
 });
 
+export const appInfo = asyncDerived([holochain.load], async ([$holochain]) => {
+	return await $holochain.appInfo();
+});
 
-// export const appInfo = derived(
-// 	holochain,
-// 	($holochain, set) => {
-// 		$holochain.appInfo().then((value) => {
-// 			set(value);
-// 		});
-// 	}
-// );
-
-// export const deepkeyAgentPubkey = derived(appInfo, ($appInfo) => $appInfo.agent_pub_key);
+export const deepkeyAgentPubkey = asyncDerived(
+	[appInfo.load],
+	async ([$appInfo]) => $appInfo.agent_pub_key
+);

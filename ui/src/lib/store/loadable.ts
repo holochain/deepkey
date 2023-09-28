@@ -1,10 +1,9 @@
 import { writable, type Readable } from 'svelte/store';
 
 export type Loadable<T> = Readable<T> & { load: Promise<T>; init?: () => Promise<T> };
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function asyncDerived<P extends any[], T>(
-	deps: { [K in keyof P]: Promise<P[K]> },
-	cb: (resolvedDeps: { [K in keyof P]: P[K] }) => Promise<T>
+export function asyncDerived<S extends readonly unknown[], T>(
+	deps: S,
+	cb: (values: { [K in keyof S]: Awaited<S[K]> }) => Promise<T>
 ): Loadable<T> {
 	const { subscribe, set } = writable<T>();
 	const load = new Promise<T>((resolve) => {

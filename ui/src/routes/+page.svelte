@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { ActionHash, AgentPubKey, AppAgentClient } from '@holochain/client';
 	import CryptographicHash from '../components/cryptographic-hash.svelte';
 	import RevocationAlert from '../components/revocation-alert.svelte';
 	import KeysetDevices from './keyset-devices.svelte';
@@ -9,8 +8,7 @@
 	import Invitations from '../components/invitations.svelte';
 	import KeysetKeys from './keyset-keys.svelte';
 	import { onMount } from 'svelte/internal';
-
-	let deepkeyAgentPubkey: AgentPubKey | undefined;
+	import { deepkeyAgentPubkey } from '$lib/store/holochain-client-store';
 
 	// async function registerTestKey() {
 	// 	const keyreg = await $deepkey.callZome('register_test_key', null);
@@ -53,9 +51,9 @@
 	<p>All devices managed under this keyset root are under the same key management rules.</p>
 
 	<div class="flex items-center gap-3 mt-4">
-		{#if deepkeyAgentPubkey}
-			<CryptographicHash hash={deepkeyAgentPubkey} />
-		{/if}
+		{#await deepkeyAgentPubkey.load then $deepkeyAgentPubkey}
+			<CryptographicHash hash={$deepkeyAgentPubkey} />
+		{/await}
 		<h1 class="text-2xl">This Device's Deepkey Agent Key</h1>
 	</div>
 </div>
