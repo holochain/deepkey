@@ -6,6 +6,7 @@ import {
 	type SigningCredentials
 } from '@holochain/client';
 import { asyncDerived, lateInitLoadable } from './loadable';
+import { browser } from '$app/environment';
 
 const HOLOCHAIN_APP_ID = 'deepkey';
 // const HOLOCHAIN_URL = new URL(`ws://localhost:${import.meta.env.VITE_HC_PORT}`);
@@ -41,3 +42,7 @@ export const deepkeyAgentPubkey = asyncDerived(
 	[appInfo.load],
 	async ([$appInfo]) => $appInfo.agent_pub_key
 );
+
+if (browser) {
+	holochain.init();
+}

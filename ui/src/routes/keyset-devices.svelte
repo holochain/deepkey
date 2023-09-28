@@ -3,21 +3,10 @@
 	import type { ActionHash, AgentPubKey } from '@holochain/client';
 	import AgentIcon from '~icons/iconoir/laptop';
 	import InviteAgent from '../components/invite-agent.svelte';
-	import { deepkey } from '$lib/store/deepkey-client-store';
+	import { deepkey, keysetMembers } from '$lib/store/deepkey-client-store';
 	import EditableName from '../components/editable-name.svelte';
 	import CryptographicHash from '../components/cryptographic-hash.svelte';
-
-	let deepkeyAgentPubkey: AgentPubKey | undefined;
-	let keysetMembers: AgentPubKey[] = [];
-	let keysetRootAuthority: ActionHash | undefined;
-
-	deepkey.subscribe(async (deepkeyClient) => {
-		if (!$deepkey) return;
-		const appInfo = await $deepkey.client.appInfo();
-		deepkeyAgentPubkey = appInfo.agent_pub_key;
-		keysetRootAuthority = await $deepkey.keyset_authority();
-		keysetMembers = await $deepkey.query_keyset_members(keysetRootAuthority);
-	});
+	import { deepkeyAgentPubkey } from '$lib/store/holochain-client-store';
 </script>
 
 <div class="card p-4 m-5">
@@ -25,20 +14,22 @@
 	<InviteAgent />
 
 	<ul class="list flex flex-col mt-6">
-		{#each keysetMembers as member}
-			<li>
-				<span> <AgentIcon class="h-6 w-6" /> </span>
-				{#if member}
+		{#await keysetMembers.load}
+			<p>Loading...</p>
+		{:then}
+			{#each $keysetMembers as member}
+				<li>
+					<span> <AgentIcon class="h-6 w-6" /> </span>
 					<CryptographicHash hash={member} />
-				{/if}
-				<EditableName pubkey={member} />
+					<EditableName pubkey={member} />
 
-				{#if Base64.fromUint8Array(member) === Base64.fromUint8Array(deepkeyAgentPubkey ?? Uint8Array.from([]))}
-					<span class="chip bg-gradient-to-br variant-gradient-secondary-tertiary">
-						This Device's Deepkey Agent Key
-					</span>
-				{/if}
-			</li>
-		{/each}
+					{#if Base64.fromUint8Array(member) === Base64.fromUint8Array($deepkeyAgentPubkey ?? Uint8Array.from([]))}
+						<span class="chip bg-gradient-to-br variant-gradient-secondary-tertiary">
+							This Device's Deepkey Agent Key
+						</span>
+					{/if}
+				</li>
+			{/each}
+		{/await}
 	</ul>
 </div>

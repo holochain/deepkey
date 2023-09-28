@@ -7,10 +7,11 @@
 	import { onMount } from 'svelte';
 	import { deepkey } from '$lib/store/deepkey-client-store';
 	import { Base64 } from 'js-base64';
+	import { deepkeyAgentPubkey } from '$lib/store/holochain-client-store';
 
 	export let pubkey: AgentPubKey;
 
-	let name: string = 'unnamed';
+	let name: string = 'Unnamed Device';
 	let savedName = name;
 	let editing = false;
 	let dirty = false;
@@ -24,7 +25,7 @@
 
 	async function save() {
 		saving = true;
-		await $deepkey?.name_device(name);
+		await $deepkey?.nameDevice(name);
 		saving = false;
 		dirty = false;
 		savedName = name;
@@ -32,16 +33,16 @@
 	}
 
 	async function getName() {
-		name = (await $deepkey?.get_device_name(pubkey)) ?? name;
+		name = (await $deepkey.getDeviceName(pubkey)) ?? name;
 	}
 
 	onMount(async () => {
 		getName();
 
 		// TODO: appinfo should be stored on a shared sveltestore, so we don't keep querying in different components.
-		const appInfo = await $deepkey.client.appInfo();
-		const deepkeyAgentPubkey = appInfo.agent_pub_key;
-		canEdit = Base64.fromUint8Array(deepkeyAgentPubkey) === Base64.fromUint8Array(pubkey);
+		// const appInfo = await $deepkey.client.appInfo();
+		// const deepkeyAgentPubkey = appInfo.agent_pub_key;
+		canEdit = Base64.fromUint8Array($deepkeyAgentPubkey) === Base64.fromUint8Array(pubkey);
 	});
 </script>
 

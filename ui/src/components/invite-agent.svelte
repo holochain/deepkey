@@ -14,16 +14,16 @@
 	async function inviteAgentOffline() {
 		const agentKeyToInvite: AgentPubKey = Base64.toUint8Array(agentKeyToInviteB64);
 		// TODO: Validate input here
-		const dia = await $deepkey?.invite_agent(agentKeyToInvite);
+		const dia = await $deepkey.inviteAgent(agentKeyToInvite);
 		diaPayload = Base64.fromUint8Array(encode(dia));
 	}
 
 	async function inviteAgent() {
 		const agentKeyToInvite: AgentPubKey = Base64.toUint8Array(agentKeyToInviteB64);
 		// TODO: Validate input here
-		const dia = await $deepkey?.invite_agent(agentKeyToInvite);
+		const dia = await $deepkey.inviteAgent(agentKeyToInvite);
 		if (dia) {
-			await $deepkey?.send_device_invitation(agentKeyToInvite, dia);
+			await $deepkey?.sendDeviceInvitation(agentKeyToInvite, dia);
 			showInviteInput = false;
 		} else {
 			console.error('Failed to invite agent. Please check the agent key.');

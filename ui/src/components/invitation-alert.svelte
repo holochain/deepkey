@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { messages, type Message, removeMessage } from '$lib/store/messages';
+	import { messages, type Message } from '$lib/store/messages';
 	import { decode } from '@msgpack/msgpack';
 	import { Base64 } from 'js-base64';
 	import KeyPlusIcon from '~icons/iconoir/key-alt-plus';
@@ -13,10 +13,10 @@
 
 	async function acceptInvitation() {
 		try {
-			const diaHash = await $deepkey?.accept_invitation(invite.dia);
+			const diaHash = await $deepkey.acceptInvitation(invite.dia);
 			console.log('successfully accepted invitation', diaHash);
 			// TODO: show success!
-			removeMessage(invite.id);
+			messages.remove(invite.id);
 		} catch (e) {
 			console.error(e);
 			// acceptInvitationError = (e as Error).message;
@@ -25,7 +25,7 @@
 	}
 
 	async function refuseInvitation() {
-		removeMessage(invite.id);
+		messages.remove(invite.id);
 	}
 </script>
 

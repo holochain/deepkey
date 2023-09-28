@@ -1,4 +1,5 @@
 import { DeepkeyClient } from '$lib/deepkey-client';
+import { writable } from 'svelte/store';
 import { holochain } from './holochain-client-store';
 import { asyncDerived } from './loadable';
 
@@ -19,12 +20,3 @@ export const keysetMembers = asyncDerived(
 		return await $deepkey.queryKeysetMembers($keysetRoot);
 	}
 );
-
-// Messages:
-
-// unsubscribe = deepkeyClient.on((data: any) => {
-//   if (data.type === 'InvitationReceived') {
-//     const dia = data.device_invite_acceptance;
-//     $messages = [...$messages, { id: nanoid(), type: 'device_invite_acceptance', bytes: dia }];
-//   }
-// });

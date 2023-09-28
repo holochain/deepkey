@@ -15,21 +15,9 @@
 	import { deepkey } from '$lib/store/deepkey-client-store';
 
 	onMount(async () => {
-		await holochain.init();
-		holochain.subscribe((hc) => console.log('hc change'));
-		deepkey.subscribe((dk) => console.log('dk change'));
-			
-		// await deepkey.load;
-		// const ksr = await $deepkey.queryKeysetRoot()
-		// console.log(ksr);
-
-		// const info = await $holochain?.appInfo();
-		// console.log(info);
-		// const dk = new DeepkeyClient($holochain, 'deepkey');
-		// await dk.queryKeysetRoot();
+		// holochain.subscribe((hc) => console.log('hc change'));
+		// deepkey.subscribe((dk) => console.log('dk change'));
 	});
-
-	// $: console.log($holochain, holochain.initComplete);
 </script>
 
 <AppShell>
