@@ -5,8 +5,8 @@
 
 	import { Base64 } from 'js-base64';
 	import Identicon from './identicon.svelte';
+	export let size = 32;
 	export let hash: Uint8Array;
-	// console.log(hash);
 	const base64Hash = Base64.fromUint8Array(hash);
 
 	let copiedConfirm = false;
@@ -19,7 +19,7 @@
 
 <div class="group relative inline-block">
 	<p class="p-1 variant-ghost">
-		<Identicon bytes={hash} />
+		<Identicon {size} bytes={hash} />
 	</p>
 
 	<div class="absolute z-10 hidden group-hover:block transform translate-x-6 -translate-y-5">

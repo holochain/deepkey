@@ -78,6 +78,9 @@ importers:
       emittery:
         specifier: ^1.0.1
         version: 1.0.1
+      imurmurhash:
+        specifier: ^0.1.4
+        version: 0.1.4
       js-base64:
         specifier: ^3.7.5
         version: 3.7.5
@@ -109,6 +112,9 @@ importers:
       '@sveltejs/kit':
         specifier: ^1.25.1
         version: 1.25.1(svelte@3.59.1)(vite@4.4.9)
+      '@types/imurmurhash':
+        specifier: ^0.1.4
+        version: 0.1.4
       '@types/lodash':
         specifier: ^4.14.197
         version: 4.14.197
@@ -717,6 +723,10 @@ packages:
 
   /@types/estree@1.0.2:
     resolution: {integrity: sha512-VeiPZ9MMwXjO32/Xu7+OwflfmeoRwkE/qzndw42gGtgJwZopBnzy2gD//NN1+go1mADzkDcqf/KnFRSjTJ8xJA==}
+    dev: true
+
+  /@types/imurmurhash@0.1.4:
+    resolution: {integrity: sha512-Zo/QlTiAvOP3pd9nuPOw33k0l/QssLOBrriShWzUE4qhIZByIF3rCoyF8ZTxdyFTUM2mYljYLqMUeLvA3NJUmQ==}
     dev: true
 
   /@types/json-schema@7.0.12:
@@ -1882,7 +1892,6 @@ packages:
   /imurmurhash@0.1.4:
     resolution: {integrity: sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==}
     engines: {node: '>=0.8.19'}
-    dev: true
 
   /inflight@1.0.6:
     resolution: {integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==}

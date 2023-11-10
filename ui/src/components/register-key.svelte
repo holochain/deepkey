@@ -51,14 +51,14 @@
 </script>
 
 {#if showRegisterInput}
-	<div class="mx-auto mt-10 w-1/3">
-		<form class="bg-surface-400 shadow-md rounded px-8 pt-6 pb-8 mb-4">
+	<div class="mx-auto card-hover mt-4 w-1/3">
+		<form class="bg-primary-400 shadow-md rounded px-8 pt-6 pb-8 mb-4">
 			<div class="mb-4">
 				<label class="block text-secondary-900 text-sm font-bold mb-1" for="public-key">
 					Public Key
 				</label>
 				<input
-					class="shadow appearance-none border rounded w-full py-2 px-3 text-surface-700 leading-tight focus:outline-none focus:shadow-outline"
+					class="input py-2 px-3"
 					id="public-key"
 					type="text"
 					bind:value={pubKeyB64}
@@ -70,7 +70,7 @@
 					App Name
 				</label>
 				<input
-					class="shadow appearance-none border rounded w-full py-2 px-3 text-surface-700 leading-tight focus:outline-none focus:shadow-outline"
+					class="input py-2 px-3"
 					id="app-name"
 					bind:value={appName}
 					type="text"
@@ -82,7 +82,7 @@
 					Dna Hash
 				</label>
 				<input
-					class="shadow appearance-none border rounded w-full py-2 px-3 text-surface-700 leading-tight focus:outline-none focus:shadow-outline"
+					class="input py-2 px-3"
 					id="dna-hash"
 					bind:value={dnaHashB64}
 					type="text"

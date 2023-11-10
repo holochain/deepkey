@@ -11,6 +11,7 @@
 	import { TreeView, TreeViewItem, type TreeViewNode } from '@skeletonlabs/skeleton';
 	import EditableName from '../components/editable-name.svelte';
 	import { indexableKey } from '$lib/util';
+	import KeyStateBadge from '../components/key-state-badge.svelte';
 	function keyStateText(keyState: any): string {
 		if (keyState.Valid) {
 			return 'Valid';
@@ -22,6 +23,7 @@
 	}
 
 	$: console.log($keysetKeysByAuthor);
+	$: console.log($keysetKeys);
 
 	// let localKeyInfo = asyncDerived(deepkey, async ($deepkey) => {
 	// 	return await $deepkey.query_local_key_info();
@@ -44,7 +46,7 @@
 	{#await Promise.all([keysetMembers.load, keysetKeysByAuthor.load])}
 		<p>Loading...</p>
 	{:then}
-		<TreeView open={false}>
+		<TreeView open={true}>
 			<!-- For Each Agent -->
 			{#each $keysetMembers as member}
 				<TreeViewItem>
@@ -55,18 +57,19 @@
 							<EditableName pubkey={member} />
 						</span>
 						<span class="chip variant-filled-surface my-auto">
-							{0} Registered Keys
+							{$keysetKeysByAuthor[indexableKey(member)].length} Key(s)
 						</span>
 					</div>
 					<svelte:fragment slot="children">
-						{#if ($keysetKeysByAuthor[indexableKey(member)] ?? []).length > 0}
-							{#each $keysetKeysByAuthor[indexableKey(member)] as key}
-								<TreeViewItem>
-									<svelte:fragment slot="lead"><AgentIcon /></svelte:fragment>
-									{key}
-								</TreeViewItem>
-							{/each}
-						{/if}
+						{#each $keysetKeysByAuthor[indexableKey(member)] ?? [] as keyInfo}
+							<TreeViewItem>
+								<svelte:fragment slot="lead"><KeyIcon /></svelte:fragment>
+								<div class="flex gap-x-4">
+									<CryptographicHash hash={keyInfo.keyBytes} size={24} />
+									<KeyStateBadge keyState={keyInfo.keyState} />
+								</div>
+							</TreeViewItem>
+						{/each}
 					</svelte:fragment>
 				</TreeViewItem>
 			{/each}
