@@ -63,10 +63,12 @@
 		<CancelIcon />
 	</button>
 {:else}
-	<p class="text-gray-350 text-lg">{name}</p>
-	{#if canEdit}
-		<button on:click={toggleEdit}>
-			<EditIcon />
-		</button>
-	{/if}
+	<div class="flex flex-row">
+		<p class="text-gray-350 text-lg">{name}</p>
+		{#if canEdit}
+			<button class="ml-2" on:click={toggleEdit}>
+				<EditIcon />
+			</button>
+		{/if}
+	</div>
 {/if}

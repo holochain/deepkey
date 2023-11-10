@@ -133,47 +133,6 @@ pub fn revoke_key(
     Ok(key_registration_action_hash)
 }
 
-// TODO: check if we need to do the `match registration` as in the old method below:
-// #[hdk_extern]
-// pub fn old_revoke_key(key_revocation: KeyRevocation) -> ExternResult<()> {
-//     let registration = get(
-//         key_revocation.prior_key_registration.clone(),
-//         GetOptions::default(),
-//     )?
-//     .map(|record| record.entry().to_app_option::<KeyRegistration>())
-//     .transpose()
-//     .map_err(|err| wasm_error!(WasmErrorInner::Guest(err.to_string())))?
-//     .flatten()
-//     .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
-//         "Cannot find the KeyRegistration to be revoked"
-//     ))))?;
-//     let agent_pubkey = match registration {
-//         KeyRegistration::Create(key_generation) => Ok(key_generation.new_key),
-//         KeyRegistration::CreateOnly(_) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
-//             "CreateOnly is Unimplemented"
-//         ))))?,
-//         KeyRegistration::Update(_, _) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
-//             "Cannot revoke: this key has already been revoked and updated to a new key."
-//         ))))?,
-//         KeyRegistration::Delete(_) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
-//             "Cannot revoke: Key is already revoked"
-//         )))),
-//     }?;
-//     let key_anchor = KeyAnchor::from_agent_key(agent_pubkey);
-//     let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(key_anchor.clone()))?;
-//     let old_key_anchor_record =
-//         get(key_anchor_hash, GetOptions::default())?.ok_or(wasm_error!(WasmErrorInner::Guest(
-//             String::from("Could not find the KeyAnchor for the KeyRegistration to be revoked")
-//         )))?;
-
-//     update_entry(
-//         key_revocation.prior_key_registration.clone(),
-//         &EntryTypes::KeyRegistration(KeyRegistration::Delete(key_revocation.clone())),
-//     )?;
-//     delete_entry(old_key_anchor_record.action_address().clone())?;
-//     Ok(())
-// }
-
 fn _get_key_anchor_record_from_key_registration_action_hash(
     key_registration_to_revoke: ActionHash,
 ) -> ExternResult<ActionHash> {
@@ -317,6 +276,8 @@ fn get_latest_key_registration(key_registration_hash: ActionHash) -> ExternResul
         None => Ok(Some(record_details.record)),
     }
 }
+
+
 // #[derive(Serialize, Deserialize, Debug)]
 // pub struct UpdateKeyRegistrationInput {
 //     pub previous_key_registration_hash: ActionHash,
@@ -343,4 +304,47 @@ fn get_latest_key_registration(key_registration_hash: ActionHash) -> ExternResul
 //     original_key_registration_hash: ActionHash,
 // ) -> ExternResult<ActionHash> {
 //     delete_entry(original_key_registration_hash)
+// }
+
+
+
+// TODO: check if we need to do the `match registration` as in the old method below:
+// #[hdk_extern]
+// pub fn old_revoke_key(key_revocation: KeyRevocation) -> ExternResult<()> {
+//     let registration = get(
+//         key_revocation.prior_key_registration.clone(),
+//         GetOptions::default(),
+//     )?
+//     .map(|record| record.entry().to_app_option::<KeyRegistration>())
+//     .transpose()
+//     .map_err(|err| wasm_error!(WasmErrorInner::Guest(err.to_string())))?
+//     .flatten()
+//     .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+//         "Cannot find the KeyRegistration to be revoked"
+//     ))))?;
+//     let agent_pubkey = match registration {
+//         KeyRegistration::Create(key_generation) => Ok(key_generation.new_key),
+//         KeyRegistration::CreateOnly(_) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
+//             "CreateOnly is Unimplemented"
+//         ))))?,
+//         KeyRegistration::Update(_, _) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
+//             "Cannot revoke: this key has already been revoked and updated to a new key."
+//         ))))?,
+//         KeyRegistration::Delete(_) => Err(wasm_error!(WasmErrorInner::Guest(String::from(
+//             "Cannot revoke: Key is already revoked"
+//         )))),
+//     }?;
+//     let key_anchor = KeyAnchor::from_agent_key(agent_pubkey);
+//     let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(key_anchor.clone()))?;
+//     let old_key_anchor_record =
+//         get(key_anchor_hash, GetOptions::default())?.ok_or(wasm_error!(WasmErrorInner::Guest(
+//             String::from("Could not find the KeyAnchor for the KeyRegistration to be revoked")
+//         )))?;
+
+//     update_entry(
+//         key_revocation.prior_key_registration.clone(),
+//         &EntryTypes::KeyRegistration(KeyRegistration::Delete(key_revocation.clone())),
+//     )?;
+//     delete_entry(old_key_anchor_record.action_address().clone())?;
+//     Ok(())
 // }

@@ -1,6 +1,7 @@
 import { deepkey, keysetRoot } from './deepkey-client-store';
-import { getKeyAnchor, getKeyFromKeyRegistration } from '$lib/deepkey-client';
+import { getKeyAnchor, getKeyFromKeyRegistration, type KeyRegistration } from '$lib/deepkey-client';
 import { asyncDerived } from './loadable';
+import { indexableKey } from '$lib/util';
 
 export const keyRegistrations = asyncDerived(
 	[deepkey, keysetRoot] as const,
@@ -9,6 +10,7 @@ export const keyRegistrations = asyncDerived(
 	}
 );
 
+// Gets all keyRegistrations and queries the key state for each
 export const keysetKeys = asyncDerived(
 	[deepkey, keyRegistrations] as const,
 	async ([$deepkey, $keyRegistrations]) => {
@@ -21,5 +23,20 @@ export const keysetKeys = asyncDerived(
 				return { keyBytes: keyAnchor.bytes, keyState };
 			})
 		);
+	}
+);
+export const keysetKeysByAuthor = asyncDerived(
+	[deepkey, keysetRoot] as const,
+	async ([$deepkey, $keysetRoot]) => {
+		const keysetKeysAndAuthors = await $deepkey.queryKeysetKeysWithAuthors($keysetRoot);
+		const keys: Record<string, KeyRegistration[]> = {};
+
+		for (let i = 0; i++; i < keysetKeysAndAuthors.length) {
+			const [authorKey, keyRegistration] = keysetKeysAndAuthors[i];
+			const authorIndex = indexableKey(authorKey);
+			keys[authorIndex] = [keyRegistration, ...(keys[authorIndex] ?? [])];
+		}
+
+		return keys;
 	}
 );

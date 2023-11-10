@@ -142,6 +142,9 @@ export class DeepkeyClient {
 	async queryKeysetKeys(ksr: ActionHash): Promise<KeyRegistration[]> {
 		return this.callZome('query_keyset_keys', ksr);
 	}
+	async queryKeysetKeysWithAuthors(ksr: ActionHash): Promise<Array<[AgentPubKey, KeyRegistration]>> {
+		return this.callZome('query_keyset_keys_with_authors', ksr);
+	}
 	async queryKeysetKeyAnchors(ksr: ActionHash): Promise<KeyAnchor[]> {
 		return this.callZome('query_keyset_key_anchors', ksr);
 	}

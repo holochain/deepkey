@@ -82,22 +82,37 @@ pub fn query_keyset_members(keyset_root_hash: ActionHash) -> ExternResult<Vec<Ag
     Ok(dia_author_pubkeys)
 }
 
+#[hdk_extern]
+pub fn query_keyset_keys_with_authors(
+    keyset_root_hash: ActionHash,
+) -> ExternResult<Vec<(AgentPubKey, KeyRegistration)>> {
+    let key_registrations = _query_keyset_key_records(keyset_root_hash)?
+        .into_iter()
+        .map(|key_reg_record| {
+            let author = key_reg_record.action().author().clone();
+            key_reg_record
+                .entry
+                .to_app_option::<KeyRegistration>()
+                .map_err(|e| {
+                    wasm_error!(WasmErrorInner::Guest(format!(
+                        "Could not deserialize KeyRegistration entry: {}",
+                        e
+                    )))
+                })
+                .map(|opt| opt.map(|key_reg| (author, key_reg)))
+        })
+        .collect::<ExternResult<Vec<Option<(AgentPubKey, KeyRegistration)>>>>()?
+        .into_iter()
+        .filter_map(|x| x)
+        .collect::<Vec<(AgentPubKey, KeyRegistration)>>();
+    Ok(key_registrations)
+}
+
 // Get all of the keys registered on the keyset, across all the deepkey agents
 #[hdk_extern]
 pub fn query_keyset_keys(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyRegistration>> {
-    let key_registrations = get_links(keyset_root_hash, LinkTypes::KeysetRootToKeyAnchors, None)?
+    let key_registrations = _query_keyset_key_records(keyset_root_hash)?
         .into_iter()
-        .map(|link| link.target.into())
-        .map(|key_anchor_hash: EntryHash| get(key_anchor_hash, GetOptions::default()))
-        .collect::<ExternResult<Vec<Option<Record>>>>()?
-        .into_iter()
-        .filter_map(|x| x)
-        .map(|record| record.action().prev_action().cloned())
-        .filter_map(|x| x)
-        .map(|key_reg_actionhash| get(key_reg_actionhash, GetOptions::default()))
-        .collect::<ExternResult<Vec<Option<Record>>>>()?
-        .into_iter()
-        .filter_map(|x| x)
         .map(|key_reg_record| {
             key_reg_record
                 .entry
@@ -113,8 +128,28 @@ pub fn query_keyset_keys(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyRe
         .into_iter()
         .filter_map(|x| x)
         .collect::<Vec<KeyRegistration>>();
-
     Ok(key_registrations)
+}
+
+// Get all of the keys registered on the keyset, across all the deepkey agents
+pub fn _query_keyset_key_records(keyset_root_hash: ActionHash) -> ExternResult<Vec<Record>> {
+    let key_registration_records =
+        get_links(keyset_root_hash, LinkTypes::KeysetRootToKeyAnchors, None)?
+            .into_iter()
+            .map(|link| link.target.into())
+            .map(|key_anchor_hash: EntryHash| get(key_anchor_hash, GetOptions::default()))
+            .collect::<ExternResult<Vec<Option<Record>>>>()?
+            .into_iter()
+            .filter_map(|x| x)
+            .map(|record| record.action().prev_action().cloned())
+            .filter_map(|x| x)
+            .map(|key_reg_actionhash| get(key_reg_actionhash, GetOptions::default()))
+            .collect::<ExternResult<Vec<Option<Record>>>>()?
+            .into_iter()
+            .filter_map(|x| x)
+            .collect::<Vec<Record>>();
+
+    Ok(key_registration_records)
 }
 
 #[hdk_extern]

@@ -1,11 +1,16 @@
 <script lang="ts">
 	import AgentIcon from '~icons/iconoir/laptop';
-	import { deepkey } from '$lib/store/deepkey-client-store';
-	import { keysetKeys } from '$lib/store/keyset-keys';
+	import KeyIcon from '~icons/iconoir/key-alt';
+	import ConfigureIcon from '~icons/iconoir/tools';
+	import { deepkey, keysetMembers } from '$lib/store/deepkey-client-store';
+	import { keysetKeys, keysetKeysByAuthor } from '$lib/store/keyset-keys';
 	import RegisterKey from '../components/register-key.svelte';
 	import CryptographicHash from '../components/cryptographic-hash.svelte';
 	import type { KeyState } from '$lib/deepkey-client';
 
+	import { TreeView, TreeViewItem, type TreeViewNode } from '@skeletonlabs/skeleton';
+	import EditableName from '../components/editable-name.svelte';
+	import { indexableKey } from '$lib/util';
 	function keyStateText(keyState: any): string {
 		if (keyState.Valid) {
 			return 'Valid';
@@ -16,7 +21,7 @@
 		}
 	}
 
-	// $: console.log($keysetKeys);
+	$: console.log($keysetKeysByAuthor);
 
 	// let localKeyInfo = asyncDerived(deepkey, async ($deepkey) => {
 	// 	return await $deepkey.query_local_key_info();
@@ -35,6 +40,38 @@
 -->
 
 	<RegisterKey />
+
+	{#await Promise.all([keysetMembers.load, keysetKeysByAuthor.load])}
+		<p>Loading...</p>
+	{:then}
+		<TreeView open={false}>
+			<!-- For Each Agent -->
+			{#each $keysetMembers as member}
+				<TreeViewItem>
+					<svelte:fragment slot="lead"><AgentIcon class="h-8 w-8" /></svelte:fragment>
+					<div class="flex gap-x-4">
+						<CryptographicHash hash={member} />
+						<span class="my-auto">
+							<EditableName pubkey={member} />
+						</span>
+						<span class="chip variant-filled-surface my-auto">
+							{0} Registered Keys
+						</span>
+					</div>
+					<svelte:fragment slot="children">
+						{#if ($keysetKeysByAuthor[indexableKey(member)] ?? []).length > 0}
+							{#each $keysetKeysByAuthor[indexableKey(member)] as key}
+								<TreeViewItem>
+									<svelte:fragment slot="lead"><AgentIcon /></svelte:fragment>
+									{key}
+								</TreeViewItem>
+							{/each}
+						{/if}
+					</svelte:fragment>
+				</TreeViewItem>
+			{/each}
+		</TreeView>
+	{/await}
 
 	<ul class="list flex flex-col mt-6">
 		{#await keysetKeys.load then}
