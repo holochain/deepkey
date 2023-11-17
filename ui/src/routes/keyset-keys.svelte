@@ -57,7 +57,7 @@
 							<EditableName pubkey={member} />
 						</span>
 						<span class="chip variant-filled-surface my-auto">
-							{$keysetKeysByAuthor[indexableKey(member)].length} Key(s)
+							{$keysetKeysByAuthor[indexableKey(member)]?.length ?? 0} Key(s)
 						</span>
 					</div>
 					<svelte:fragment slot="children">
@@ -76,6 +76,7 @@
 		</TreeView>
 	{/await}
 
+	<!-- Flat View of All Keys -->
 	<ul class="list flex flex-col mt-6">
 		{#await keysetKeys.load then}
 			{#each $keysetKeys as key}
