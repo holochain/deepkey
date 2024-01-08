@@ -40,8 +40,12 @@ pub fn create_keyset_root(_: ()) -> ExternResult<(ActionHash, ActionHash)> {
 }
 
 #[hdk_extern]
-pub fn get_keyset_root(keyset_root_hash: ActionHash) -> ExternResult<Option<Record>> {
-    get(keyset_root_hash, GetOptions::default())
+pub fn get_keyset_root(keyset_root_hash: ActionHash) -> ExternResult<Option<KeysetRoot>> {
+    // get(keyset_root_hash, GetOptions::default())
+    Ok(
+        get(keyset_root_hash, GetOptions::default())?
+            .and_then( |record| KeysetRoot::try_from( record ).ok() )
+    )
 }
 
 // Get all of the members of the keyset: the first deepkey agent, and all the deepkey agents
@@ -140,9 +144,9 @@ pub fn _query_keyset_key_records(keyset_root_hash: ActionHash) -> ExternResult<V
             .map(|key_anchor_hash: EntryHash| get(key_anchor_hash, GetOptions::default()))
             .collect::<ExternResult<Vec<Option<Record>>>>()?
             .into_iter()
-            .filter_map(|x| x)
+            .filter_map(|x| x) // Drop any dead links
             .map(|record| record.action().prev_action().cloned())
-            .filter_map(|x| x)
+            .filter_map(|x| x) // Drop anything without a prev action
             .map(|key_reg_actionhash| get(key_reg_actionhash, GetOptions::default()))
             .collect::<ExternResult<Vec<Option<Record>>>>()?
             .into_iter()

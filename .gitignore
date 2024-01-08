@@ -2,6 +2,7 @@ node_modules
 **/dist/
 /target/
 /.cargo/
+/zomes
 *.happ
 *.webhapp
 *.zip

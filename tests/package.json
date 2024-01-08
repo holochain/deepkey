@@ -1,23 +1,22 @@
 {
-  "name": "tests",
+  "name": "testing",
   "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "test": "TRYORAMA_LOG_LEVEL=${TRYORAMA_LOG_LEVEL:-error} NODE_NO_WARNINGS=1 vitest --threads false --run -t ${TESTS:-.}"
-  },
-  "author": "",
-  "license": "CAL-1.0",
-  "dependencies": {
-    "@holochain/client": "^0.14.1",
-    "@holochain/tryorama": "^0.11.2",
-    "@msgpack/msgpack": "^2.8.0",
-    "@noble/ed25519": "^2.0.0",
-    "js-base64": "^3.7.5",
-    "vitest": "^0.31.0",
-    "ws": "^8.13.0"
-  },
+  "description": "",
   "type": "module",
-  "devDependencies": {
-    "vite": "^4.0"
+  "main": "index.js",
+  "scripts": {},
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@holochain/deepkey-zomelets": "file:../dnas/deepkey/zomelets",
+    "@spartan-hc/app-interface-client": "^0.3.0",
+    "@spartan-hc/holo-hash": "^0.6.1",
+    "@spartan-hc/holochain-backdrop": "^2.2.3",
+    "@whi/holochain-backdrop": "^2.0.0",
+    "@whi/json": "^0.1.5",
+    "@whi/weblogger": "^0.2.1",
+    "chai": "^4.3.4",
+    "mocha": "^10.1.0",
+    "why-is-node-running": "^2.2.0"
   }
 }

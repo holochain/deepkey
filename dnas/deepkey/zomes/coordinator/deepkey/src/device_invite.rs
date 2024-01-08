@@ -3,16 +3,6 @@ use hdk::prelude::*;
 
 use crate::source_of_authority::*;
 
-pub fn create_device_invite(device_invite: DeviceInvite) -> ExternResult<Record> {
-    let device_invite_hash = create_entry(&EntryTypes::DeviceInvite(device_invite.clone()))?;
-
-    let record = get(device_invite_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
-        WasmErrorInner::Guest(String::from(
-            "Could not find the newly created DeviceInvite"
-        ))
-    ))?;
-    Ok(record)
-}
 #[hdk_extern]
 pub fn get_device_invite(device_invite_hash: ActionHash) -> ExternResult<Option<Record>> {
     get(device_invite_hash, GetOptions::default())
@@ -65,13 +55,19 @@ pub fn invite_agent(agent_to_invite: AgentPubKey) -> ExternResult<DeviceInviteAc
     //     .limit(1)
     // )?;
     let keyset_root = query_keyset_root_action_hash(())?;
+    debug!("Using keyset root: {}", keyset_root );
     let parent = query_keyset_authority_action_hash(())?;
+    debug!("Using parent: {}", parent );
 
     let invite = DeviceInvite::new(keyset_root.clone(), parent, agent_to_invite.clone());
+    debug!("Constructed invite: {:#?}", invite );
     let invite_hash = create_entry(EntryTypes::DeviceInvite(invite.clone()))?;
+    debug!("Created invite: {}", invite_hash );
 
-    Ok(DeviceInviteAcceptance::new(
+    let acceptance = DeviceInviteAcceptance::new(
         keyset_root.clone(),
         invite_hash,
-    ))
+    );
+    debug!("Return invite acceptance: {:#?}", acceptance );
+    Ok( acceptance )
 }

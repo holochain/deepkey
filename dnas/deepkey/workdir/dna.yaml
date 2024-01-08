@@ -8,12 +8,12 @@ integrity:
   zomes:
     - name: deepkey_integrity
       hash: ~
-      bundled: "../../../target/wasm32-unknown-unknown/release/deepkey_integrity.wasm"
+      bundled: "../../../zomes/deepkey_integrity.wasm"
       dependencies: ~
 coordinator:
   zomes:
     - name: deepkey
       hash: ~
-      bundled: "../../../target/wasm32-unknown-unknown/release/deepkey.wasm"
+      bundled: "../../../zomes/deepkey.wasm"
       dependencies:
         - name: deepkey_integrity

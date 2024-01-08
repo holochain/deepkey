@@ -1,0 +1,34 @@
+{
+  "name": "@holochain/deepkey-zomelets",
+  "version": "0.1.1",
+  "description": "Zomelets for Holochain's DeepKey DNA",
+  "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "browser": "dist/deepkey-zomelets.js",
+  "files": [
+    "README.md",
+    "src/index.js",
+    "src/types.js",
+    "dist/**"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Matthew Brisebois <matthew.brisebois@holo.host>",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/holochain/deepkey/"
+  },
+  "dependencies": {
+    "@spartan-hc/holo-hash": "^0.6.1",
+    "@spartan-hc/zomelets": "^0.1.3",
+    "@whi/bytes-class": "^0.1.0",
+    "@whi/into-struct": "^0.2.1"
+  },
+  "devDependencies": {
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
+  }
+}
