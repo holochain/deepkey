@@ -21,19 +21,6 @@ const { Holochain }			= HolochainBackdrop;
 
 import {
     DeepKeyCell,
-
-    SignedAction,
-    Authorization,
-    AuthoritySpec,
-    AuthorizedSpecChange,
-    ChangeRule,
-    KeysetRoot,
-    KeyMeta,
-    KeyAnchor,
-    DnaBinding,
-    DeviceInvite,
-    DeviceInviteAcceptance,
-    KeyRegistrationEntry,
 }					from '@holochain/deepkey-zomelets';
 import {
     AppInterfaceClient,
@@ -81,18 +68,6 @@ describe("DeepKey", function () {
     });
 });
 
-// const wasm1_bytes			= crypto.randomBytes( 1_000 );
-const APP_ENTRY_STRUCTS_MAP		= {
-    ChangeRule,
-    KeysetRoot,
-    KeyMeta,
-    KeyAnchor,
-    DnaBinding,
-    DeviceInvite,
-    DeviceInviteAcceptance,
-    "KeyRegistration": KeyRegistrationEntry,
-};
-
 
 function basic_tests () {
     let client;
@@ -110,49 +85,6 @@ function basic_tests () {
 	app_client			= await client.app( "test-alice" );
 	bobby_client			= await client.app( "test-bobby" );
 
-	app_client.on("signal/deepkey", function ({ role, signal }) {
-	    let action_type;
-	    try {
-		console.log("Recv signal (%s) for role '%s':", signal.type, role );
-		if ( signal.data.action ) {
-		    const signed_action	= SignedAction( signal.data.action );
-		    const action	= signed_action.hashed.content;
-
-		    action_type		= action.type;
-		    // delete action.type;
-
-		    console.log(
-			"  %s Action => [%s]",
-			action_type, signed_action.hashed.hash, json.debug( signed_action )
-		    );
-		}
-
-		if ( signal.data.app_entry ) {
-		    const app_entry_type	= signal.data.app_entry.type;
-		    const struct		= APP_ENTRY_STRUCTS_MAP[ app_entry_type ];
-
-		    if ( struct === undefined )
-			throw new TypeError(`No AppEntry struct for type '${app_entry_type}'`);
-
-		    signal.data.app_entry	= struct( signal.data.app_entry );
-
-		    console.log(
-			"  AppEntry => [%s]", app_entry_type, json.debug( signal.data.app_entry )
-		    );
-		}
-		else if ( signal.data.link_type ) {
-		    console.log(
-			"  LinkType => [%s]", action_type, json.debug( signal.data.link_type )
-		    );
-		}
-	    } catch (err) {
-		console.error("Failed to handle signal '%s'", err );
-		console.log(
-		    "  %s =>", action_type, json.debug( signal.data )
-		);
-	    }
-	});
-
 	({
 	    deepkey,
 	}				= app_client.createInterface({
@@ -161,22 +93,15 @@ function basic_tests () {
 
 	deepkey_csr			= deepkey.zomes.deepkey.functions;
 
-	// await deepkey_csr.whoami();
-
-	const key_info			= await deepkey_csr.query_local_key_info();
-	log.normal("Local key info: %s", json.debug(key_info) );
-
-	const keyset_authority_addr	= await deepkey_csr.query_keyset_authority_action_hash();
-	log.normal("Keyset Authority: %s", json.debug(keyset_authority_addr) );
-
-	const keyset_root_addr	= await deepkey_csr.query_keyset_root_action_hash();
-	log.normal("Keyset Root: %s", json.debug(keyset_root_addr) );
-
-	ksr1_addr			= keyset_authority_addr;
+	await deepkey_csr.query_local_key_info();
     });
 
-    it("should query local key info", async function () {
-	await deepkey_csr.query_local_key_info();
+    it("should query keyset root action hash", async function () {
+	await deepkey_csr.query_keyset_root_action_hash();
+    });
+
+    it("should query keyset authority action hash", async function () {
+	ksr1_addr			= await deepkey_csr.query_keyset_authority_action_hash();
     });
 
     it("should query keyset members (1)", async function () {

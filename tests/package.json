@@ -9,7 +9,7 @@
   "license": "ISC",
   "dependencies": {
     "@holochain/deepkey-zomelets": "file:../dnas/deepkey/zomelets",
-    "@spartan-hc/app-interface-client": "^0.3.0",
+    "@spartan-hc/app-interface-client": "^0.3.1",
     "@spartan-hc/holo-hash": "^0.6.1",
     "@spartan-hc/holochain-backdrop": "^2.2.3",
     "@whi/holochain-backdrop": "^2.0.0",

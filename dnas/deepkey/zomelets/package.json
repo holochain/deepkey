@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@spartan-hc/holo-hash": "^0.6.1",
-    "@spartan-hc/zomelets": "^0.1.3",
+    "@spartan-hc/zomelets": "^0.2.0",
     "@whi/bytes-class": "^0.1.0",
     "@whi/into-struct": "^0.2.1"
   },

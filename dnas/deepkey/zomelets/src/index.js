@@ -25,7 +25,7 @@ import {
 }					from './types.js';
 
 
-export const DeepKeyCSRZomelet		= new Zomelet({
+const functions				= {
     async query_local_key_info () {
 	const result			= await this.call();
 
@@ -88,6 +88,68 @@ export const DeepKeyCSRZomelet		= new Zomelet({
     // 	    "mere_memory_addr": addr,
     // 	});
     // },
+};
+
+const APP_ENTRY_STRUCTS_MAP		= {
+    ChangeRule,
+    KeysetRoot,
+    KeyMeta,
+    KeyAnchor,
+    DnaBinding,
+    DeviceInvite,
+    DeviceInviteAcceptance,
+    "KeyRegistration": KeyRegistrationEntry,
+};
+
+function formatSignal ( signal ) {
+    if ( signal.action ) {
+	signal.signed_action		= SignedAction( signal.action );
+	signal.action			= signal.signed_action.hashed.content;
+    }
+
+    if ( signal.app_entry ) {
+	const app_entry_type		= signal.app_entry.type;
+	const struct			= APP_ENTRY_STRUCTS_MAP[ app_entry_type ];
+
+	if ( struct === undefined )
+	    throw new TypeError(`No AppEntry struct for type '${app_entry_type}'`);
+
+	signal.app_entry_type		= app_entry_type;
+	signal.app_entry		= struct( signal.app_entry );
+    }
+
+    return signal;
+}
+
+const signals				= {
+    EntryCreated ( signal ) {
+	formatSignal( signal );
+
+	// if ( signal.action ) {
+	//     console.log(
+	// 	"  %s Action => [%s]",
+	// 	signal.action.type, signal.signed_action.hashed.hash, JSON.stringify(signal.action,null,4)
+	//     );
+	// }
+
+	if ( signal.app_entry ) {
+	    console.log(
+		"SIGNAL: AppEntry => [%s]", signal.app_entry_type, JSON.stringify(signal.app_entry,null,4)
+	    );
+	}
+    },
+    LinkCreated ( signal ) {
+	formatSignal( signal );
+
+	console.log(
+	    "SIGNAL: LinkType => [%s]", signal.action.type, signal.link_type
+	);
+    },
+};
+
+export const DeepKeyCSRZomelet		= new Zomelet({
+    functions,
+    signals,
 });
 
 
