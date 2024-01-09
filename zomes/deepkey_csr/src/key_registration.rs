@@ -1,4 +1,4 @@
-use deepkey_integrity::*;
+use deepkey::*;
 use hdk::prelude::{holo_hash::hash_type::Dna, *};
 
 use crate::source_of_authority::query_keyset_authority_action_hash;

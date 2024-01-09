@@ -91,7 +91,7 @@ function basic_tests () {
 	    [DEEPKEY_DNA_NAME]:	DeepKeyCell,
 	}));
 
-	deepkey_csr			= deepkey.zomes.deepkey.functions;
+	deepkey_csr			= deepkey.zomes.deepkey_csr.functions;
 
 	await deepkey_csr.query_local_key_info();
     });
@@ -130,7 +130,7 @@ function basic_tests () {
 
     it("should register new key (bobby)", async function () {
 	const registration_addr		= new ActionHash( await bobby_client.call(
-	    "deepkey", "deepkey", "register_key", [
+	    "deepkey", "deepkey_csr", "register_key", [
 		new AgentPubKey( crypto.randomBytes( 32 ) ),
 		crypto.randomBytes( 64 ),
 		new DnaHash( crypto.randomBytes( 32 ) ),
@@ -173,7 +173,7 @@ function basic_tests () {
 
     it("should accept invite", async function () {
 	const acceptance_addr		= new ActionHash( await bobby_client.call(
-	    "deepkey", "deepkey", "accept_invite", invite_accept
+	    "deepkey", "deepkey_csr", "accept_invite", invite_accept
 	) );
 	log.normal("Acceptance [addr]: %s", acceptance_addr );
     });

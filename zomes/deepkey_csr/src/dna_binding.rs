@@ -1,4 +1,4 @@
-use deepkey_integrity::*;
+use deepkey::*;
 use hdk::prelude::*;
 
 // This returns DnaBindings on the local chain.

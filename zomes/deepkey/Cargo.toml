@@ -1,12 +1,12 @@
 [package]
-name = "deepkey_integrity"
+name = "deepkey"
 version = "0.0.1"
 edition = "2021"
 resolver = "2"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
-name = "deepkey_integrity"
+name = "deepkey"
 
 [dependencies]
 hdi = { workspace = true }

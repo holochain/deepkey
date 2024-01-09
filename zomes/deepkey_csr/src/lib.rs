@@ -12,7 +12,7 @@ pub mod keyset_root;
 pub mod source_of_authority;
 pub mod dna_binding;
 
-use deepkey_integrity::*;
+use deepkey::*;
 use hdk::prelude::*;
 use keyset_root::create_keyset_root;
 

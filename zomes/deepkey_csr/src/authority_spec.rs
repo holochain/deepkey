@@ -1,4 +1,4 @@
-use deepkey_integrity::*;
+use deepkey::*;
 use hdk::prelude::*;
 #[hdk_extern]
 pub fn create_authority_spec(authority_spec: AuthoritySpec) -> ExternResult<Record> {

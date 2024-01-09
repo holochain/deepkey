@@ -1,4 +1,4 @@
-use deepkey_integrity::*;
+use deepkey::*;
 use hdk::prelude::*;
 
 // function instantiate_key_revocation creates and returns a KeyRevocation in an ExternResult

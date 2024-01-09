@@ -1,5 +1,5 @@
 use hdk::prelude::*;
-use deepkey_integrity::*;
+use deepkey::*;
 #[hdk_extern]
 pub fn create_joining_proof(joining_proof: JoiningProof) -> ExternResult<Record> {
     let joining_proof_hash = create_entry(

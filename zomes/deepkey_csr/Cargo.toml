@@ -1,17 +1,17 @@
 [package]
-name = "deepkey"
+name = "deepkey_csr"
 version = "0.0.1"
 edition = "2021"
 resolver = "2"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
-name = "deepkey"
+name = "deepkey_csr"
 
 [dependencies]
 hdk = { workspace = true }
 serde = { workspace = true }
-deepkey_integrity = { workspace = true }
+deepkey = { workspace = true }
 
 [dev-dependencies]
 # holochain = { workspace = true }

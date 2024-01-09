@@ -1,4 +1,4 @@
-use deepkey_integrity::*;
+use deepkey::*;
 use hdk::prelude::*;
 
 use crate::source_of_authority::*;

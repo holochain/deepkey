@@ -1,15 +1,15 @@
 
-INT_DIR			= dnas/deepkey/zomes/integrity/deepkey
-CSR_DIR			= dnas/deepkey/zomes/coordinator/deepkey
+INT_DIR			= zomes/deepkey
+CSR_DIR			= zomes/deepkey_csr
 
 # DNAs
 DEEPKEY_DNA		= dnas/deepkey.dna
 
 # Integrity Zomes
-DEEPKEY_WASM		= zomes/deepkey_integrity.wasm
+DEEPKEY_WASM		= zomes/deepkey.wasm
 
 # Coordinator WASMs
-DEEPKEY_CSR_WASM	= zomes/deepkey.wasm
+DEEPKEY_CSR_WASM	= zomes/deepkey_csr.wasm
 
 
 TARGET			= release
@@ -20,11 +20,14 @@ SOURCE_FILES		= $(COMMON_SOURCE_FILES) \
 				$(CSR_DIR)/Cargo.toml $(CSR_DIR)/src/*.rs
 
 
+#
+# Project
+#
 $(DEEPKEY_DNA):		$(DEEPKEY_WASM) $(DEEPKEY_CSR_WASM)
 
-dnas/%.dna:		dnas/%/workdir/dna.yaml
+dnas/%.dna:		dnas/%/dna.yaml
 	@echo "Packaging '$*': $@"
-	@hc dna pack -o $@ dnas/$*/workdir
+	@hc dna pack -o $@ dnas/$*
 
 zomes:
 	mkdir $@
@@ -41,6 +44,15 @@ $(TARGET_DIR)/%.wasm:		$(SOURCE_FILES)
 	@touch $@ # Cargo must have a cache somewhere because it doesn't update the file time
 
 
+GG_REPLACE_LOCATIONS = ':(exclude)*.lock' zomes/
+
+# update-tracked-files:
+# 	git grep -l 'deepkey_integrity' -- $(GG_REPLACE_LOCATIONS) | xargs sed -i 's|deepkey_integrity|deepkey|g'
+
+
+#
+# Testing
+#
 DEBUG_LEVEL	       ?= warn
 TEST_ENV_VARS		= LOG_LEVEL=$(DEBUG_LEVEL)
 

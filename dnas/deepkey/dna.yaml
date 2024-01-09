@@ -6,14 +6,14 @@ integrity:
   properties: ~
   origin_time: 1669408001130688
   zomes:
-    - name: deepkey_integrity
+    - name: deepkey
       hash: ~
-      bundled: "../../../zomes/deepkey_integrity.wasm"
+      bundled: "../../zomes/deepkey.wasm"
       dependencies: ~
 coordinator:
   zomes:
-    - name: deepkey
+    - name: deepkey_csr
       hash: ~
-      bundled: "../../../zomes/deepkey.wasm"
+      bundled: "../../zomes/deepkey_csr.wasm"
       dependencies:
-        - name: deepkey_integrity
+        - name: deepkey

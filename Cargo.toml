@@ -6,7 +6,7 @@ opt-level = "z"
 
 [workspace]
 resolver = "2"
-members = ["dnas/*/zomes/coordinator/*", "dnas/*/zomes/integrity/*"]
+members = ["zomes/*"]
 
 [workspace.dependencies]
 serde = "1"
@@ -18,7 +18,7 @@ hdk = { version = "0.1.3" } # "0.3.0-beta-dev.0"
 # futures = { version = "0.3.1", default-features = false }
 
 [workspace.dependencies.deepkey]
-path = "dnas/deepkey/zomes/coordinator/deepkey"
+path = "zomes/deepkey"
 
-[workspace.dependencies.deepkey_integrity]
-path = "dnas/deepkey/zomes/integrity/deepkey"
+[workspace.dependencies.deepkey_csr]
+path = "zomes/deepkey_csr"

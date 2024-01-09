@@ -473,18 +473,18 @@ dependencies = [
 name = "deepkey"
 version = "0.0.1"
 dependencies = [
- "deepkey_integrity",
- "hdk",
- "serde",
-]
-
-[[package]]
-name = "deepkey_integrity"
-version = "0.0.1"
-dependencies = [
  "hdi",
  "serde",
  "thiserror",
+]
+
+[[package]]
+name = "deepkey_csr"
+version = "0.0.1"
+dependencies = [
+ "deepkey",
+ "hdk",
+ "serde",
 ]
 
 [[package]]

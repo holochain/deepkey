@@ -2,11 +2,11 @@ node_modules
 **/dist/
 /target/
 /.cargo/
-/zomes
+/dnas/*.dna
+/zomes/*.wasm
 *.happ
 *.webhapp
 *.zip
-*.dna
 .hc*
 .hc
 .running

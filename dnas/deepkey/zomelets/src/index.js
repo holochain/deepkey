@@ -154,7 +154,7 @@ export const DeepKeyCSRZomelet		= new Zomelet({
 
 
 export const DeepKeyCell		= new CellZomelets({
-    "deepkey": DeepKeyCSRZomelet,
+    "deepkey_csr": DeepKeyCSRZomelet,
 });
 
 

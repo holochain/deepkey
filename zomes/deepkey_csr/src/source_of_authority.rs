@@ -1,4 +1,4 @@
-use deepkey_integrity::*;
+use deepkey::*;
 use hdk::prelude::*;
 
 // This function queries for the keyset authority for this conductor.

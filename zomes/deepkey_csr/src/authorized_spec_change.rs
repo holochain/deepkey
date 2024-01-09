@@ -1,5 +1,5 @@
 use hdk::prelude::*;
-use deepkey_integrity::*;
+use deepkey::*;
 #[hdk_extern]
 pub fn create_authorized_spec_change(
     authorized_spec_change: AuthorizedSpecChange,

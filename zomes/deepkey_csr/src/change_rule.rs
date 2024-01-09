@@ -1,4 +1,4 @@
-use deepkey_integrity::*;
+use deepkey::*;
 use hdk::prelude::*;
 #[hdk_extern]
 pub fn create_change_rule(change_rule: ChangeRule) -> ExternResult<Record> {
