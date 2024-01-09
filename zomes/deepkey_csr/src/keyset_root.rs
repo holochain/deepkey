@@ -64,7 +64,7 @@ pub fn query_keyset_members(keyset_root_hash: ActionHash) -> ExternResult<Vec<Ag
         None,
     )?
     .into_iter()
-    .map(|link| link.target.into())
+    .filter_map(|link| link.target.into_action_hash())
     .collect();
     let dia_records: Vec<Record> = dia_hashes
         .into_iter()
@@ -140,7 +140,7 @@ pub fn _query_keyset_key_records(keyset_root_hash: ActionHash) -> ExternResult<V
     let key_registration_records =
         get_links(keyset_root_hash, LinkTypes::KeysetRootToKeyAnchors, None)?
             .into_iter()
-            .map(|link| link.target.into())
+            .filter_map(|link| link.target.into_entry_hash())
             .map(|key_anchor_hash: EntryHash| get(key_anchor_hash, GetOptions::default()))
             .collect::<ExternResult<Vec<Option<Record>>>>()?
             .into_iter()
@@ -160,7 +160,7 @@ pub fn _query_keyset_key_records(keyset_root_hash: ActionHash) -> ExternResult<V
 pub fn query_keyset_key_anchors(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyAnchor>> {
     let key_anchors = get_links(keyset_root_hash, LinkTypes::KeysetRootToKeyAnchors, None)?
         .into_iter()
-        .map(|link| link.target.into())
+        .filter_map(|link| link.target.into_entry_hash())
         .map(|key_anchor_hash: EntryHash| get(key_anchor_hash, GetOptions::default()))
         .collect::<ExternResult<Vec<Option<Record>>>>()?
         .into_iter()

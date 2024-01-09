@@ -12,3 +12,6 @@ name = "deepkey"
 hdi = { workspace = true }
 serde = { workspace = true }
 thiserror = "1.0.38"
+
+# temporary fix for compile error in
+getrandom = { version = "=0.2.7", features = ["custom"] }
