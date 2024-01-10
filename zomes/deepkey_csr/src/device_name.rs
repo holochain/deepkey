@@ -17,7 +17,9 @@ pub fn name_device(device_name: String) -> ExternResult<()> {
 
 #[hdk_extern]
 pub fn get_device_name(agent_pubkey: AgentPubKey) -> ExternResult<Option<String>> {
-    let links = get_links(agent_pubkey.clone(), LinkTypes::DeviceName, None)?;
+    let links = get_links(
+        GetLinksInputBuilder::try_new( agent_pubkey.clone(), LinkTypes::DeviceName )?.build()
+    )?;
 
     match links.first() {
         Some(link) => {

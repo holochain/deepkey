@@ -59,9 +59,10 @@ pub fn query_keyset_members(keyset_root_hash: ActionHash) -> ExternResult<Vec<Ag
     let ksr_chain_pubkey = keyset_root_record.action().author().clone();
 
     let dia_hashes: Vec<ActionHash> = get_links(
-        keyset_root_hash,
-        LinkTypes::KeysetRootToDeviceInviteAcceptances,
-        None,
+        GetLinksInputBuilder::try_new(
+            keyset_root_hash,
+            LinkTypes::KeysetRootToDeviceInviteAcceptances,
+        )?.build()
     )?
     .into_iter()
     .filter_map(|link| link.target.into_action_hash())
@@ -138,7 +139,12 @@ pub fn query_keyset_keys(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyRe
 // Get all of the keys registered on the keyset, across all the deepkey agents
 pub fn _query_keyset_key_records(keyset_root_hash: ActionHash) -> ExternResult<Vec<Record>> {
     let key_registration_records =
-        get_links(keyset_root_hash, LinkTypes::KeysetRootToKeyAnchors, None)?
+        get_links(
+            GetLinksInputBuilder::try_new(
+                keyset_root_hash,
+                LinkTypes::KeysetRootToKeyAnchors,
+            )?.build()
+        )?
             .into_iter()
             .filter_map(|link| link.target.into_entry_hash())
             .map(|key_anchor_hash: EntryHash| get(key_anchor_hash, GetOptions::default()))
@@ -158,7 +164,12 @@ pub fn _query_keyset_key_records(keyset_root_hash: ActionHash) -> ExternResult<V
 
 #[hdk_extern]
 pub fn query_keyset_key_anchors(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyAnchor>> {
-    let key_anchors = get_links(keyset_root_hash, LinkTypes::KeysetRootToKeyAnchors, None)?
+    let key_anchors = get_links(
+        GetLinksInputBuilder::try_new(
+            keyset_root_hash,
+            LinkTypes::KeysetRootToKeyAnchors,
+        )?.build()
+    )?
         .into_iter()
         .filter_map(|link| link.target.into_entry_hash())
         .map(|key_anchor_hash: EntryHash| get(key_anchor_hash, GetOptions::default()))
