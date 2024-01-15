@@ -71,6 +71,30 @@ scoped_type_connector!(
     EntryTypesUnit::ChangeRule,
     EntryTypes::ChangeRule( ChangeRule )
 );
+scoped_type_connector!(
+    EntryTypesUnit::DeviceInvite,
+    EntryTypes::DeviceInvite( DeviceInvite )
+);
+scoped_type_connector!(
+    EntryTypesUnit::DeviceInviteAcceptance,
+    EntryTypes::DeviceInviteAcceptance( DeviceInviteAcceptance )
+);
+scoped_type_connector!(
+    EntryTypesUnit::KeyRegistration,
+    EntryTypes::KeyRegistration( KeyRegistration )
+);
+scoped_type_connector!(
+    EntryTypesUnit::KeyAnchor,
+    EntryTypes::KeyAnchor( KeyAnchor )
+);
+scoped_type_connector!(
+    EntryTypesUnit::KeyMeta,
+    EntryTypes::KeyMeta( KeyMeta )
+);
+scoped_type_connector!(
+    EntryTypesUnit::DnaBinding,
+    EntryTypes::DnaBinding( DnaBinding )
+);
 
 
 #[derive(Serialize, Deserialize)]

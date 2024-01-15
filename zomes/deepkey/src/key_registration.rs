@@ -1,33 +1,23 @@
 use hdi::prelude::*;
 
-use crate::{KeyGeneration, KeyRevocation};
+use crate::{
+    KeyGeneration,
+    KeyRevocation,
+};
+
 
 #[hdk_entry_helper]
 #[derive(Clone, PartialEq)]
 pub enum KeyRegistration {
-    Create(KeyGeneration), // Creates a key under management of current KSR on this chain
-    CreateOnly(KeyGeneration), // Unmanaged key. Keys for hosted web users may be of this type, cannot replace/revoke
-    Update(KeyRevocation, KeyGeneration), // Revokes a key and replaces it with a newly generated one
-    Delete(KeyRevocation) // Permanently revokes a key (Note: still uses an update action.)
-}
-pub fn validate_create_key_registration(
-    _action: EntryCreationAction,
-    _key_registration: KeyRegistration,
-) -> ExternResult<ValidateCallbackResult> {
-    Ok(ValidateCallbackResult::Valid)
-}
-pub fn validate_update_key_registration(
-    _action: Update,
-    _key_registration: KeyRegistration,
-    _original_action: EntryCreationAction,
-    _original_key_registration: KeyRegistration,
-) -> ExternResult<ValidateCallbackResult> {
-    Ok(ValidateCallbackResult::Valid)
-}
-pub fn validate_delete_key_registration(
-    _action: Delete,
-    _original_action: EntryCreationAction,
-    _original_key_registration: KeyRegistration,
-) -> ExternResult<ValidateCallbackResult> {
-    Ok(ValidateCallbackResult::Valid)
+    // Creates a key under management of current KSR on this chain
+    Create(KeyGeneration),
+
+    // Unmanaged key. Keys for hosted web users may be of this type, cannot replace/revoke
+    CreateOnly(KeyGeneration),
+
+    // Revokes a key and replaces it with a newly generated one
+    Update(KeyRevocation, KeyGeneration),
+
+    // Permanently revokes a key (Note: still uses an update action.)
+    Delete(KeyRevocation)
 }
