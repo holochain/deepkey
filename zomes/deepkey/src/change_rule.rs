@@ -1,3 +1,4 @@
+use holo_hash;
 use hdi::prelude::*;
 
 use crate::{error::Error, Authorization, AuthorizedSpecChange};
@@ -37,7 +38,7 @@ impl ChangeRule {
                 {
                     Some(agent) => {
                         if !verify_signature_raw(
-                            agent.to_owned(),
+                            holo_hash::AgentPubKey::from_raw_32( agent.to_vec() ),
                             signature.to_owned(),
                             data.to_vec(),
                         )? {

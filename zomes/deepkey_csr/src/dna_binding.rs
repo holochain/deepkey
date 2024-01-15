@@ -6,7 +6,7 @@ use hdk::prelude::*;
 pub fn query_local_dna_bindings(_: ()) -> ExternResult<Vec<DnaBinding>> {
     let local_dna_bindings = query(
         ChainQueryFilter::new()
-            .entry_type(EntryType::App(UnitEntryTypes::DnaBinding.try_into()?))
+            .entry_type(EntryType::App(EntryTypesUnit::DnaBinding.try_into()?))
             .include_entries(true),
     )?
     .into_iter()
@@ -32,7 +32,7 @@ pub fn query_local_dna_bindings(_: ()) -> ExternResult<Vec<DnaBinding>> {
 // It is the more sensitive version of the public `query_keyset_keys` in keyset_root.rs
 #[hdk_extern]
 pub fn query_local_key_info(_: ()) -> ExternResult<Vec<(DnaBinding, KeyMeta, KeyRegistration)>> {
-    let app_entry_def: AppEntryDef = UnitEntryTypes::DnaBinding.try_into()?;
+    let app_entry_def: AppEntryDef = EntryTypesUnit::DnaBinding.try_into()?;
     let entry_type: EntryType = EntryType::App(app_entry_def);
 
     let local_key_infos = query(

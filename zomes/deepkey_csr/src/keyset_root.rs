@@ -1,43 +1,74 @@
+use serde_bytes;
+use crate::utils;
+use crate::hdi_extensions::{
+    guest_error,
+    ScopedTypeConnector,
+};
+use crate::hdk_extensions::{
+    agent_id,
+};
+use crate::source_of_authority::{
+    query_keyset_root_addr,
+};
+
 use deepkey::*;
 use hdk::prelude::*;
 
+
 #[hdk_extern]
-pub fn create_keyset_root(_: ()) -> ExternResult<(ActionHash, ActionHash)> {
-    let first_deepkey_agent: AgentPubKey = agent_info()?.agent_latest_pubkey;
+pub fn create_keyset_root(_: ()) -> ExternResult<ActionHash> {
+    let fda: AgentPubKey = agent_info()?.agent_latest_pubkey;
+    let fda_bytes = utils::serialize( &fda )?;
 
-    // There is only one authorized signer: the first deepkey agent (fda)
-    let new_authority_spec = AuthoritySpec::new(0, vec![first_deepkey_agent.clone()]);
-
-    let fda_bytes = SerializedBytes::try_from(first_deepkey_agent.clone())
-        .map_err(|e| wasm_error!(WasmErrorInner::Guest(e.into())))?;
-    let new_authority_spec_bytes = SerializedBytes::try_from(new_authority_spec.clone())
-        .map_err(|e| wasm_error!(WasmErrorInner::Guest(e.into())))?;
-
-    let sigs = sign_ephemeral::<SerializedBytes>(vec![fda_bytes, new_authority_spec_bytes])?;
-    let root_pub_key = sigs.key;
-    let mut sig_iter = sigs.signatures.into_iter();
-    let sig_error_closure = || {
-        wasm_error!(WasmErrorInner::Guest(
-            "Expected an ephemeral signature".into()
-        ))
+    let esigs = sign_ephemeral(vec![ fda_bytes ])?;
+    let [signed_fda, ..] = esigs.signatures.as_slice() else {
+        return Err(guest_error!("sign_ephemeral returned wrong number of signatures".to_string()))
     };
 
-    let fda_signature = sig_iter.next().ok_or_else(sig_error_closure)?;
-    let auth_spec_signature = sig_iter.next().ok_or_else(sig_error_closure)?;
+    let keyset_root = KeysetRoot::new(
+        fda.clone(),
+        esigs.key.get_raw_32().try_into()
+            .map_err( |e| guest_error!(format!("Failed AgentPubKey to [u8;32] conversion: {:?}", e)) )?,
+        signed_fda.to_owned()
+    );
+    let create_hash = create_entry( keyset_root.to_input() )?;
 
-    let keyset_root = KeysetRoot::new(first_deepkey_agent.clone(), root_pub_key, fda_signature);
-    let keyset_root_hash = create_entry(EntryTypes::KeysetRoot(keyset_root))?;
+    Ok( create_hash )
+}
 
-    let spec_change = AuthorizedSpecChange::new(new_authority_spec, vec![(0, auth_spec_signature)]);
-    // TODO: Should the keyset_leaf here be a SourceOfAuthority::KeysetRoot hash?
-    let change_rule_hash = create_entry(EntryTypes::ChangeRule(ChangeRule::new(
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ChangeRuleInput {
+    pub sigs_required: u8,
+    pub revocation_keys: Vec<serde_bytes::ByteArray<32>>,
+}
+
+#[hdk_extern]
+pub fn init_change_rule(input: ChangeRuleInput) -> ExternResult<ActionHash> {
+    let keyset_root_hash = query_keyset_root_addr()?;
+    let new_authority_spec = AuthoritySpec::new(
+        input.sigs_required,
+        input.revocation_keys.iter()
+            .map(|key| key.into_array() )
+            .collect(),
+    );
+    let auth_spec_bytes = utils::serialize( &new_authority_spec )?;
+    let signed_bytes = sign( agent_id()?, auth_spec_bytes )?;
+
+    let spec_change = AuthorizedSpecChange::new(
+        new_authority_spec, vec![(0, signed_bytes)]
+    );
+
+    let change_rule = ChangeRule::new(
         keyset_root_hash.clone(),
         keyset_root_hash.clone(),
         spec_change,
-    )))?;
+    );
+    let create_hash = create_entry( change_rule.to_input() )?;
 
-    Ok((keyset_root_hash, change_rule_hash))
+    Ok( create_hash )
 }
+
 
 #[hdk_extern]
 pub fn get_keyset_root(keyset_root_hash: ActionHash) -> ExternResult<Option<KeysetRoot>> {
@@ -47,6 +78,7 @@ pub fn get_keyset_root(keyset_root_hash: ActionHash) -> ExternResult<Option<Keys
             .and_then( |record| KeysetRoot::try_from( record ).ok() )
     )
 }
+
 
 // Get all of the members of the keyset: the first deepkey agent, and all the deepkey agents
 #[hdk_extern]

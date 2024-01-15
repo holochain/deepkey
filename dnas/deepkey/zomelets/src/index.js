@@ -22,6 +22,7 @@ import {
     DeviceInviteAcceptance,
 
     KeyRegistrationEntry,
+    KeyInfo,
 }					from './types.js';
 
 
@@ -29,7 +30,7 @@ const functions				= {
     async query_local_key_info () {
 	const result			= await this.call();
 
-	return result;
+	return result.map( info => KeyInfo( info ) );
     },
     async query_keyset_authority_action_hash () {
 	const result			= await this.call();
@@ -62,6 +63,11 @@ const functions				= {
 	const result			= await this.call( input );
 
 	return result.map( key_registration => KeyRegistrationEntry( key_registration ) );
+    },
+    async init_change_rule ( input ) {
+	const result			= await this.call( input );
+
+	return new ActionHash( result );
     },
     async register_key ({ key, signature, dna_hash, app_name }) {
 	const result			= await this.call([

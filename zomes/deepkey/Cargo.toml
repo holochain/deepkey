@@ -1,6 +1,6 @@
 [package]
 name = "deepkey"
-version = "0.0.1"
+version = "0.0.0"
 edition = "2021"
 resolver = "2"
 
@@ -10,8 +10,10 @@ name = "deepkey"
 
 [dependencies]
 hdi = { workspace = true }
+holo_hash = { workspace = true }
 serde = { workspace = true }
 thiserror = "1.0.38"
+whi_hdi_extensions = { git = "https://github.com/mjbrisebois/rust-hdi-extensions.git", rev = "76a0dc37d7558f3d8f02a609c292ac37edfeec8a" }
 
 # temporary fix for compile error in
 getrandom = { version = "=0.2.7", features = ["custom"] }

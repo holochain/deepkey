@@ -9,6 +9,9 @@ import crypto				from 'crypto';
 
 import { expect }			from 'chai';
 
+import * as ed				from '@noble/ed25519';
+import { hmac }				from '@noble/hashes/hmac';
+
 import json				from '@whi/json';
 import {
     HoloHash,
@@ -68,6 +71,9 @@ describe("DeepKey", function () {
 });
 
 
+let revocation_key1 = ed.utils.randomPrivateKey();
+let revocation_key2 = ed.utils.randomPrivateKey();
+
 function basic_tests () {
     let client;
     let app_client, bobby_client;
@@ -92,7 +98,12 @@ function basic_tests () {
 
 	deepkey_csr			= deepkey.zomes.deepkey_csr.functions;
 
-	await deepkey_csr.query_local_key_info();
+	await deepkey_csr.init_change_rule({
+	    "sigs_required": 1,
+	    "revocation_keys": [
+		Array.from( await ed.getPublicKeyAsync( revocation_key1 ) ),
+	    ],
+	});
     });
 
     it("should query keyset root action hash", async function () {
@@ -117,10 +128,12 @@ function basic_tests () {
 	expect( keys			).to.have.length( 0 );
     });
 
+    const dna1_hash			= new DnaHash( crypto.randomBytes( 32 ) );
+
     it("should register new key", async function () {
 	const registration_addr		= await deepkey_csr.register_key({
 	    "app_name":		"Alice - App #1",
-	    "dna_hash":		new DnaHash( crypto.randomBytes( 32 ) ),
+	    "dna_hash":		dna1_hash,
 	    "key":		new AgentPubKey( crypto.randomBytes( 32 ) ),
 	    "signature":	crypto.randomBytes( 64 ),
 	});
@@ -196,6 +209,13 @@ function basic_tests () {
 	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
 
 	expect( keys			).to.have.length( 1 );
+    });
+
+    it("should query local key info", async function () {
+	let key_info			= await deepkey_csr.query_local_key_info();
+	log.normal("Key info: %s", json.debug(key_info) );
+
+	expect( key_info		).to.have.length( 1 );
     });
 
     linearSuite("Errors", function () {

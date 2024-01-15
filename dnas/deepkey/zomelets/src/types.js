@@ -99,7 +99,7 @@ export function Authorization ( data ) {
 
 export const AuthoritySpecStruct	= {
     "sigs_required":		Number,
-    "authorized_signers":	VecType( AgentPubKey ),
+    "authorized_signers":	VecType( Uint8Array ),
 };
 
 export function AuthoritySpec ( data ) {
@@ -130,7 +130,7 @@ export function ChangeRule ( data ) {
 
 export const KeysetRootStruct		= {
     "first_deepkey_agent":		AgentPubKey,
-    "root_pub_key":			AgentPubKey,
+    "root_pub_key":			Uint8Array,
     "fda_pubkey_signed_by_root_key":	Signature,
 };
 
@@ -220,6 +220,16 @@ export function KeyRegistrationEntry ( entry ) {
 //     static STRUCT		= KeyRegistrationStruct;
 // }
 
+export const KeyInfoStruct = [
+    DnaBindingStruct,
+    KeyMetaStruct,
+    KeyRegistrationEntry,
+];
+
+export function KeyInfo ( data ) {
+    return intoStruct( data, KeyInfoStruct );
+}
+
 
 export default {
     Signature,
@@ -260,4 +270,7 @@ export default {
     KeyGenerationStruct,
     KeyRevocationStruct,
     KeyRegistrationEntry,
+
+    KeyInfoStruct,
+    KeyInfo,
 };

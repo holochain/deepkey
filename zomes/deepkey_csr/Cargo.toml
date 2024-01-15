@@ -1,6 +1,6 @@
 [package]
 name = "deepkey_csr"
-version = "0.0.1"
+version = "0.0.0"
 edition = "2021"
 resolver = "2"
 
@@ -9,13 +9,9 @@ crate-type = ["cdylib", "rlib"]
 name = "deepkey_csr"
 
 [dependencies]
-hdk = { workspace = true }
-serde = { workspace = true }
 deepkey = { workspace = true }
-
-[dev-dependencies]
-# holochain = { workspace = true }
-# tokio =  { workspace = true }
-# serial_test =  { workspace = true }
-# futures =  { workspace = true }
-
+hdk = { workspace = true }
+rmp-serde = { workspace = true }
+serde = { workspace = true }
+serde_bytes = { workspace = true }
+whi_hdk_extensions = { git = "https://github.com/mjbrisebois/rust-hdk-extensions.git", rev = "f115791d05c35de974968fa4a867b2f13f6e6a0b" }

@@ -177,7 +177,7 @@ pub fn validate_device_invite_original(
         let activities = must_get_agent_activity(invitor, filter)?;
 
         // Check that that range contains no invite acceptances (have abandoned the Keyset they are inviting a new device into).
-        let dia_def = AppEntryDef::try_from(UnitEntryTypes::DeviceInviteAcceptance).unwrap();
+        let dia_def = AppEntryDef::try_from(EntryTypesUnit::DeviceInviteAcceptance).unwrap();
         for activity in activities.into_iter() {
             if let Some(EntryType::App(app_entry_def)) = activity.action.action().entry_type() {
                 if *app_entry_def == dia_def {
@@ -197,7 +197,7 @@ pub fn validate_device_invite_original(
             .filter_map(|activity| {
                 if let Some(EntryType::App(app_entry_def)) = activity.action.action().entry_type() {
                     if *app_entry_def
-                        == AppEntryDef::try_from(UnitEntryTypes::DeviceInviteAcceptance).unwrap()
+                        == AppEntryDef::try_from(EntryTypesUnit::DeviceInviteAcceptance).unwrap()
                     {
                         return Some(activity.clone());
                     }

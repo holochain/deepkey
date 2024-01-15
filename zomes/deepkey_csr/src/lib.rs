@@ -1,23 +1,29 @@
-pub mod authority_spec;
-pub mod authorized_spec_change;
 pub mod change_rule;
 pub mod device_invite;
 pub mod device_invite_acceptance;
 pub mod device_name;
 pub mod key_anchor;
-pub mod key_generation;
 pub mod key_registration;
-pub mod key_revocation;
 pub mod keyset_root;
 pub mod source_of_authority;
 pub mod dna_binding;
+pub mod utils;
+
+pub use hdk_extensions;
+pub use hdk_extensions::hdi_extensions;
 
 use deepkey::*;
 use hdk::prelude::*;
+use hdi_extensions::{
+    guest_error,
+};
 use keyset_root::create_keyset_root;
 
 #[hdk_extern]
 pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
+    // TODO: This cannot actually be done here because we must pass in the revocation keys.  Unless
+    // we separate the KSR creation and authority spec creation.  Which means the ephemeral key
+    // would not be able to sign the authority spec.
     create_keyset_root(())?;
 
     // grant unrestricted access to receive_device_invitation so other agents can send us device invitations
@@ -111,9 +117,9 @@ fn signal_action(action: SignedActionHashed) -> ExternResult<()> {
         }
         Action::DeleteLink(delete_link) => {
             let record = get(delete_link.link_add_address.clone(), GetOptions::default())?.ok_or(
-                wasm_error!(WasmErrorInner::Guest(
+                guest_error!(
                     "Failed to fetch CreateLink action".to_string()
-                )),
+                ),
             )?;
             match record.action() {
                 Action::CreateLink(create_link) => {
@@ -125,9 +131,9 @@ fn signal_action(action: SignedActionHashed) -> ExternResult<()> {
                     Ok(())
                 }
                 _ => {
-                    return Err(wasm_error!(WasmErrorInner::Guest(
+                    return Err(guest_error!(
                         "Create Link should exist".to_string()
-                    )));
+                    ));
                 }
             }
         }
@@ -167,10 +173,10 @@ fn get_entry_for_action(action_hash: &ActionHash) -> ExternResult<Option<EntryTy
 #[hdk_extern]
 pub fn receive_device_invitation(dia: DeviceInviteAcceptance) -> ExternResult<()> {
     let dia_bytes: SerializedBytes = dia.try_into().map_err(|err| {
-        wasm_error!(WasmErrorInner::Guest(format!(
+        guest_error!(format!(
             "Can't serialize object: {:?}",
             err
-        )))
+        ))
     })?;
 
     emit_signal(Signal::InvitationReceived {
