@@ -65,18 +65,14 @@ pub fn init_change_rule(
         keyset_root_hash.clone(),
         spec_change,
     );
-    let create_hash = create_entry( change_rule.to_input() )?;
 
-    Ok( create_hash )
+    Ok( crate::change_rule::create_change_rule( change_rule )? )
 }
 
 
 #[hdk_extern]
-pub fn get_keyset_root(keyset_root_hash: ActionHash) -> ExternResult<Option<KeysetRoot>> {
-    Ok(
-        get(keyset_root_hash, GetOptions::default())?
-            .and_then( |record| KeysetRoot::try_from( record ).ok() )
-    )
+pub fn get_keyset_root(ksr_addr: ActionHash) -> ExternResult<KeysetRoot> {
+    must_get( &ksr_addr )?.try_into()
 }
 
 
@@ -108,7 +104,7 @@ pub fn get_ksr_dia_members(ksr_addr: ActionHash) -> ExternResult<Vec<AgentPubKey
         get_ksr_dia_links( ksr_addr.clone() )?
             .into_iter()
             .filter_map( |link| must_get( &link.target.into_any_dht_hash()? ).ok() )
-            .map( |dia_record| dia_record.action().author().to_owned() )
+            .map( |record| record.action().author().to_owned() )
             .collect()
     )
 }
@@ -120,7 +116,7 @@ pub fn get_device_keys(author: AgentPubKey) -> ExternResult<Vec<KeyAnchor>> {
         get_device_key_anchor_links( author.clone() )?
             .into_iter()
             .filter_map( |link| must_get( &link.target.into_any_dht_hash()? ).ok() )
-            .filter_map( |anchor_record| KeyAnchor::try_from( anchor_record ).ok() )
+            .filter_map( |record| KeyAnchor::try_from( record ).ok() )
             .collect()
     )
 }

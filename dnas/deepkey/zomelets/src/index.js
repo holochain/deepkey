@@ -27,6 +27,7 @@ import {
 
 
 const functions				= {
+    // Local reading
     async query_local_key_info () {
 	const result			= await this.call();
 
@@ -41,11 +42,6 @@ const functions				= {
 	const result			= await this.call();
 
 	return new ActionHash( result );
-    },
-    async get_keyset_root ( input ) {
-	const result			= await this.call( input );
-
-	return KeysetRoot( result );
     },
     async query_keyset_members ( input ) {
 	const result			= await this.call( input );
@@ -64,6 +60,13 @@ const functions				= {
 
 	return result.map( key_registration => KeyRegistrationEntry( key_registration ) );
     },
+
+    // Public reading
+    async get_keyset_root ( input ) {
+	const result			= await this.call( input );
+
+	return KeysetRoot( result );
+    },
     async get_ksr_members ( input ) {
 	const result			= await this.call( input );
 
@@ -74,19 +77,8 @@ const functions				= {
 
 	return result.map( key_anchor => KeyAnchor( key_anchor ) );
     },
-    async construct_authority_spec ( input ) {
-	const result			= await this.call( input );
 
-	return {
-	    "authority_spec": AuthoritySpec( result[0] ),
-	    "serialized": new Uint8Array( result[1] ),
-	};
-    },
-    async update_change_rule ( input ) {
-	const result			= await this.call( input );
-
-	return new ChangeRule( result );
-    },
+    // Key Registration
     async register_key ({ key, signature, dna_hashes, app_name }) {
 	const result			= await this.call([
 	    key, signature, dna_hashes, app_name
@@ -94,6 +86,8 @@ const functions				= {
 
 	return new ActionHash( result );
     },
+
+    // Device Inviting
     async invite_agent ( input ) {
 	const result			= await this.call( input );
 
@@ -104,6 +98,27 @@ const functions				= {
 
 	return new ActionHash( result );
     },
+
+    // Change Rules
+    async update_change_rule ( input ) {
+	const result			= await this.call( input );
+
+	return new ChangeRule( result );
+    },
+    async construct_authority_spec ( input ) {
+	const result			= await this.call( input );
+
+	return {
+	    "authority_spec": AuthoritySpec( result[0] ),
+	    "serialized": new Uint8Array( result[1] ),
+	};
+    },
+    async get_current_change_rule_for_ksr ( input ) {
+	const result			= await this.call( input );
+
+	return new ChangeRule( result );
+    },
+    "get_ksr_change_rule_links": true,
 
 
     //

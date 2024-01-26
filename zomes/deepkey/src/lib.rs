@@ -101,7 +101,7 @@ scoped_type_connector!(
 #[derive(Serialize, Deserialize)]
 #[hdk_link_types]
 pub enum LinkTypes {
-    ChangeRuleUpdates,
+    KSRToChangeRule,
     KeysetRootToDeviceInviteAcceptances,
     KeysetRootToKeyAnchors,
     InviteeToDeviceInviteAcceptances,

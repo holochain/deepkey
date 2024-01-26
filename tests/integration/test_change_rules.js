@@ -79,7 +79,7 @@ describe("DeepKey", function () {
 	APP_PORT			= await holochain.ensureAppPort();
     });
 
-    linearSuite("Basic", basic_tests );
+    linearSuite("Change Rules", basic_tests );
 
     after(async () => {
 	await holochain.destroy();
@@ -166,6 +166,10 @@ function basic_tests () {
 	});
 
 	log.normal("New Change Rule: %s", json.debug(new_change_rule) );
+
+	const current_change_rule	= await alice1_deepkey.get_current_change_rule_for_ksr( ksr1_addr );
+
+	expect( current_change_rule	).to.deep.equal( new_change_rule );
     });
 
     linearSuite("Errors (pre invite acceptance)", function () {

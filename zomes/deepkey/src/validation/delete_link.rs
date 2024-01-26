@@ -28,8 +28,8 @@ pub fn validation(
         LinkTypes::KeysetRootToKeyAnchors => {
             invalid!(format!("KeysetRootToKeyAnchors links cannot be deleted"))
         },
-        LinkTypes::ChangeRuleUpdates => {
-            invalid!(format!("ChangeRuleUpdates links cannot be deleted"))
+        LinkTypes::KSRToChangeRule => {
+            invalid!(format!("KSRToChangeRule links cannot be deleted"))
         },
         LinkTypes::KeysetRootToDeviceInviteAcceptances => {
             invalid!(format!("KeysetRootToDeviceInvites links cannot be deleted"))

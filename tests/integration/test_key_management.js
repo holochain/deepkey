@@ -72,7 +72,7 @@ describe("DeepKey", function () {
 	APP_PORT			= await holochain.ensureAppPort();
     });
 
-    linearSuite("Basic", basic_tests );
+    linearSuite("Key Management", basic_tests );
 
     after(async () => {
 	await holochain.destroy();

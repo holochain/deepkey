@@ -70,7 +70,7 @@ test:			$(DEEPKEY_DNA)
 
 test-integration:	$(DEEPKEY_DNA)
 	make -s test-basic
-	make -s test-change-rule
+	make -s test-change-rules
 	make -s test-key-management
 
 test-basic:		$(DEEPKEY_DNA)

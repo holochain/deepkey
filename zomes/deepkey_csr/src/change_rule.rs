@@ -4,19 +4,56 @@ use deepkey::*;
 use hdk::prelude::*;
 use hdk_extensions::{
     agent_id,
+    must_get,
     hdi_extensions::{
         guest_error,
+        ScopedTypeConnector,
     },
 };
 
 
 #[hdk_extern]
-pub fn create_change_rule(change_rule: ChangeRule) -> ExternResult<Record> {
-    let change_rule_hash = create_entry(&EntryTypes::ChangeRule(change_rule.clone()))?;
-    let record = get(change_rule_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
-        WasmErrorInner::Guest(String::from("Could not find the newly created ChangeRule"))
-    ))?;
-    Ok(record)
+pub fn create_change_rule(change_rule: ChangeRule) -> ExternResult<ActionHash> {
+    let create_addr = create_entry( &change_rule.to_input() )?;
+
+    create_link(
+        change_rule.keyset_root.clone(),
+        create_addr.clone(),
+        LinkTypes::KSRToChangeRule,
+        (),
+    )?;
+
+    Ok( create_addr )
+}
+
+
+#[hdk_extern]
+pub fn get_ksr_change_rule_links(ksr_addr: ActionHash) -> ExternResult<Vec<Link>> {
+    get_links(
+        GetLinksInputBuilder::try_new(
+            ksr_addr,
+            LinkTypes::KSRToChangeRule,
+        )?.build()
+    )
+}
+
+
+#[hdk_extern]
+pub fn get_current_change_rule_for_ksr(ksr_addr: ActionHash) -> ExternResult<ChangeRule> {
+    let change_rule_links = get_ksr_change_rule_links( ksr_addr.clone() )?;
+    let latest_addr = change_rule_links
+        .iter()
+        .filter_map( |link| Some(
+            (
+                link.timestamp,
+                link.target.to_owned().into_any_dht_hash()?
+            )
+        ))
+        .max_by_key( |(timestamp, _)| timestamp.to_owned() )
+        .ok_or(guest_error!(format!("There are no change rules for KSR ({})", ksr_addr )))?
+        .1;
+
+    Ok( must_get( &latest_addr )?.try_into()? )
 }
 
 
@@ -83,16 +120,23 @@ pub fn update_change_rule(input: UpdateChangeRuleInput) -> ExternResult<ChangeRu
 
     ChangeRule::try_from( latest_change_rule_record.clone() )?;
 
-    let keyset_root_hash = utils::query_keyset_root_addr()?;
+    let keyset_root_addr = utils::query_keyset_root_addr()?;
     let new_change_rule = ChangeRule::new(
-        keyset_root_hash.clone(),
-        keyset_root_hash.clone(),
+        keyset_root_addr.clone(),
+        keyset_root_addr.clone(),
         spec_change,
     );
 
-    update_entry(
+    let update_addr = update_entry(
         latest_change_rule_record.action_address().to_owned(),
         &new_change_rule,
+    )?;
+
+    create_link(
+        keyset_root_addr.clone(),
+        update_addr,
+        LinkTypes::KSRToChangeRule,
+        (),
     )?;
 
     Ok( new_change_rule )

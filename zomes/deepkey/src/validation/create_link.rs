@@ -24,7 +24,7 @@ pub fn validation(
 
             valid!()
         },
-        LinkTypes::ChangeRuleUpdates |
+        LinkTypes::KSRToChangeRule |
         LinkTypes::KeysetRootToDeviceInviteAcceptances |
         LinkTypes::InviteeToDeviceInviteAcceptances |
         LinkTypes::DeviceInviteToDeviceInviteAcceptances |
