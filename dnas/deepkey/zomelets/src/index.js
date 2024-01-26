@@ -64,14 +64,32 @@ const functions				= {
 
 	return result.map( key_registration => KeyRegistrationEntry( key_registration ) );
     },
-    async init_change_rule ( input ) {
+    async get_ksr_members ( input ) {
 	const result			= await this.call( input );
 
-	return new ActionHash( result );
+	return result.map( agent => new AgentPubKey(agent) );
     },
-    async register_key ({ key, signature, dna_hash, app_name }) {
+    async get_device_keys ( input ) {
+	const result			= await this.call( input );
+
+	return result.map( key_anchor => KeyAnchor( key_anchor ) );
+    },
+    async construct_authority_spec ( input ) {
+	const result			= await this.call( input );
+
+	return {
+	    "authority_spec": AuthoritySpec( result[0] ),
+	    "serialized": new Uint8Array( result[1] ),
+	};
+    },
+    async update_change_rule ( input ) {
+	const result			= await this.call( input );
+
+	return new ChangeRule( result );
+    },
+    async register_key ({ key, signature, dna_hashes, app_name }) {
 	const result			= await this.call([
-	    key, signature, dna_hash, app_name
+	    key, signature, dna_hashes, app_name
 	]);
 
 	return new ActionHash( result );
@@ -81,19 +99,29 @@ const functions				= {
 
 	return DeviceInviteAcceptance( result );
     },
+    async accept_invite ( input ) {
+	const result			= await this.call( input );
+
+	return new ActionHash( result );
+    },
 
 
     //
     // Virtual functions
     //
-    // async save_integrity ( bytes ) {
-    // 	const addr			= await this.zomes.mere_memory_api.save( bytes );
+    async get_keysets_for_ksr ( input ) {
+	const devices			= [];
+	const members			= await this.functions.get_ksr_members( input );
 
-    // 	return await this.functions.create_wasm({
-    // 	    "wasm_type": WASM_TYPES.INTEGRITY,
-    // 	    "mere_memory_addr": addr,
-    // 	});
-    // },
+	for ( let agent of members ) {
+	    devices.push({
+		"member": agent,
+		"keyset": await this.functions.get_device_keys( agent ),
+	    });
+	}
+
+	return devices;
+    },
 };
 
 const APP_ENTRY_STRUCTS_MAP		= {
@@ -124,6 +152,7 @@ function formatSignal ( signal ) {
 	signal.app_entry		= struct( signal.app_entry );
     }
 
+    // console.log("Signal", JSON.stringify(signal,null,4) );
     return signal;
 }
 
@@ -138,18 +167,18 @@ const signals				= {
 	//     );
 	// }
 
-	if ( signal.app_entry ) {
-	    console.log(
-		"SIGNAL: AppEntry => [%s]", signal.app_entry_type, JSON.stringify(signal.app_entry,null,4)
-	    );
-	}
+	// if ( signal.app_entry ) {
+	//     console.log(
+	// 	"SIGNAL: AppEntry => [%s]", signal.app_entry_type, JSON.stringify(signal.app_entry,null,4)
+	//     );
+	// }
     },
     LinkCreated ( signal ) {
 	formatSignal( signal );
 
-	console.log(
-	    "SIGNAL: LinkType => [%s]", signal.action.type, signal.link_type
-	);
+	// console.log(
+	//     "SIGNAL: LinkType => [%s]", signal.action.type, signal.link_type
+	// );
     },
 };
 

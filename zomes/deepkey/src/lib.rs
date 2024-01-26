@@ -1,5 +1,6 @@
 mod validation;
 
+pub mod utils;
 pub mod authority_spec;
 pub mod authorized_spec_change;
 pub mod change_rule;
@@ -17,26 +18,26 @@ pub mod key_generation;
 pub mod keyset_root;
 pub mod source_of_authority;
 
-pub use key_anchor::*;
-pub use joining_proof::*;
-pub use key_registration::*;
-pub use key_revocation::*;
-pub use key_generation::*;
-pub use device_invite_acceptance::*;
-pub use device_invite::*;
-pub use change_rule::*;
 pub use authorized_spec_change::*;
 pub use authority_spec::*;
-pub use keyset_root::*;
-pub use error::*;
-pub use source_of_authority::*;
+pub use change_rule::*;
+pub use device_invite_acceptance::*;
+pub use device_invite::*;
 pub use device_name::*;
-pub use key_meta::*;
 pub use dna_binding::*;
+pub use error::*;
+pub use joining_proof::*;
+pub use keyset_root::*;
+pub use key_anchor::*;
+pub use key_generation::*;
+pub use key_meta::*;
+pub use key_registration::*;
+pub use key_revocation::*;
+pub use source_of_authority::*;
 
+use serde_bytes;
 use hdi::prelude::*;
 use hdi_extensions::{
-    // guest_error,
     scoped_type_connector,
     ScopedTypeConnector,
 };
@@ -105,5 +106,13 @@ pub enum LinkTypes {
     KeysetRootToKeyAnchors,
     InviteeToDeviceInviteAcceptances,
     DeviceInviteToDeviceInviteAcceptances, // unused for now
+    DeviceToKeyAnchor,
     DeviceName,
+}
+
+
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct MembraneProof {
+    pub joining_proof: serde_bytes::ByteBuf,
 }

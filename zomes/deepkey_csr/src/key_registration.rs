@@ -1,15 +1,21 @@
 use deepkey::*;
-use hdk::prelude::{holo_hash::hash_type::Dna, *};
+use hdk::prelude::{
+    *,
+    holo_hash::DnaHash,
+};
+use hdk_extensions::{
+    agent_id,
+};
 
 use crate::source_of_authority::query_keyset_authority_action_hash;
 
 #[hdk_extern]
 pub fn register_key(
     // TODO: Create the AgentPubKey in Lair using the derivation_path etc instead of passing it in here.
-    (new_key, new_key_signature, dna_hash, app_name): (
+    (new_key, new_key_signature, dna_hashes, app_name): (
         AgentPubKey,
         Signature,
-        HoloHash<Dna>,
+        Vec<DnaHash>,
         String,
     ),
 ) -> ExternResult<ActionHash> {
@@ -29,7 +35,7 @@ pub fn register_key(
     _create_new_key_entries(
         key_registration_hash.clone(),
         key_anchor,
-        dna_hash,
+        dna_hashes,
         app_name,
         derivation_index,
         key_type,
@@ -45,14 +51,14 @@ pub fn update_key(
         revocation_authorization,
         new_key,
         new_key_signature,
-        dna_hash,
+        dna_hashes,
         app_name,
     ): (
         ActionHash,
         Vec<Authorization>,
         AgentPubKey,
         Signature,
-        HoloHash<Dna>,
+        Vec<DnaHash>,
         String,
     ),
 ) -> ExternResult<ActionHash> {
@@ -87,7 +93,7 @@ pub fn update_key(
     _create_new_key_entries(
         key_registration_hash.clone(),
         key_anchor,
-        dna_hash,
+        dna_hashes,
         app_name,
         derivation_index,
         key_type,
@@ -167,12 +173,12 @@ fn _get_key_anchor_record_from_key_registration_action_hash(
 fn _create_new_key_entries(
     key_registration_hash: ActionHash,
     key_anchor: KeyAnchor,
-    dna_hash: HoloHash<Dna>,
+    dna_hashes: Vec<DnaHash>,
     app_name: String,
     derivation_index: u32,
     key_type: KeyType,
 ) -> ExternResult<ActionHash> {
-    let derivation_path = format!("/dna/{dna_hash}/app/{app_name}");
+    let derivation_path = format!("/dna/?/app/{app_name}");
     // Form of: [u8; 32]!
     let derivation_path: [u8; 32] = hash_blake2b(Vec::from(derivation_path.as_bytes()), 32)?
         .try_into()
@@ -194,7 +200,7 @@ fn _create_new_key_entries(
 
     let dna_binding = DnaBinding {
         app_name,
-        dna_hash,
+        dna_hashes,
         key_meta: key_meta_hash,
     };
     create_entry(EntryTypes::DnaBinding(dna_binding))?;
@@ -204,8 +210,15 @@ fn _create_new_key_entries(
     let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(key_anchor))?;
     create_link(
         keyset_root_authority,
-        key_anchor_hash,
+        key_anchor_hash.clone(),
         LinkTypes::KeysetRootToKeyAnchors,
+        (),
+    )?;
+
+    create_link(
+        agent_id()?,
+        key_anchor_hash.clone(),
+        LinkTypes::DeviceToKeyAnchor,
         (),
     )?;
 

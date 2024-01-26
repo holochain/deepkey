@@ -1,3 +1,7 @@
+use crate::hdi_extensions::{
+    guest_error,
+};
+
 use deepkey::*;
 use hdk::prelude::*;
 
@@ -37,22 +41,15 @@ pub fn accept_invite(invite_acceptance: DeviceInviteAcceptance) -> ExternResult<
     //     MembraneProof::None,
     // );
     // let joining_proof_hash = create_entry(EntryTypes::JoiningProof(joining_proof))?;
-    let invite_record =
-        get(invite_acceptance.invite.clone(), GetOptions::default())?.ok_or(wasm_error!(
-            WasmErrorInner::Guest(String::from("Could not find the invite"))
-        ))?;
+    let invite_record = get(invite_acceptance.invite.clone(), GetOptions::default())?
+        .ok_or(guest_error!("Could not find the invite".to_string()))?;
     let invite = invite_record
         .entry
         .to_app_option::<DeviceInvite>()
-        .map_err(|e| {
-            wasm_error!(WasmErrorInner::Guest(format!(
-                "Could not convert entry to DeviceInvite: {:?}",
-                e
-            )))
-        })?
-        .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
-            "Could not find the invite"
-        ))))?;
+        .map_err(|e| guest_error!(format!(
+            "Could not convert entry to DeviceInvite: {:?}", e
+        )))?
+        .ok_or(guest_error!("Could not find the invite".to_string()))?;
 
     let acceptance_hash = create_entry(EntryTypes::DeviceInviteAcceptance(
         invite_acceptance.clone(),

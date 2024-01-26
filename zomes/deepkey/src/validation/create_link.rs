@@ -28,6 +28,7 @@ pub fn validation(
         LinkTypes::KeysetRootToDeviceInviteAcceptances |
         LinkTypes::InviteeToDeviceInviteAcceptances |
         LinkTypes::DeviceInviteToDeviceInviteAcceptances |
+        LinkTypes::DeviceToKeyAnchor |
         LinkTypes::DeviceName => {
             valid!()
         },

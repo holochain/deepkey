@@ -40,6 +40,9 @@ pub fn validation(
         LinkTypes::DeviceInviteToDeviceInviteAcceptances => {
             invalid!(format!("DeviceInviteToDeviceInviteAcceptances links cannot be deleted"))
         },
+        LinkTypes::DeviceToKeyAnchor => {
+            invalid!(format!("DeviceToKeyAnchor links cannot be deleted"))
+        },
         LinkTypes::DeviceName => {
             valid!()
         },

@@ -520,8 +520,11 @@ version = "0.0.0"
 dependencies = [
  "getrandom",
  "hdi",
+ "hdk",
  "holo_hash",
+ "rmp-serde 1.1.2",
  "serde",
+ "serde_bytes",
  "thiserror",
  "whi_hdi_extensions",
 ]

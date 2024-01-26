@@ -99,7 +99,7 @@ export function Authorization ( data ) {
 
 export const AuthoritySpecStruct	= {
     "sigs_required":		Number,
-    "authorized_signers":	VecType( Uint8Array ),
+    "authorized_signers":	VecType( Bytes ),
 };
 
 export function AuthoritySpec ( data ) {
@@ -130,8 +130,8 @@ export function ChangeRule ( data ) {
 
 export const KeysetRootStruct		= {
     "first_deepkey_agent":		AgentPubKey,
-    "root_pub_key":			Uint8Array,
-    "fda_pubkey_signed_by_root_key":	Signature,
+    "root_pub_key":			Bytes,
+    "signed_fda":			Signature,
 };
 
 export function KeysetRoot ( data ) {
@@ -162,7 +162,7 @@ export function KeyAnchor ( data ) {
 
 export const DnaBindingStruct		= {
     "key_meta":			ActionHash,
-    "dna_hash":			DnaHash,
+    "dna_hashes":		VecType( DnaHash ),
     "app_name":			String,
 };
 

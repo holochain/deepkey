@@ -65,5 +65,39 @@ GG_REPLACE_LOCATIONS = ':(exclude)*.lock' zomes/
 DEBUG_LEVEL	       ?= warn
 TEST_ENV_VARS		= LOG_LEVEL=$(DEBUG_LEVEL)
 
+test:			$(DEEPKEY_DNA)
+	make -s test-integration
+
 test-integration:	$(DEEPKEY_DNA)
+	make -s test-basic
+	make -s test-change-rule
+	make -s test-key-management
+
+test-basic:		$(DEEPKEY_DNA)
 	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_basic.js
+test-change-rules:	$(DEEPKEY_DNA)
+	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_change_rules.js
+test-key-management:	$(DEEPKEY_DNA)
+	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_key_management.js
+
+
+#
+# Documentation
+#
+target/doc/%/index.html:	zomes/%/src/**
+	cargo test --doc -p $*
+	cargo doc -p $*
+	@echo -e "\x1b[37mOpen docs in file://$(shell pwd)/$@\x1b[0m";
+
+
+DEEPKEY_CSR_DOCS	= target/doc/deepkey_csr/index.html
+
+docs:			$(DEEPKEY_CSR_DOCS)
+docs-watch:
+	@inotifywait -r -m -e modify		\
+		--includei '.*\.rs'		\
+			zomes/			\
+	| while read -r dir event file; do	\
+		echo -e "\x1b[37m$$event $$dir$$file\x1b[0m";\
+		make docs;			\
+	done

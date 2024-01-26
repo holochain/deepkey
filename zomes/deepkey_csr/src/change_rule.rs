@@ -1,5 +1,15 @@
+use crate::utils;
+use serde_bytes;
 use deepkey::*;
 use hdk::prelude::*;
+use hdk_extensions::{
+    agent_id,
+    hdi_extensions::{
+        guest_error,
+    },
+};
+
+
 #[hdk_extern]
 pub fn create_change_rule(change_rule: ChangeRule) -> ExternResult<Record> {
     let change_rule_hash = create_entry(&EntryTypes::ChangeRule(change_rule.clone()))?;
@@ -8,44 +18,82 @@ pub fn create_change_rule(change_rule: ChangeRule) -> ExternResult<Record> {
     ))?;
     Ok(record)
 }
-#[hdk_extern]
-pub fn get_change_rule(_original_change_rule_hash: ActionHash) -> ExternResult<Option<Record>> {
-    // let links = get_links(
-    //     original_change_rule_hash.clone(),
-    //     LinkTypes::ChangeRuleUpdates,
-    //     None,
-    // )?;
-    // let latest_link = links
-    //     .into_iter()
-    //     .max_by(|link_a, link_b| link_b.timestamp.cmp(&link_a.timestamp));
-    // let latest_change_rule_hash = match latest_link {
-    //     Some(link) => ActionHash::from(link.target.clone()),
-    //     None => original_change_rule_hash.clone(),
-    // };
-    // get(latest_change_rule_hash, GetOptions::default())
-    Ok(None)
+
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct AuthoritySpecInput {
+    pub sigs_required: u8,
+    pub authorized_signers: Vec<serde_bytes::ByteArray<32>>,
 }
-#[derive(Serialize, Deserialize, Debug)]
+
+impl From<AuthoritySpecInput> for AuthoritySpec {
+    fn from(input: AuthoritySpecInput) -> Self {
+        Self {
+            sigs_required: input.sigs_required,
+            authorized_signers: input.authorized_signers.iter()
+                .map(|key| key.into_array() )
+                .collect(),
+        }
+    }
+}
+
+
+#[hdk_extern]
+pub fn construct_authority_spec(input: AuthoritySpecInput) -> ExternResult<(AuthoritySpec, Vec<u8>)> {
+    let authority_spec = AuthoritySpec::from( input );
+    let serialized = utils::serialize( &authority_spec )?;
+
+    Ok((
+        authority_spec,
+        serialized,
+    ))
+}
+
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct UpdateChangeRuleInput {
-    pub original_change_rule_hash: ActionHash,
-    pub previous_change_rule_hash: ActionHash,
-    pub updated_change_rule: ChangeRule,
+    pub authority_spec: AuthoritySpecInput,
+    pub authorizations: Option<Vec<Authorization>>,
 }
+
 #[hdk_extern]
-pub fn update_change_rule(input: UpdateChangeRuleInput) -> ExternResult<Record> {
-    let updated_change_rule_hash = update_entry(
-        input.previous_change_rule_hash.clone(),
-        &input.updated_change_rule,
+pub fn update_change_rule(input: UpdateChangeRuleInput) -> ExternResult<ChangeRule> {
+    let new_authority_spec = AuthoritySpec::from( input.authority_spec );
+    let authorizations = match input.authorizations {
+        Some(authorizations) => authorizations,
+        None => {
+            let fda = agent_id()?;
+            debug!("Signing new authority spec with FDA ({})", fda );
+            let fda_signature = sign_raw(
+                fda,
+                utils::serialize( &new_authority_spec )?
+            )?;
+            vec![ (0, fda_signature) ]
+        }
+    };
+    let spec_change = AuthorizedSpecChange::new(
+        new_authority_spec,
+        authorizations,
+    );
+
+    let latest_change_rule_record = utils::query_entry_type_latest( EntryTypesUnit::ChangeRule )?
+        .ok_or(guest_error!(format!(
+            "There is no change rule to update"
+        )))?;
+
+    ChangeRule::try_from( latest_change_rule_record.clone() )?;
+
+    let keyset_root_hash = utils::query_keyset_root_addr()?;
+    let new_change_rule = ChangeRule::new(
+        keyset_root_hash.clone(),
+        keyset_root_hash.clone(),
+        spec_change,
+    );
+
+    update_entry(
+        latest_change_rule_record.action_address().to_owned(),
+        &new_change_rule,
     )?;
-    create_link(
-        input.original_change_rule_hash.clone(),
-        updated_change_rule_hash.clone(),
-        LinkTypes::ChangeRuleUpdates,
-        (),
-    )?;
-    let record =
-        get(updated_change_rule_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
-            WasmErrorInner::Guest(String::from("Could not find the newly updated ChangeRule"))
-        ))?;
-    Ok(record)
+
+    Ok( new_change_rule )
 }
