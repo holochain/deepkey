@@ -53,10 +53,10 @@ $(TARGET_DIR)/%_csr.wasm:	$(CSR_SOURCE_FILES)
 	@touch $@ # Cargo must have a cache somewhere because it doesn't update the file time
 
 
-GG_REPLACE_LOCATIONS = ':(exclude)*.lock' zomes/
+GG_REPLACE_LOCATIONS = ':(exclude)*.lock' zomes/ dnas/ tests/
 
 # update-tracked-files:
-# 	git grep -l 'UnitEntryTypes' -- $(GG_REPLACE_LOCATIONS) | xargs sed -i 's|UnitEntryTypes|EntryTypesUnit|g'
+# 	git grep -l 'dna_binding' -- $(GG_REPLACE_LOCATIONS) | xargs sed -i 's|dna_binding|app_binding|g'
 
 
 #

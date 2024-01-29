@@ -17,7 +17,7 @@ import {
     KeysetRoot,
     KeyMeta,
     KeyAnchor,
-    DnaBinding,
+    AppBinding,
     DeviceInvite,
     DeviceInviteAcceptance,
 
@@ -28,7 +28,7 @@ import {
 
 const functions				= {
     // Local reading
-    async query_local_key_info () {
+    async query_key_info () {
 	const result			= await this.call();
 
 	return result.map( info => KeyInfo( info ) );
@@ -60,6 +60,11 @@ const functions				= {
 
 	return result.map( key_registration => KeyRegistrationEntry( key_registration ) );
     },
+    async query_app_bindings ( input ) {
+	const result			= await this.call( input );
+
+	return result.map( entry => AppBinding( entry ) );
+    },
 
     // Public reading
     async get_keyset_root ( input ) {
@@ -81,6 +86,24 @@ const functions				= {
     // Key Registration
     async register_key ({ key, signature, dna_hashes, app_name }) {
 	const result			= await this.call([
+	    key, signature, dna_hashes, app_name
+	]);
+
+	return new ActionHash( result );
+    },
+    async update_key ( input ) {
+	const {
+	    prior_key_registration,
+	    revocation_authorization,
+	    key,
+	    signature,
+	    dna_hashes,
+	    app_name,
+	}				= input;
+
+	const result			= await this.call([
+	    prior_key_registration,
+	    revocation_authorization,
 	    key, signature, dna_hashes, app_name
 	]);
 
@@ -144,7 +167,7 @@ const APP_ENTRY_STRUCTS_MAP		= {
     KeysetRoot,
     KeyMeta,
     KeyAnchor,
-    DnaBinding,
+    AppBinding,
     DeviceInvite,
     DeviceInviteAcceptance,
     "KeyRegistration": KeyRegistrationEntry,

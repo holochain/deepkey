@@ -95,7 +95,7 @@ pub fn validation(
         EntryTypes::KeyMeta(_key_meta_entry) => {
             valid!()
         },
-        EntryTypes::DnaBinding(_dna_binding_entry) => {
+        EntryTypes::AppBinding(_app_binding_entry) => {
             valid!()
         },
         // _ => invalid!(format!("Update validation not implemented for entry type: {:#?}", update.entry_type )),

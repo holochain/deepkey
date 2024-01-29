@@ -50,7 +50,7 @@ pub fn key_state((key_anchor_vec, _timestamp): (Vec<u8>, Timestamp)) -> ExternRe
 pub fn get_key_registration_from_agent_pubkey_key_anchor(
     agent_pubkey: AgentPubKey,
 ) -> ExternResult<Option<Record>> {
-    let key_anchor = KeyAnchor::from_agent_key(agent_pubkey);
+    let key_anchor = KeyAnchor::from_agent_key( agent_pubkey )?;
     let key_anchor_clone = key_anchor.clone(); // Clone the key_anchor
     let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(key_anchor_clone))?;
     let key_registration_record = get(key_anchor_hash, GetOptions::default())?
@@ -69,7 +69,7 @@ pub fn get_key_registration_from_agent_pubkey_key_anchor(
 
 #[hdk_extern]
 pub fn get_agent_pubkey_key_anchor(agent_pubkey: AgentPubKey) -> ExternResult<Option<Record>> {
-    let key_anchor = KeyAnchor::from_agent_key(agent_pubkey);
+    let key_anchor = KeyAnchor::from_agent_key( agent_pubkey )?;
     let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(key_anchor.clone()))?;
     get(key_anchor_hash, GetOptions::default())
 }

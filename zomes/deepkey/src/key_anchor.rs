@@ -1,4 +1,7 @@
 use hdi::prelude::*;
+use hdi_extensions::{
+    guest_error,
+};
 
 
 #[hdk_entry_helper]
@@ -8,12 +11,13 @@ pub struct KeyAnchor {
 }
 
 impl KeyAnchor {
-    pub fn from_agent_key(agent_key: AgentPubKey) -> Self {
-        let slice = agent_key.get_raw_32();
-        let bytes: [u8; 32] = match slice.try_into() {
-            Ok(array) => array,
-            Err(_) => panic!("Failed to convert AgentPubKey to [u8; 32]"),
-        };
-        Self { bytes }
+    pub fn from_agent_key(agent_key: AgentPubKey) -> ExternResult<Self> {
+        let bytes: [u8; 32] = agent_key.get_raw_32()
+            .try_into()
+            .map_err( |e| guest_error!(format!(
+                "Failed AgentPubKey to [u8;32] conversion: {:?}", e
+            )) )?;
+
+        Ok( Self { bytes } )
     }
 }

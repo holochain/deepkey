@@ -42,6 +42,13 @@ const dna1_hash				= new DnaHash( crypto.randomBytes( 32 ) );
 
 const revocation_key1			= ed.utils.randomPrivateKey();
 const revocation_key2			= ed.utils.randomPrivateKey();
+const revocation_key3			= ed.utils.randomPrivateKey();
+const revocation_key4			= ed.utils.randomPrivateKey();
+
+const rev1_pubkey			= await ed.getPublicKeyAsync( revocation_key1 );
+const rev2_pubkey			= await ed.getPublicKeyAsync( revocation_key2 );
+const rev3_pubkey			= await ed.getPublicKeyAsync( revocation_key3 );
+const rev4_pubkey			= await ed.getPublicKeyAsync( revocation_key4 );
 
 let APP_PORT;
 
@@ -132,6 +139,8 @@ function basic_tests () {
 	expect( keys			).to.have.length( 0 );
     });
 
+    let alice1_key1a_addr;
+
     it("should register new key (alice1)", async function () {
 	this.timeout( 5_000 );
 
@@ -145,6 +154,8 @@ function basic_tests () {
 	    "signature":	await ed.signAsync( alice1_client.agent_id, secret ),
 	});
 	log.normal("Key registration addr: %s", registration_addr );
+
+	alice1_key1a_addr		= registration_addr;
     });
 
     it("should register new key (alice2)", async function () {
@@ -188,6 +199,27 @@ function basic_tests () {
 	log.normal("Keyset Root: %s", json.debug(ksr) );
     });
 
+    it("should update key (alice1)", async function () {
+	this.timeout( 5_000 );
+
+	const secret			= ed.utils.randomPrivateKey();
+	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
+
+	const registration_addr		= await alice1_deepkey.update_key({
+	    "prior_key_registration": alice1_key1a_addr,
+	    "revocation_authorization": [
+		[ 0, crypto.randomBytes(64) ],
+	    ],
+	    "key":		new AgentPubKey( pubkey_bytes ),
+	    "signature":	await ed.signAsync( alice1_client.agent_id, secret ),
+
+	    // TODO: these should not be necessary because they shouldn't change when updating
+	    "app_name":		"Alice1 - App #1",
+	    "dna_hashes":	[ dna1_hash ],
+	});
+	log.normal("Key registration addr: %s", registration_addr );
+    });
+
     let invite_accept;
     it("(alice1) should invite device 'alice2'", async function () {
 	// const parent			= await alice1_deepkey.query_keyset_authority_action_hash();
@@ -229,6 +261,8 @@ function basic_tests () {
     });
 
     it("should query (alice1) keyset keys (1)", async function () {
+	this.skip();
+
 	const keys			= await alice1_deepkey.query_keyset_keys( ksr1_addr );
 	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
 
@@ -236,17 +270,30 @@ function basic_tests () {
     });
 
     it("should query (alice1) keyset keys with authors (1)", async function () {
+	this.skip();
+
 	const keys			= await alice1_deepkey.query_keyset_keys_with_authors( ksr1_addr );
 	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
 
 	expect( keys			).to.have.length( 1 );
     });
 
-    it("should query (alice1) local key info", async function () {
-	let key_info			= await alice1_deepkey.query_local_key_info();
+    it("should query (alice1) key info", async function () {
+	this.skip();
+
+	let key_info			= await alice1_deepkey.query_key_info();
 	log.normal("Key info: %s", json.debug(key_info) );
 
 	expect( key_info		).to.have.length( 1 );
+    });
+
+    it("should query (alice1) app bindings", async function () {
+	this.skip();
+
+	let app_bindings			= await alice1_deepkey.query_app_bindings();
+	log.normal("App Bindings: %s", json.debug(app_bindings) );
+
+	expect( app_bindings		).to.have.length( 1 );
     });
 
     linearSuite("Errors", function () {

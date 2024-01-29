@@ -191,7 +191,7 @@ pub fn query_keyset_keys_with_authors(
 pub fn query_keyset_keys(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyRegistration>> {
     let key_registrations = query_keyset_key_registration_records(keyset_root_hash)?
         .into_iter()
-        .map(|key_reg_record| KeyRegistration::try_from( key_reg_record ) )
+        .map( |key_reg_record| KeyRegistration::try_from( key_reg_record ) )
         .collect::<ExternResult<Vec<KeyRegistration>>>()?;
 
     Ok(key_registrations)

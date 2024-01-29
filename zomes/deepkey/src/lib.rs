@@ -7,14 +7,12 @@ pub mod change_rule;
 pub mod device_invite;
 pub mod device_invite_acceptance;
 pub mod device_name;
-pub mod dna_binding;
+pub mod app_binding;
 pub mod error;
 pub mod joining_proof;
 pub mod key_anchor;
 pub mod key_meta;
 pub mod key_registration;
-pub mod key_revocation;
-pub mod key_generation;
 pub mod keyset_root;
 pub mod source_of_authority;
 
@@ -24,15 +22,13 @@ pub use change_rule::*;
 pub use device_invite_acceptance::*;
 pub use device_invite::*;
 pub use device_name::*;
-pub use dna_binding::*;
+pub use app_binding::*;
 pub use error::*;
 pub use joining_proof::*;
 pub use keyset_root::*;
 pub use key_anchor::*;
-pub use key_generation::*;
 pub use key_meta::*;
 pub use key_registration::*;
-pub use key_revocation::*;
 pub use source_of_authority::*;
 
 use serde_bytes;
@@ -61,7 +57,7 @@ pub enum EntryTypes {
     #[entry_def(visibility = "private")]
     KeyMeta(KeyMeta),
     #[entry_def(visibility = "private")]
-    DnaBinding(DnaBinding),
+    AppBinding(AppBinding),
 }
 
 scoped_type_connector!(
@@ -93,8 +89,8 @@ scoped_type_connector!(
     EntryTypes::KeyMeta( KeyMeta )
 );
 scoped_type_connector!(
-    EntryTypesUnit::DnaBinding,
-    EntryTypes::DnaBinding( DnaBinding )
+    EntryTypesUnit::AppBinding,
+    EntryTypes::AppBinding( AppBinding )
 );
 
 

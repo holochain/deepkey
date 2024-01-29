@@ -139,11 +139,16 @@ export function KeysetRoot ( data ) {
 }
 
 
+export const DerivationDetails		= {
+    "app_index":		Number,
+    "agent_index":		Number,
+};
+
 export const KeyMetaStruct		= {
-    "new_key":			ActionHash, // KeyRegistration Create Action
-    "derivation_path":		Bytes,
-    "derivation_index":		Number,
-    "key_type":			AnyType,
+    "key_anchor_addr":			ActionHash,
+    "derivation_details":		DerivationDetails,
+    // "derivation_path":		Bytes,
+    // "key_type":			AnyType,
 };
 
 export function KeyMeta ( data ) {
@@ -160,14 +165,14 @@ export function KeyAnchor ( data ) {
 }
 
 
-export const DnaBindingStruct		= {
-    "key_meta":			ActionHash,
+export const AppBindingStruct		= {
+    "key_meta_addr":		ActionHash,
     "dna_hashes":		VecType( DnaHash ),
     "app_name":			String,
 };
 
-export function DnaBinding ( data ) {
-    return intoStruct( data, DnaBindingStruct );
+export function AppBinding ( data ) {
+    return intoStruct( data, AppBindingStruct );
 }
 
 
@@ -221,7 +226,7 @@ export function KeyRegistrationEntry ( entry ) {
 // }
 
 export const KeyInfoStruct = [
-    DnaBindingStruct,
+    AppBindingStruct,
     KeyMetaStruct,
     KeyRegistrationEntry,
 ];
@@ -258,8 +263,8 @@ export default {
     KeyAnchorStruct,
     KeyAnchor,
 
-    DnaBindingStruct,
-    DnaBinding,
+    AppBindingStruct,
+    AppBinding,
 
     DeviceInviteStruct,
     DeviceInvite,

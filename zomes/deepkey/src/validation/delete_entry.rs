@@ -49,7 +49,7 @@ pub fn validation(
         EntryTypesUnit::KeyMeta => {
             valid!()
         },
-        EntryTypesUnit::DnaBinding => {
+        EntryTypesUnit::AppBinding => {
             valid!()
         },
         // entry_type_unit => invalid!(format!("Delete validation not implemented for entry type: {:?}", entry_type_unit )),

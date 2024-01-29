@@ -12,7 +12,7 @@ mod delete_link;
 // use crate::keyset_root::*;
 // use crate::device_name::*;
 // use crate::key_meta::*;
-// use crate::dna_binding::*;
+// use crate::app_binding::*;
 use crate::{
     EntryTypes,
     LinkTypes,

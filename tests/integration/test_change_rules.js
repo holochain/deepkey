@@ -160,8 +160,8 @@ function basic_tests () {
 	const new_change_rule		= await alice1_deepkey.update_change_rule({
 	    "authority_spec": auth_spec_package.authority_spec,
 	    "authorizations": [
-		[0, await ed.signAsync( auth_spec_package.serialized, revocation_key1 ) ],
-		[2, await ed.signAsync( auth_spec_package.serialized, revocation_key3 ) ],
+		[ 0, await ed.signAsync( auth_spec_package.serialized, revocation_key1 ) ],
+		[ 2, await ed.signAsync( auth_spec_package.serialized, revocation_key3 ) ],
 	    ],
 	});
 
@@ -184,8 +184,8 @@ function basic_tests () {
 			],
 		    },
 		    "authorizations": [
-			[0, crypto.randomBytes(64) ],
-			[1, crypto.randomBytes(64) ],
+			[ 0, crypto.randomBytes(64) ],
+			[ 1, crypto.randomBytes(64) ],
 		    ],
 		});
 	    }, "Authorization has invalid signature" );
@@ -201,7 +201,7 @@ function basic_tests () {
 			],
 		    },
 		    "authorizations": [
-			[0, crypto.randomBytes(64) ],
+			[ 0, crypto.randomBytes(64) ],
 		    ],
 		});
 	    }, "There are not enough authorities" );
@@ -223,7 +223,7 @@ function basic_tests () {
 			],
 		    },
 		    "authorizations": [
-			[0, await ed.signAsync( auth_spec_package.serialized, revocation_key1 ) ],
+			[ 0, await ed.signAsync( auth_spec_package.serialized, revocation_key1 ) ],
 		    ],
 		});
 	    }, "change rule requires at least" );
@@ -240,8 +240,8 @@ function basic_tests () {
 		await alice1_deepkey.update_change_rule({
 		    "authority_spec": auth_spec_package.authority_spec,
 		    "authorizations": [
-			[0, await ed.signAsync( auth_spec_package.serialized, revocation_key1 ) ],
-			[2, await ed.signAsync( auth_spec_package.serialized, revocation_key3 ) ],
+			[ 0, await ed.signAsync( auth_spec_package.serialized, revocation_key1 ) ],
+			[ 2, await ed.signAsync( auth_spec_package.serialized, revocation_key3 ) ],
 		    ],
 		});
 	    }, "Required signatures cannot be 0" );
@@ -274,7 +274,7 @@ function basic_tests () {
 			    ],
 			},
 			"authorizations": [
-			    [0, crypto.randomBytes(64) ],
+			    [ 0, crypto.randomBytes(64) ],
 			],
 		    });
 		}, "Cannot change rules for KSR because a Device Invite was accepted" );

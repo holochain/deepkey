@@ -478,7 +478,7 @@ In addition to shared/public keysets and registrations, each agent can keep priv
 
 `KeyMeta` records record the derivation path and index used to generate a previously registered key.
 
-`DnaBinding` records track how registered keys are being used by happs.
+`AppBinding` records track how registered keys are being used by happs.
 
 ### Meta API
 
@@ -509,15 +509,15 @@ The structure of `KeyMeta` is:
   - output is `ActionHash` of the created `KeyMeta`
   - creates a `KeyMeta`
 
-### DnaBinding API
+### AppBinding API
 
-A `DnaBinding` is:
+A `AppBinding` is:
 
 - A `key_meta` as `ActionHash` referencing a `KeyMeta`
 - A `dna_hash` of the DNA the key is bound to
 - An `app_name` as strings of `bundle_name` and `cell_nick` _TODO: make names compatible with new naming_
 
-**Create**: A `DnaBinding` must deserialize cleanly from the `Record`
+**Create**: A `AppBinding` must deserialize cleanly from the `Record`
 
 **Read**: _TODO_
 
@@ -527,10 +527,10 @@ A `DnaBinding` is:
 
 #### Zome calls
 
-- `new_dna_binding`
-  - input is `DnaBinding`
-  - output is `ActionHash` of the created `DnaBinding`
-  - creates a `DnaBinding`
+- `new_app_binding`
+  - input is `AppBinding`
+  - output is `ActionHash` of the created `AppBinding`
+  - creates a `AppBinding`
 - `install_an_app`
   - _TODO_
 

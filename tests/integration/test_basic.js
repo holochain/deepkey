@@ -156,7 +156,7 @@ function basic_tests () {
     });
 
     it("should query local key info", async function () {
-	let key_info			= await deepkey_csr.query_local_key_info();
+	let key_info			= await deepkey_csr.query_key_info();
 	log.normal("Key info: %s", json.debug(key_info) );
 
 	expect( key_info		).to.have.length( 1 );

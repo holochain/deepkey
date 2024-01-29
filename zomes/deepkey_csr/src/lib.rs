@@ -6,7 +6,7 @@ pub mod key_anchor;
 pub mod key_registration;
 pub mod keyset_root;
 pub mod source_of_authority;
-pub mod dna_binding;
+pub mod app_binding;
 pub mod utils;
 
 pub use hdk_extensions;

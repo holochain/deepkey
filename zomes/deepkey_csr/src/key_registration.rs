@@ -1,3 +1,4 @@
+use crate::utils;
 use deepkey::*;
 use hdk::prelude::{
     *,
@@ -5,13 +6,19 @@ use hdk::prelude::{
 };
 use hdk_extensions::{
     agent_id,
+    must_get,
+    hdi_extensions::{
+        guest_error,
+        trace_origin,
+        ScopedTypeConnector,
+    },
 };
 
 use crate::source_of_authority::query_keyset_authority_action_hash;
 
+
 #[hdk_extern]
 pub fn register_key(
-    // TODO: Create the AgentPubKey in Lair using the derivation_path etc instead of passing it in here.
     (new_key, new_key_signature, dna_hashes, app_name): (
         AgentPubKey,
         Signature,
@@ -19,30 +26,33 @@ pub fn register_key(
         String,
     ),
 ) -> ExternResult<ActionHash> {
-    let derivation_index: u32 = 1;
-    // TODO: Figure out when to set different key_types and what they mean
-    let key_type = KeyType::AppSig;
+    let derivation_details = DerivationDetails {
+        app_index: crate::app_binding::query_app_bindings(())?.len() as u32,
+        agent_index: 0,
+    };
+
+    // let key_type = KeyType::AppSig;
 
     // Create the KeyRegistration entry and its associated KeyAnchor entry directly after
-    let key_registration = KeyRegistration::Create(KeyGeneration {
-        new_key: new_key.clone(),
-        new_key_signing_of_author: new_key_signature,
-    });
-    let key_registration_hash = create_entry(EntryTypes::KeyRegistration(key_registration))?;
-    let key_anchor = KeyAnchor::from_agent_key(new_key.clone());
-    create_entry(EntryTypes::KeyAnchor(key_anchor.clone()))?;
+    let key_registration = KeyRegistration::Create( (&new_key, &new_key_signature).into() );
+    let key_registration_hash = create_entry( key_registration.to_input() )?;
+    let key_anchor = KeyAnchor::from_agent_key( new_key.clone() )?;
+
+    let key_anchor_addr = create_entry( key_anchor.to_input() )?;
 
     _create_new_key_entries(
         key_registration_hash.clone(),
         key_anchor,
+        key_anchor_addr,
         dna_hashes,
         app_name,
-        derivation_index,
-        key_type,
+        derivation_details,
+        // key_type,
     )?;
 
     Ok(key_registration_hash)
 }
+
 
 #[hdk_extern]
 pub fn update_key(
@@ -62,41 +72,48 @@ pub fn update_key(
         String,
     ),
 ) -> ExternResult<ActionHash> {
-    // TODO: We should be traversing all the previous keys and counting up to calculate the derivation index.
-    let derivation_index: u32 = 1;
-    let key_type = KeyType::AppSig;
+    // let derivation_index: u32 = 1;
+    // let key_type = KeyType::AppSig;
+    let history = trace_origin( &prior_key_registration )?;
 
-    let key_revocation = KeyRevocation {
-        prior_key_registration: prior_key_registration.clone(),
-        revocation_authorization,
+    let derivation_details = DerivationDetails {
+        app_index: 0, // Where can this come from?
+        // - Derive previous anchor from previous registration
+        // - Get record for previous anchor
+        //   - We must be certain that there can only be 1 action for it
+        // - Then query all key meta to find the one that points to this key anchor
+        // - Use the same app_index
+        agent_index: history.len() as u32,
     };
 
-    let key_generation = KeyGeneration {
-        new_key: new_key.clone(),
-        new_key_signing_of_author: new_key_signature,
-    };
+    let key_revocation = KeyRevocation::from(( &prior_key_registration, &revocation_authorization ));
+    let key_generation = KeyGeneration::from(( &new_key, &new_key_signature ));
+
     // Create the KeyRegistration entry and its associated KeyAnchor entry directly after
-    let key_registration = KeyRegistration::Update(key_revocation, key_generation);
+    let key_registration = KeyRegistration::Update( key_revocation, key_generation );
     let key_registration_hash = update_entry(
         prior_key_registration.clone(),
-        EntryTypes::KeyRegistration(key_registration),
+        key_registration.to_input(),
     )?;
 
-    let old_key_anchor_action_hash =
-        _get_key_anchor_record_from_key_registration_action_hash(prior_key_registration.clone())?;
-    let key_anchor = KeyAnchor::from_agent_key(new_key.clone());
-    update_entry(
+    let old_key_anchor_action_hash = _get_key_anchor_record_from_key_registration_action_hash(
+        prior_key_registration.clone()
+    )?;
+    let key_anchor = KeyAnchor::from_agent_key( new_key.clone() )?;
+
+    let key_anchor_addr = update_entry(
         old_key_anchor_action_hash,
-        EntryTypes::KeyAnchor(key_anchor.clone()),
+        key_anchor.to_input(),
     )?;
 
     _create_new_key_entries(
         key_registration_hash.clone(),
         key_anchor,
+        key_anchor_addr,
         dna_hashes,
         app_name,
-        derivation_index,
-        key_type,
+        derivation_details,
+        // key_type,
     )?;
 
     Ok(key_registration_hash)
@@ -116,6 +133,7 @@ pub fn update_key(
     // }?;
 }
 
+
 #[hdk_extern]
 pub fn revoke_key(
     (key_registration_to_revoke, revocation_authorization): (ActionHash, Vec<Authorization>),
@@ -134,80 +152,66 @@ pub fn revoke_key(
     // TODO: Fill out the validation for KeyRevocation so it actually validates the revocation_authorization signatures.
     let key_registration_action_hash = update_entry(
         key_registration_to_revoke,
-        EntryTypes::KeyRegistration(revocation_registration),
+        revocation_registration.to_input(),
     )?;
     Ok(key_registration_action_hash)
 }
 
+
 fn _get_key_anchor_record_from_key_registration_action_hash(
     key_registration_to_revoke: ActionHash,
 ) -> ExternResult<ActionHash> {
-    let record =
-        get(key_registration_to_revoke.clone(), GetOptions::default())?.ok_or(wasm_error!(
-            WasmErrorInner::Guest(String::from("Cannot query old key registration to revoke."))
-        ))?;
-    let old_key_registration = record
-        .entry
-        .to_app_option::<KeyRegistration>()
-        .map_err(|err| {
-            wasm_error!(WasmErrorInner::Guest(format!(
-                "Could not deserialize old key registration to revoke. {:?}",
-                err
-            )))
-        })?
-        .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
-            "Provided old key registration does not exist"
-        ))))?;
+    let record = must_get( &key_registration_to_revoke )?;
 
-    let old_key_anchor =
-        KeyAnchor::from_agent_key(_get_key_from_key_registration(old_key_registration)?);
+    let old_key_registration = KeyRegistration::try_from( record )?;
+    let old_key_anchor = KeyAnchor::from_agent_key(
+        _get_key_from_key_registration( old_key_registration )?
+    )?;
 
-    let record = get(hash_entry(old_key_anchor)?, GetOptions::default())?.ok_or(wasm_error!(
-        WasmErrorInner::Guest(String::from("Old Key anchor does not exist on the chain."))
-    ))?;
+    let record = must_get( &hash_entry( &old_key_anchor )? )?;
 
-    Ok(record.action_address().clone())
+    Ok( record.action_address().clone() )
 }
+
 
 // All the entries in key creation:
 fn _create_new_key_entries(
     key_registration_hash: ActionHash,
     key_anchor: KeyAnchor,
+    key_anchor_addr: ActionHash,
     dna_hashes: Vec<DnaHash>,
     app_name: String,
-    derivation_index: u32,
-    key_type: KeyType,
+    derivation_details: DerivationDetails,
+    // key_type: KeyType,
 ) -> ExternResult<ActionHash> {
-    let derivation_path = format!("/dna/?/app/{app_name}");
+    // let derivation_path = format!("/dna/?/app/{app_name}");
     // Form of: [u8; 32]!
-    let derivation_path: [u8; 32] = hash_blake2b(Vec::from(derivation_path.as_bytes()), 32)?
-        .try_into()
-        .map_err(|err| {
-            wasm_error!(WasmErrorInner::Guest(format!(
-                "Error hashing derivation path. {:?}",
-                err
-            )))
-        })?;
+    // let derivation_path: [u8; 32] = hash_blake2b( Vec::from(derivation_path.as_bytes()), 32 )?
+    //     .try_into()
+    //     .map_err(|err| {
+    //         guest_error!(format!("Error hashing derivation path. {:?}", err ))
+    //     })?;
 
     // Create the private Metadata entries
     let key_meta = KeyMeta {
-        derivation_index,
-        derivation_path,
-        new_key: key_registration_hash.clone(),
-        key_type,
+        key_anchor_addr,
+        derivation_details,
+        // derivation_bytes,
+        // new_key: key_registration_hash.clone(),
+        // key_type,
     };
-    let key_meta_hash = create_entry(EntryTypes::KeyMeta(key_meta))?;
+    let key_meta_addr = create_entry( key_meta.to_input() )?;
 
-    let dna_binding = DnaBinding {
+    let app_binding = AppBinding {
         app_name,
         dna_hashes,
-        key_meta: key_meta_hash,
+        key_meta_addr,
     };
-    create_entry(EntryTypes::DnaBinding(dna_binding))?;
+    create_entry( app_binding.to_input() )?;
 
     // Create Link entry here: from KeySetRoot -> KeyAnchor
     let keyset_root_authority = query_keyset_authority_action_hash(())?;
-    let key_anchor_hash = hash_entry(&EntryTypes::KeyAnchor(key_anchor))?;
+    let key_anchor_hash = hash_entry( &key_anchor.to_input() )?;
     create_link(
         keyset_root_authority,
         key_anchor_hash.clone(),
@@ -225,6 +229,7 @@ fn _create_new_key_entries(
     Ok(key_registration_hash)
 }
 
+
 fn _get_key_from_key_registration(key_registration: KeyRegistration) -> ExternResult<AgentPubKey> {
     let key = match key_registration.clone() {
         KeyRegistration::Create(key_generation) => key_generation.new_key,
@@ -232,17 +237,15 @@ fn _get_key_from_key_registration(key_registration: KeyRegistration) -> ExternRe
         KeyRegistration::Update(_, key_generation) => key_generation.new_key,
         KeyRegistration::Delete(key_revocation) => {
             let old_keyreg_action = key_revocation.prior_key_registration;
-            let old_keyreg = get(old_keyreg_action, GetOptions::default())?.ok_or(wasm_error!(
-                WasmErrorInner::Guest("KeyRegistration not found".into())
-            ))?;
+            let old_keyreg = must_get( &old_keyreg_action )?;
             let key_registration = KeyRegistration::try_from(old_keyreg)?;
             match key_registration {
                 KeyRegistration::Create(key_generation) => key_generation.new_key,
                 KeyRegistration::CreateOnly(key_generation) => key_generation.new_key,
                 KeyRegistration::Update(_, key_generation) => key_generation.new_key,
                 KeyRegistration::Delete(_) => {
-                    return Err(wasm_error!(WasmErrorInner::Guest(
-                        "Invalid KeyRevocation: attempted to revoke a revocation".into()
+                    return Err(guest_error!(format!(
+                        "Invalid KeyRevocation: attempted to revoke a revocation"
                     )))
                 }
             }
@@ -265,29 +268,17 @@ fn _get_key_from_key_registration(key_registration: KeyRegistration) -> ExternRe
 //     Ok(key_registration)
 // }
 
+
 #[hdk_extern]
 pub fn get_key_registration(
     original_key_registration_hash: ActionHash,
-) -> ExternResult<Option<Record>> {
+) -> ExternResult<KeyRegistration> {
     get_latest_key_registration(original_key_registration_hash)
 }
-fn get_latest_key_registration(key_registration_hash: ActionHash) -> ExternResult<Option<Record>> {
-    let details = get_details(key_registration_hash, GetOptions::default())?.ok_or(wasm_error!(
-        WasmErrorInner::Guest("KeyRegistration not found".into())
-    ))?;
-    let record_details = match details {
-        Details::Entry(_) => Err(wasm_error!(WasmErrorInner::Guest(
-            "Malformed details".into()
-        ))),
-        Details::Record(record_details) => Ok(record_details),
-    }?;
-    if record_details.deletes.len() > 0 {
-        return Ok(None);
-    }
-    match record_details.updates.last() {
-        Some(update) => get_latest_key_registration(update.action_address().clone()),
-        None => Ok(Some(record_details.record)),
-    }
+
+
+fn get_latest_key_registration(key_registration_addr: ActionHash) -> ExternResult<KeyRegistration> {
+    utils::get_latest_record( key_registration_addr )?.try_into()
 }
 
 
