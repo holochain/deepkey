@@ -4,6 +4,7 @@ use crate::{
     KeysetRoot,
     ChangeRule,
 
+    KeyBytes,
     Authorization,
 };
 use rmp_serde;
@@ -134,7 +135,7 @@ pub fn prev_change_rule (
 
 
 pub fn check_authorities(
-    authorities: &Vec<[u8; 32]>,
+    authorities: &Vec<KeyBytes>,
     authorizations: &Vec<Authorization>,
     signed_content: &Vec<u8>,
 ) -> ExternResult<u8> {

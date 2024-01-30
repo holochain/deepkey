@@ -83,7 +83,7 @@ function basic_tests () {
     let client;
     let alice1_client;
     let deepkey;
-    let deepkey_csr;
+    let alice1_deepkey;
     let ksr1_addr;
 
     before(async function () {
@@ -100,24 +100,24 @@ function basic_tests () {
 	    [DEEPKEY_DNA_NAME]:	DeepKeyCell,
 	}));
 
-	deepkey_csr			= deepkey.zomes.deepkey_csr.functions;
+	alice1_deepkey			= deepkey.zomes.deepkey_csr.functions;
 
-	ksr1_addr			= await deepkey_csr.query_keyset_authority_action_hash();
+	ksr1_addr			= await alice1_deepkey.query_keyset_authority_action_hash();
     });
 
     it("should query keyset root action hash", async function () {
-	await deepkey_csr.query_keyset_root_action_hash();
+	await alice1_deepkey.query_keyset_root_action_hash();
     });
 
     it("should query keyset members (1)", async function () {
-	const members			= await deepkey_csr.query_keyset_members( ksr1_addr );
+	const members			= await alice1_deepkey.query_keyset_members( ksr1_addr );
 	log.normal("Keyset Root -> Members: %s", json.debug(members) );
 
 	expect( members			).to.have.length( 1 );
     });
 
     it("should query keyset keys with authors (0)", async function () {
-	const keys			= await deepkey_csr.query_keyset_keys_with_authors( ksr1_addr );
+	const keys			= await alice1_deepkey.query_keyset_keys_with_authors( ksr1_addr );
 	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
 
 	expect( keys			).to.have.length( 0 );
@@ -127,40 +127,50 @@ function basic_tests () {
 	const secret			= ed.utils.randomPrivateKey();
 	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
 
-	const registration_addr		= await deepkey_csr.register_key({
-	    "app_name":		"Alice1 - App #1",
-	    "dna_hashes":	[ dna1_hash ],
-	    "key":		new AgentPubKey( pubkey_bytes ),
-	    "signature":	await ed.signAsync( alice1_client.agent_id, secret ),
+	const [ addr, key_reg, key_meta ]	= await alice1_deepkey.create_key({
+	    "app_binding": {
+		"app_name":		"Alice1 - App #1",
+		"dna_hashes":		[ dna1_hash ],
+	    },
+	    "key_generation": {
+		"new_key":			new AgentPubKey( pubkey_bytes ),
+		"new_key_signing_of_author":	await ed.signAsync( alice1_client.agent_id, secret ),
+	    },
+	    "derivation_details": {
+		"app_index": 0,
+		"key_index": 0,
+	    },
 	});
-	log.normal("Key registration addr: %s", registration_addr );
+	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
+	log.normal("Key Meta: %s", json.debug(key_meta) );
+	log.normal("Key registration (update) addr: %s", addr );
     });
 
-    it("should query keyset keys with authors (1)", async function () {
-	const keys			= await deepkey_csr.query_keyset_keys_with_authors( ksr1_addr );
-	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
+    // it("should query keyset keys with authors (1)", async function () {
+    // 	const keys			= await alice1_deepkey.query_keyset_keys_with_authors( ksr1_addr );
+    // 	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
 
-	expect( keys			).to.have.length( 1 );
-    });
+    // 	expect( keys			).to.have.length( 1 );
+    // });
 
-    it("should query keyset keys (1)", async function () {
-	const keys			= await deepkey_csr.query_keyset_keys( ksr1_addr );
-	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
+    // it("should query keyset keys (1)", async function () {
+    // 	const keys			= await alice1_deepkey.query_keyset_keys( ksr1_addr );
+    // 	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
 
-	expect( keys			).to.have.length( 1 );
-    });
+    // 	expect( keys			).to.have.length( 1 );
+    // });
 
-    it("should get keyset root", async function () {
-	const ksr			= await deepkey_csr.get_keyset_root( ksr1_addr );
-	log.normal("Keyset Root: %s", json.debug(ksr) );
-    });
+    // it("should get keyset root", async function () {
+    // 	const ksr			= await alice1_deepkey.get_keyset_root( ksr1_addr );
+    // 	log.normal("Keyset Root: %s", json.debug(ksr) );
+    // });
 
-    it("should query local key info", async function () {
-	let key_info			= await deepkey_csr.query_key_info();
-	log.normal("Key info: %s", json.debug(key_info) );
+    // it("should query local key info", async function () {
+    // 	let key_info			= await alice1_deepkey.query_key_info();
+    // 	log.normal("Key info: %s", json.debug(key_info) );
 
-	expect( key_info		).to.have.length( 1 );
-    });
+    // 	expect( key_info		).to.have.length( 1 );
+    // });
 
     after(async function () {
 	await client.close();

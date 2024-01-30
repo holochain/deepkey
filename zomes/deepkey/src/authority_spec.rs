@@ -1,3 +1,4 @@
+use crate::KeyBytes;
 use hdi::prelude::*;
 
 
@@ -13,12 +14,12 @@ pub struct AuthoritySpec {
     pub sigs_required: u8,
     // These signers may not exist on the DHT.
     // E.g. a revocation key used to create the first change rule.
-    pub authorized_signers: Vec<[u8; 32]>,
+    pub authorized_signers: Vec<KeyBytes>,
 }
 
 
 impl AuthoritySpec {
-    pub fn new(sigs_required: u8, authorized_signers: Vec<[u8; 32]>) -> Self {
+    pub fn new(sigs_required: u8, authorized_signers: Vec<KeyBytes>) -> Self {
         Self {
             sigs_required,
             authorized_signers,

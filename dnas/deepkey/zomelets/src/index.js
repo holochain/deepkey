@@ -82,32 +82,40 @@ const functions				= {
 
 	return result.map( key_anchor => KeyAnchor( key_anchor ) );
     },
+    async key_state ( input ) {
+	const result			= await this.call([
+	    input, Date.now()
+	]);
+
+	return result;
+    },
 
     // Key Registration
-    async register_key ({ key, signature, dna_hashes, app_name }) {
-	const result			= await this.call([
-	    key, signature, dna_hashes, app_name
-	]);
+    async create_key ( input ) {
+	const result			= await this.call( input );
 
-	return new ActionHash( result );
+	return [
+	    new ActionHash( result[0] ),
+	    KeyRegistrationEntry( result[1] ),
+	    KeyMeta( result[2] ),
+	];
     },
     async update_key ( input ) {
-	const {
-	    prior_key_registration,
-	    revocation_authorization,
-	    key,
-	    signature,
-	    dna_hashes,
-	    app_name,
-	}				= input;
+	const result			= await this.call( input );
 
-	const result			= await this.call([
-	    prior_key_registration,
-	    revocation_authorization,
-	    key, signature, dna_hashes, app_name
-	]);
+	return [
+	    new ActionHash( result[0] ),
+	    KeyRegistrationEntry( result[1] ),
+	    KeyMeta( result[2] ),
+	];
+    },
+    async revoke_key ( input ) {
+	const result			= await this.call( input );
 
-	return new ActionHash( result );
+	return [
+	    new ActionHash( result[0] ),
+	    KeyRegistrationEntry( result[1] ),
+	];
     },
 
     // Device Inviting
@@ -154,7 +162,7 @@ const functions				= {
 	for ( let agent of members ) {
 	    devices.push({
 		"member": agent,
-		"keyset": await this.functions.get_device_keys( agent ),
+		"keys": await this.functions.get_device_keys( agent ),
 	    });
 	}
 

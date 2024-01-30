@@ -104,6 +104,7 @@ pub enum LinkTypes {
     DeviceInviteToDeviceInviteAcceptances, // unused for now
     DeviceToKeyAnchor,
     DeviceName,
+    AppBindingToKeyMeta,
 }
 
 

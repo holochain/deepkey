@@ -9,7 +9,8 @@ use hdi::prelude::{
 pub struct AppBinding {
     // TODO: if an app binding will not change for the series of registration updates, it doesn't
     // make sense to point to 1 key meta when there could be many in the series.
-    pub key_meta_addr: ActionHash,
-    pub dna_hashes: Vec<DnaHash>, //The hash of the DNA the key is bound to
+    pub app_index: u32,
     pub app_name: String,
+    pub dna_hashes: Vec<DnaHash>,
+    pub key_anchor_addr: ActionHash,
 }

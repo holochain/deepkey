@@ -141,14 +141,14 @@ export function KeysetRoot ( data ) {
 
 export const DerivationDetails		= {
     "app_index":		Number,
-    "agent_index":		Number,
+    "key_index":		Number,
 };
 
 export const KeyMetaStruct		= {
+    "app_binding_addr":			ActionHash,
+    "key_index":			Number,
+    "key_registration_addr":		ActionHash,
     "key_anchor_addr":			ActionHash,
-    "derivation_details":		DerivationDetails,
-    // "derivation_path":		Bytes,
-    // "key_type":			AnyType,
 };
 
 export function KeyMeta ( data ) {
@@ -166,9 +166,10 @@ export function KeyAnchor ( data ) {
 
 
 export const AppBindingStruct		= {
-    "key_meta_addr":		ActionHash,
-    "dna_hashes":		VecType( DnaHash ),
+    "app_index":		Number,
     "app_name":			String,
+    "dna_hashes":		VecType( DnaHash ),
+    "key_anchor_addr":		ActionHash,
 };
 
 export function AppBinding ( data ) {

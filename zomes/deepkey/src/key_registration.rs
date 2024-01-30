@@ -1,6 +1,12 @@
 use hdi::prelude::*;
+use hdi_extensions::{
+    guest_error,
+};
 
-use crate::Authorization;
+use crate::{
+    KeyAnchor,
+    Authorization,
+};
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -79,4 +85,21 @@ pub enum KeyRegistration {
 
     // Permanently revokes a key (Note: still uses an update action.)
     Delete(KeyRevocation)
+}
+
+impl KeyRegistration {
+    pub fn key_anchor(&self) -> ExternResult<KeyAnchor> {
+        match self {
+            KeyRegistration::Create(key_gen) => key_gen.new_key.to_owned(),
+            KeyRegistration::CreateOnly(key_gen) => key_gen.new_key.to_owned(),
+            KeyRegistration::Update(_, key_gen) => key_gen.new_key.to_owned(),
+            KeyRegistration::Delete(_) => Err(guest_error!(
+                "Cannot derive KeyAnchor from a KeyRegistration::Delete".to_string()
+            ))?,
+        }.try_into()
+    }
+
+    pub fn key_anchor_hash(&self) -> ExternResult<EntryHash> {
+        hash_entry( self.key_anchor()? )
+    }
 }

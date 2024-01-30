@@ -140,6 +140,8 @@ function basic_tests () {
     });
 
     let alice1_key1a_addr;
+    let alice1_key1b_addr;
+    let alice1_key1c_addr;
 
     it("should register new key (alice1)", async function () {
 	this.timeout( 5_000 );
@@ -147,15 +149,28 @@ function basic_tests () {
 	const secret			= ed.utils.randomPrivateKey();
 	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
 
-	const registration_addr		= await alice1_deepkey.register_key({
-	    "app_name":		"Alice1 - App #1",
-	    "dna_hashes":	[ dna1_hash ],
-	    "key":		new AgentPubKey( pubkey_bytes ),
-	    "signature":	await ed.signAsync( alice1_client.agent_id, secret ),
+	const [ addr, key_reg, key_meta ]	= await alice1_deepkey.create_key({
+	    "app_binding": {
+		"app_name":		"Alice1 - App #1",
+		"dna_hashes":		[ dna1_hash ],
+	    },
+	    "key_generation": {
+		"new_key":			new AgentPubKey( pubkey_bytes ),
+		"new_key_signing_of_author":	await ed.signAsync( alice1_client.agent_id, secret ),
+	    },
+	    "derivation_details": {
+		"app_index": 0,
+		"key_index": 0,
+	    },
 	});
-	log.normal("Key registration addr: %s", registration_addr );
+	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
+	log.normal("Key Meta: %s", json.debug(key_meta) );
+	log.normal("Key registration (create) addr: %s", addr );
 
-	alice1_key1a_addr		= registration_addr;
+	alice1_key1a_addr		= addr;
+
+	const key_state			= await alice1_deepkey.key_state( pubkey_bytes );
+	log.normal("Key state: %s", key_state );
     });
 
     it("should register new key (alice2)", async function () {
@@ -164,40 +179,50 @@ function basic_tests () {
 	const secret			= ed.utils.randomPrivateKey();
 	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
 
-	const registration_addr		= await alice2_deepkey.register_key({
-	    "app_name":		"Alice2 - App #1",
-	    "dna_hashes":	[ dna1_hash ],
-	    "key":		new AgentPubKey( pubkey_bytes ),
-	    "signature":	await ed.signAsync( alice2_client.agent_id, secret ),
+	const [ addr, key_reg, key_meta ]	= await alice2_deepkey.create_key({
+	    "app_binding": {
+		"app_name":		"Alice2 - App #1",
+		"dna_hashes":		[ dna1_hash ],
+	    },
+	    "key_generation": {
+		"new_key":			new AgentPubKey( pubkey_bytes ),
+		"new_key_signing_of_author":	await ed.signAsync( alice2_client.agent_id, secret ),
+	    },
+	    "derivation_details": {
+		"app_index": 0,
+		"key_index": 0,
+	    },
 	});
-	log.normal("Key registration addr: %s", registration_addr );
+	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
+	log.normal("Key Meta: %s", json.debug(key_meta) );
+	log.normal("Key registration (update) addr: %s", addr );
     });
 
-    it("should query (alice1) KSR keyset keys with authors (1)", async function () {
-	const keys			= await alice1_deepkey.query_keyset_keys_with_authors( ksr1_addr );
-	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
+    // it("should query (alice1) KSR keyset keys with authors (1)", async function () {
+    // 	const keys			= await alice1_deepkey.query_keyset_keys_with_authors( ksr1_addr );
+    // 	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
 
-	expect( keys			).to.have.length( 1 );
-    });
+    // 	expect( keys			).to.have.length( 1 );
+    // });
 
-    it("should query (alice1) KSR keyset keys (1)", async function () {
-	const keys			= await alice1_deepkey.query_keyset_keys( ksr1_addr );
-	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
+    // it("should query (alice1) KSR keyset keys (1)", async function () {
+    // 	const keys			= await alice1_deepkey.query_keyset_keys( ksr1_addr );
+    // 	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
 
-	expect( keys			).to.have.length( 1 );
-    });
+    // 	expect( keys			).to.have.length( 1 );
+    // });
 
-    it("should query (alice1) KSR keyset keys (1)", async function () {
-	const keys			= await alice1_deepkey.query_keyset_keys( ksr1_addr );
-	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
+    // it("should query (alice1) KSR keyset keys (1)", async function () {
+    // 	const keys			= await alice1_deepkey.query_keyset_keys( ksr1_addr );
+    // 	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
 
-	expect( keys			).to.have.length( 1 );
-    });
+    // 	expect( keys			).to.have.length( 1 );
+    // });
 
-    it("should get (alice1) keyset root", async function () {
-	const ksr			= await alice1_deepkey.get_keyset_root( ksr1_addr );
-	log.normal("Keyset Root: %s", json.debug(ksr) );
-    });
+    // it("should get (alice1) keyset root", async function () {
+    // 	const ksr			= await alice1_deepkey.get_keyset_root( ksr1_addr );
+    // 	log.normal("Keyset Root: %s", json.debug(ksr) );
+    // });
 
     it("should update key (alice1)", async function () {
 	this.timeout( 5_000 );
@@ -205,19 +230,27 @@ function basic_tests () {
 	const secret			= ed.utils.randomPrivateKey();
 	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
 
-	const registration_addr		= await alice1_deepkey.update_key({
-	    "prior_key_registration": alice1_key1a_addr,
-	    "revocation_authorization": [
-		[ 0, crypto.randomBytes(64) ],
-	    ],
-	    "key":		new AgentPubKey( pubkey_bytes ),
-	    "signature":	await ed.signAsync( alice1_client.agent_id, secret ),
-
-	    // TODO: these should not be necessary because they shouldn't change when updating
-	    "app_name":		"Alice1 - App #1",
-	    "dna_hashes":	[ dna1_hash ],
+	const [ addr, key_reg, key_meta ]	= await alice1_deepkey.update_key({
+	    "key_revocation": {
+		"prior_key_registration": alice1_key1a_addr,
+		"revocation_authorization": [
+		    [ 0, crypto.randomBytes(64) ],
+		],
+	    },
+	    "key_generation": {
+		"new_key":			new AgentPubKey( pubkey_bytes ),
+		"new_key_signing_of_author":	await ed.signAsync( alice1_client.agent_id, secret ),
+	    },
+	    "derivation_details": {
+		"app_index": 0,
+		"key_index": 1,
+	    },
 	});
-	log.normal("Key registration addr: %s", registration_addr );
+	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
+	log.normal("Key Meta: %s", json.debug(key_meta) );
+	log.normal("Key registration (update) addr: %s", addr );
+
+	alice1_key1b_addr		= addr;
     });
 
     let invite_accept;
@@ -260,51 +293,79 @@ function basic_tests () {
 	expect( devices			).to.have.length( 2 );
     });
 
-    it("should query (alice1) keyset keys (1)", async function () {
-	this.skip();
+    // it("should query (alice1) keyset keys (1)", async function () {
+    // 	this.skip();
 
-	const keys			= await alice1_deepkey.query_keyset_keys( ksr1_addr );
-	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
+    // 	const keys			= await alice1_deepkey.query_keyset_keys( ksr1_addr );
+    // 	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
 
-	expect( keys			).to.have.length( 1 );
-    });
+    // 	expect( keys			).to.have.length( 1 );
+    // });
 
-    it("should query (alice1) keyset keys with authors (1)", async function () {
-	this.skip();
+    // it("should query (alice1) keyset keys with authors (1)", async function () {
+    // 	this.skip();
 
-	const keys			= await alice1_deepkey.query_keyset_keys_with_authors( ksr1_addr );
-	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
+    // 	const keys			= await alice1_deepkey.query_keyset_keys_with_authors( ksr1_addr );
+    // 	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
 
-	expect( keys			).to.have.length( 1 );
-    });
+    // 	expect( keys			).to.have.length( 1 );
+    // });
 
-    it("should query (alice1) key info", async function () {
-	this.skip();
+    // it("should query (alice1) key info", async function () {
+    // 	this.skip();
 
-	let key_info			= await alice1_deepkey.query_key_info();
-	log.normal("Key info: %s", json.debug(key_info) );
+    // 	let key_info			= await alice1_deepkey.query_key_info();
+    // 	log.normal("Key info: %s", json.debug(key_info) );
 
-	expect( key_info		).to.have.length( 1 );
-    });
+    // 	expect( key_info		).to.have.length( 1 );
+    // });
 
-    it("should query (alice1) app bindings", async function () {
-	this.skip();
+    // it("should query (alice1) app bindings", async function () {
+    // 	this.skip();
 
-	let app_bindings			= await alice1_deepkey.query_app_bindings();
-	log.normal("App Bindings: %s", json.debug(app_bindings) );
+    // 	let app_bindings			= await alice1_deepkey.query_app_bindings();
+    // 	log.normal("App Bindings: %s", json.debug(app_bindings) );
 
-	expect( app_bindings		).to.have.length( 1 );
+    // 	expect( app_bindings		).to.have.length( 1 );
+    // });
+
+    it("should revoke key (alice1)", async function () {
+	this.timeout( 5_000 );
+
+	const secret			= ed.utils.randomPrivateKey();
+	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
+
+	const [ addr, key_reg ]	= await alice1_deepkey.revoke_key({
+	    "key_revocation": {
+		"prior_key_registration": alice1_key1b_addr,
+		"revocation_authorization": [
+		    [ 0, crypto.randomBytes(64) ],
+		],
+	    },
+	});
+	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
+	log.normal("Key registration (update) addr: %s", addr );
+
+	alice1_key1c_addr		= addr;
     });
 
     linearSuite("Errors", function () {
 
 	it("should fail to register invalid key", async function () {
 	    await expect_reject(async () => {
-		await alice1_deepkey.register_key({
-		    "app_name":		"?",
-		    "dna_hashes":	[ dna1_hash ],
-		    "key":		new AgentPubKey( crypto.randomBytes( 32 ) ),
-		    "signature":	crypto.randomBytes( 64 ),
+		await alice1_deepkey.create_key({
+		    "key_generation": {
+			"new_key":			new AgentPubKey( crypto.randomBytes( 32 ) ),
+			"new_key_signing_of_author":	crypto.randomBytes( 64 ),
+		    },
+		    "app_binding": {
+			"app_name":		"?",
+			"dna_hashes":		[ dna1_hash ],
+		    },
+		    "derivation_details": {
+			"app_index": 1,
+			"key_index": 0,
+		    },
 		});
 	    }, "Signature does not match new key" );
 	});

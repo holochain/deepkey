@@ -29,7 +29,8 @@ pub fn validation(
         LinkTypes::InviteeToDeviceInviteAcceptances |
         LinkTypes::DeviceInviteToDeviceInviteAcceptances |
         LinkTypes::DeviceToKeyAnchor |
-        LinkTypes::DeviceName => {
+        LinkTypes::DeviceName |
+        LinkTypes::AppBindingToKeyMeta => {
             valid!()
         },
         // _ => invalid!(format!("Create link validation not implemented for link type: {:#?}", create.link_type )),

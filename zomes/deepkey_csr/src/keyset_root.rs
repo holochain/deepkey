@@ -46,9 +46,9 @@ pub fn create_keyset_root(_: ()) -> ExternResult<ActionHash> {
 
 pub fn init_change_rule(
     sigs_required: u8,
-    revocation_keys: Vec<[u8; 32]>
+    revocation_keys: Vec<KeyBytes>
 ) -> ExternResult<ActionHash> {
-    let keyset_root_hash = utils::query_keyset_root_addr()?;
+    let ksr_addr = utils::query_keyset_root_addr()?;
     let new_authority_spec = AuthoritySpec::new(
         sigs_required,
         revocation_keys,
@@ -61,8 +61,8 @@ pub fn init_change_rule(
     );
 
     let change_rule = ChangeRule::new(
-        keyset_root_hash.clone(),
-        keyset_root_hash.clone(),
+        ksr_addr.clone(),
+        ksr_addr.clone(),
         spec_change,
     );
 
@@ -136,14 +136,14 @@ pub fn get_ksr_members(ksr_addr: ActionHash) -> ExternResult<Vec<AgentPubKey>> {
 
 // Get all of the members of the keyset: the first deepkey agent, and all the deepkey agents
 #[hdk_extern]
-pub fn query_keyset_members(keyset_root_hash: ActionHash) -> ExternResult<Vec<AgentPubKey>> {
+pub fn query_keyset_members(ksr_addr: ActionHash) -> ExternResult<Vec<AgentPubKey>> {
     // Get the PubKey of the Deepkey Agent who wrote the KeysetRoot
-    let keyset_root_record = must_get( &keyset_root_hash )?;
+    let keyset_root_record = must_get( &ksr_addr )?;
     let ksr_chain_pubkey = keyset_root_record.action().author().clone();
 
     let dia_hashes: Vec<ActionHash> = get_links(
         GetLinksInputBuilder::try_new(
-            keyset_root_hash,
+            ksr_addr,
             LinkTypes::KeysetRootToDeviceInviteAcceptances,
         )?.build()
     )?
@@ -172,24 +172,25 @@ pub fn query_keyset_members(keyset_root_hash: ActionHash) -> ExternResult<Vec<Ag
 
 #[hdk_extern]
 pub fn query_keyset_keys_with_authors(
-    keyset_root_hash: ActionHash,
+    ksr_addr: ActionHash,
 ) -> ExternResult<Vec<(AgentPubKey, KeyRegistration)>> {
-    let key_registrations = query_keyset_key_registration_records(keyset_root_hash)?
-        .into_iter()
-        .map(|key_reg_record| {
-            let author = key_reg_record.action().author().clone();
-
-            Ok(( author, KeyRegistration::try_from( key_reg_record )? ))
-        })
-        .collect::<ExternResult<Vec<(AgentPubKey, KeyRegistration)>>>()?;
-
-    Ok(key_registrations)
+    Ok(
+        query_keyset_key_registration_records( ksr_addr )?
+            .into_iter()
+            .filter_map( |record| {
+                Some((
+                    record.action().author().to_owned(),
+                    KeyRegistration::try_from( record ).ok()?
+                ))
+            })
+            .collect()
+    )
 }
 
 // Get all of the keys registered on the keyset, across all the deepkey agents
 #[hdk_extern]
-pub fn query_keyset_keys(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyRegistration>> {
-    let key_registrations = query_keyset_key_registration_records(keyset_root_hash)?
+pub fn query_keyset_keys(ksr_addr: ActionHash) -> ExternResult<Vec<KeyRegistration>> {
+    let key_registrations = query_keyset_key_registration_records(ksr_addr)?
         .into_iter()
         .map( |key_reg_record| KeyRegistration::try_from( key_reg_record ) )
         .collect::<ExternResult<Vec<KeyRegistration>>>()?;
@@ -199,11 +200,11 @@ pub fn query_keyset_keys(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyRe
 
 // Get all of the keys registered on the keyset, across all the deepkey agents
 pub fn query_keyset_key_registration_records(
-    keyset_root_hash: ActionHash
+    ksr_addr: ActionHash
 ) -> ExternResult<Vec<Record>> {
     let key_registration_records = get_links(
         GetLinksInputBuilder::try_new(
-            keyset_root_hash,
+            ksr_addr,
             LinkTypes::KeysetRootToKeyAnchors,
         )?.build()
     )?
@@ -221,10 +222,10 @@ pub fn query_keyset_key_registration_records(
 }
 
 #[hdk_extern]
-pub fn query_keyset_key_anchors(keyset_root_hash: ActionHash) -> ExternResult<Vec<KeyAnchor>> {
+pub fn query_keyset_key_anchors(ksr_addr: ActionHash) -> ExternResult<Vec<KeyAnchor>> {
     let key_anchors = get_links(
         GetLinksInputBuilder::try_new(
-            keyset_root_hash,
+            ksr_addr,
             LinkTypes::KeysetRootToKeyAnchors,
         )?.build()
     )?

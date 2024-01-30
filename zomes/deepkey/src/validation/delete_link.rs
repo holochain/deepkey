@@ -46,6 +46,9 @@ pub fn validation(
         LinkTypes::DeviceName => {
             valid!()
         },
+        LinkTypes::AppBindingToKeyMeta => {
+            valid!()
+        },
         // _ => {
         //     // if create_link.author != delete.author {
         //     //     invalid!(format!(

@@ -7,6 +7,7 @@ pub mod key_registration;
 pub mod keyset_root;
 pub mod source_of_authority;
 pub mod app_binding;
+pub mod key_meta;
 pub mod utils;
 
 pub use hdk_extensions;
