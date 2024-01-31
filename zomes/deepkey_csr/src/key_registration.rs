@@ -9,7 +9,6 @@ use hdk_extensions::{
     must_get,
     hdi_extensions::{
         guest_error,
-        trace_origin_root,
         ScopedTypeConnector,
     },
 };
@@ -125,6 +124,7 @@ pub struct UpdateKeyInput {
 pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistration, KeyMeta)> {
     let key_rev = input.key_revocation;
     let key_gen = input.key_generation;
+    let prior_key_reg_addr = key_rev.prior_key_registration.clone();
 
     let given_app_index = input.derivation_details.app_index;
     let given_key_index = input.derivation_details.key_index;
@@ -137,7 +137,7 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
 
     // Check that prior key meta has the same app index
     let prior_key_meta = crate::key_meta::query_key_meta_for_registration(
-        key_rev.prior_key_registration.clone()
+        prior_key_reg_addr.clone()
     )?;
 
     if prior_key_meta.app_binding_addr != app_binding_addr {
@@ -159,12 +159,14 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
     let key_anchor_hash = hash_entry( &key_anchor.to_input() )?;
 
     // Create Registration
-    let prior_key_registration = key_rev.prior_key_registration.clone();
     let key_reg = KeyRegistration::Update( key_rev, key_gen );
-    let key_reg_addr = update_entry( prior_key_registration, key_reg.to_input() )?;
+    let key_reg_addr = update_entry( prior_key_reg_addr.clone(), key_reg.to_input() )?;
 
     // Create Anchor
-    let key_anchor_addr = create_entry( key_anchor.to_input() )?;
+    let prior_key_addr = crate::key_anchor::get_key_anchor_for_registration(
+        prior_key_reg_addr.clone()
+    )?.0;
+    let key_anchor_addr = update_entry( prior_key_addr, key_anchor.to_input() )?;
 
     // Create Meta
     let key_meta = KeyMeta {
@@ -213,8 +215,7 @@ pub fn revoke_key(input: RevokeKeyInput) -> ExternResult<(ActionHash, KeyRegistr
     let prior_key_addr = crate::key_anchor::get_key_anchor_for_registration(
         key_rev.prior_key_registration.clone()
     )?.0;
-    let key_anchor_create_addr = trace_origin_root( &prior_key_addr )?.0;
-    delete_entry( key_anchor_create_addr )?;
+    delete_entry( prior_key_addr )?;
 
     let key_revocation = KeyRevocation {
         prior_key_registration: key_rev.prior_key_registration.clone(),

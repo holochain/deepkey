@@ -21,7 +21,7 @@ export class EntryTypeEnum {
 	if ( "App" in data )
 	    return intoStruct( data, AppEntryTypeStruct );
 
-	console.log("EntryTypeEnum constructor:", data );
+	// console.log("EntryTypeEnum constructor:", data );
 	throw new Error(`Unhandled Action entry type: ${Object.keys(data)[0]}`);
     }
 }
@@ -53,6 +53,20 @@ export const CreateActionStruct		= {
     "entry_hash":		EntryHash,
     "weight":			WeightStruct,
 };
+export const UpdateActionStruct		= {
+    ...ActionBaseStruct,
+    "original_action_address":	ActionHash,
+    "original_entry_address":	EntryHash,
+    "entry_type":		EntryTypeEnum,
+    "entry_hash":		EntryHash,
+    "weight":			WeightStruct,
+};
+export const DeleteActionStruct		= {
+    ...ActionBaseStruct,
+    "deletes_address":		ActionHash,
+    "deletes_entry_address":	EntryHash,
+    "weight":			WeightStruct,
+};
 
 export const CreateLinkActionStruct	= {
     ...ActionBaseStruct,
@@ -68,10 +82,14 @@ export class ActionEnum {
     constructor ( data ) {
 	if ( data.type === "Create" )
 	    return intoStruct( data, CreateActionStruct );
+	if ( data.type === "Update" )
+	    return intoStruct( data, UpdateActionStruct );
+	if ( data.type === "Delete" )
+	    return intoStruct( data, DeleteActionStruct );
 	if ( data.type === "CreateLink" )
 	    return intoStruct( data, CreateLinkActionStruct );
 
-	console.log("ActionEnum constructor:", data );
+	// console.log("ActionEnum constructor:", data );
 	throw new Error(`Unhandled Action type: ${data.type}`);
     }
 }
@@ -237,6 +255,18 @@ export function KeyInfo ( data ) {
 }
 
 
+export function KeyState ( entry ) {
+    if ( "NotFound" in entry )
+	null;
+    if ( "Valid" in entry )
+	entry.Valid		= intoStruct( entry.Valid, SignedActionStruct );
+    if ( "Invalidated" in entry )
+	entry.Invalidated	= intoStruct( entry.Invalidated, SignedActionStruct );
+
+    return entry;
+}
+
+
 export default {
     Signature,
 
@@ -279,4 +309,6 @@ export default {
 
     KeyInfoStruct,
     KeyInfo,
+
+    KeyState,
 };

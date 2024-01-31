@@ -27,14 +27,50 @@ pub fn key_state((key_bytes, timestamp): (ByteArray<32>, Timestamp)) -> ExternRe
     if let Some(details) = key_anchor_details {
         match details {
             Details::Entry(entry_details) => {
+                debug!(
+                    "Details for KeyAnchor entry '{}': {} create(s), {} update(s), {} delete(s)",
+                    key_anchor_hash,
+                    entry_details.actions.len(),
+                    entry_details.updates.len(),
+                    entry_details.deletes.len(),
+                );
                 if let Some(delete_record) = entry_details.deletes.first() {
                     if delete_record.action().timestamp() < timestamp {
                         return Ok(KeyState::Invalidated( delete_record.to_owned() ));
                     }
+                    else {
+                        debug!(
+                            "Deletion occurred after the given timestamp: [deleted] {} > {}",
+                            delete_record.action().timestamp(), timestamp
+                        );
+                    }
+                }
+
+                if let Some(update_record) = entry_details.updates.first() {
+                    if update_record.action().timestamp() < timestamp {
+                        return Ok(KeyState::Invalidated( update_record.to_owned() ));
+                    }
+                    else {
+                        debug!(
+                            "Update occurred after the given timestamp: [updated] {} > {}",
+                            update_record.action().timestamp(), timestamp
+                        );
+                    }
                 }
 
                 if let Some(record) = entry_details.actions.first() {
-                    return Ok(KeyState::Valid( record.to_owned() ));
+                    return Ok(
+                        match record.action().timestamp() > timestamp {
+                            true => {
+                                debug!(
+                                    "Create occurred before the given timestamp: [created] {} < {}",
+                                    record.action().timestamp(), timestamp
+                                );
+                                KeyState::NotFound
+                            },
+                            false => KeyState::Valid( record.to_owned() ),
+                        }
+                    );
                 }
 
                 Err(guest_error!("KeyAnchor anchor details has no actions".into()))?

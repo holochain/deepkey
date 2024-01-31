@@ -94,6 +94,10 @@ function basic_tests () {
     let alice1_deepkey, alice2_deepkey;
     let ksr1_addr;
 
+    let alice1_key1a_reg, alice1_key1a_reg_addr, alice1_key1a;
+    let alice1_key1b_reg, alice1_key1b_reg_addr, alice1_key1b;
+    let alice1_key1c_reg, alice1_key1c_reg_addr;
+
     before(async function () {
 	this.timeout( 30_000 );
 
@@ -139,10 +143,6 @@ function basic_tests () {
 	expect( keys			).to.have.length( 0 );
     });
 
-    let alice1_key1a_addr;
-    let alice1_key1b_addr;
-    let alice1_key1c_addr;
-
     it("should register new key (alice1)", async function () {
 	this.timeout( 5_000 );
 
@@ -167,10 +167,16 @@ function basic_tests () {
 	log.normal("Key Meta: %s", json.debug(key_meta) );
 	log.normal("Key registration (create) addr: %s", addr );
 
-	alice1_key1a_addr		= addr;
+	alice1_key1a			= pubkey_bytes;
+	alice1_key1a_reg		= key_reg;
+	alice1_key1a_reg_addr		= addr;
 
-	const key_state			= await alice1_deepkey.key_state( pubkey_bytes );
-	log.normal("Key state: %s", key_state );
+	{
+	    const key_state		= await alice1_deepkey.key_state( alice1_key1a );
+	    log.normal("Key (1a) state: %s", json.debug(key_state) );
+
+	    expect( key_state		).to.have.key( "Valid" );
+	}
     });
 
     it("should register new key (alice2)", async function () {
@@ -232,7 +238,7 @@ function basic_tests () {
 
 	const [ addr, key_reg, key_meta ]	= await alice1_deepkey.update_key({
 	    "key_revocation": {
-		"prior_key_registration": alice1_key1a_addr,
+		"prior_key_registration": alice1_key1a_reg_addr,
 		"revocation_authorization": [
 		    [ 0, crypto.randomBytes(64) ],
 		],
@@ -250,7 +256,22 @@ function basic_tests () {
 	log.normal("Key Meta: %s", json.debug(key_meta) );
 	log.normal("Key registration (update) addr: %s", addr );
 
-	alice1_key1b_addr		= addr;
+	alice1_key1b			= pubkey_bytes;
+	alice1_key1b_reg		= key_reg;
+	alice1_key1b_reg_addr		= addr;
+
+	{
+	    const key_state		= await alice1_deepkey.key_state( alice1_key1a );
+	    log.normal("Key (1a) state: %s", json.debug(key_state) );
+
+	    expect( key_state		).to.have.key( "Invalidated" );
+	}
+	{
+	    const key_state		= await alice1_deepkey.key_state( alice1_key1b );
+	    log.normal("Key (1b) state: %s", json.debug(key_state) );
+
+	    expect( key_state		).to.have.key( "Valid" );
+	}
     });
 
     let invite_accept;
@@ -288,7 +309,7 @@ function basic_tests () {
 
     it("should get (alice1) KSR keys (1)", async function () {
 	const devices			= await alice1_deepkey.get_keysets_for_ksr( ksr1_addr );
-	log.normal("KSR keysets: %s", json.debug(devices) );
+	log.normal("KSR keyset: %s", json.debug(devices) );
 
 	expect( devices			).to.have.length( 2 );
     });
@@ -332,12 +353,9 @@ function basic_tests () {
     it("should revoke key (alice1)", async function () {
 	this.timeout( 5_000 );
 
-	const secret			= ed.utils.randomPrivateKey();
-	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
-
 	const [ addr, key_reg ]	= await alice1_deepkey.revoke_key({
 	    "key_revocation": {
-		"prior_key_registration": alice1_key1b_addr,
+		"prior_key_registration": alice1_key1b_reg_addr,
 		"revocation_authorization": [
 		    [ 0, crypto.randomBytes(64) ],
 		],
@@ -346,7 +364,29 @@ function basic_tests () {
 	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
 	log.normal("Key registration (update) addr: %s", addr );
 
-	alice1_key1c_addr		= addr;
+	alice1_key1c_reg		= key_reg;
+	alice1_key1c_reg_addr		= addr;
+
+	{
+	    const key_state		= await alice1_deepkey.key_state( alice1_key1a );
+	    log.normal("Key (1a) state: %s", json.debug(key_state) );
+
+	    expect( key_state		).to.have.key( "Invalidated" );
+	}
+	{
+	    const key_state		= await alice1_deepkey.key_state( alice1_key1b );
+	    log.normal("Key (1b) state: %s", json.debug(key_state) );
+
+	    expect( key_state		).to.have.key( "Invalidated" );
+	}
+    });
+
+    it("should check key state before creation (alice1)", async function () {
+	const timestamp			= Date.now() - (60 * 60 * 1000); // 1 hour ago
+	const key_state			= await alice1_deepkey.key_state([ alice1_key1a, timestamp ]);
+	log.normal("Key (1a) state @ %s: %s", timestamp, json.debug(key_state) );
+
+	expect( key_state		).to.have.key( "NotFound" );
     });
 
     linearSuite("Errors", function () {

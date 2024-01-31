@@ -4,7 +4,7 @@ use crate::{
 
 use hdi::prelude::*;
 use hdi_extensions::{
-    summon_create_action,
+    summon_creation_action,
     detect_app_entry_unit,
     // Macros
     valid, invalid,
@@ -16,9 +16,9 @@ pub fn validation(
     _original_entry_hash: EntryHash,
     _delete: Delete
 ) -> ExternResult<ValidateCallbackResult> {
-    let create = summon_create_action( &original_action_hash )?;
+    let creation = summon_creation_action( &original_action_hash )?;
 
-    match detect_app_entry_unit( &create )? {
+    match detect_app_entry_unit( &creation )? {
         EntryTypesUnit::KeysetRoot => {
             // let create = summon_create_action( &original_action_hash )?;
 

@@ -17,6 +17,7 @@ import {
     KeysetRoot,
     KeyMeta,
     KeyAnchor,
+    KeyState,
     AppBinding,
     DeviceInvite,
     DeviceInviteAcceptance,
@@ -82,12 +83,17 @@ const functions				= {
 
 	return result.map( key_anchor => KeyAnchor( key_anchor ) );
     },
-    async key_state ( input ) {
-	const result			= await this.call([
-	    input, Date.now()
-	]);
+    async key_state ( input, options ) {
+	if ( !Array.isArray( input ) )
+	    input			= [ input, Date.now() ];
 
-	return result;
+	// Because the 'Timestamp' type on the other side expects nano seconds
+	if ( options?.adjust_for_nano_seconds !== false )
+	    input[1]		       *= 1000;
+
+	const result			= await this.call( input );
+
+	return KeyState( result );
     },
 
     // Key Registration
