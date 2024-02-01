@@ -97,6 +97,11 @@ const functions				= {
     },
 
     // Key Registration
+    async next_derivation_details ( input ) {
+	const result			= await this.call( input );
+
+	return result;
+    },
     async create_key ( input ) {
 	const result			= await this.call( input );
 

@@ -130,6 +130,7 @@ function basic_tests () {
 	const [ addr, key_reg, key_meta ]	= await alice1_deepkey.create_key({
 	    "app_binding": {
 		"app_name":		"Alice1 - App #1",
+		"installed_app_id":	"alice1-app1",
 		"dna_hashes":		[ dna1_hash ],
 	    },
 	    "key_generation": {

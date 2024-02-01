@@ -5,7 +5,6 @@ use hdk::prelude::{
     holo_hash::DnaHash,
 };
 use hdk_extensions::{
-    agent_id,
     must_get,
     hdi_extensions::{
         guest_error,
@@ -14,9 +13,33 @@ use hdk_extensions::{
 };
 
 
+#[hdk_extern]
+pub fn next_derivation_details(installed_app_id: String) -> ExternResult<DerivationDetailsInput> {
+    Ok(
+        match crate::app_binding::query_app_binding_by_id( installed_app_id ) {
+            Ok((_, app_binding)) => {
+                let next_key_index = crate::key_meta::query_next_key_index_for_app_index(
+                    app_binding.app_index
+                )?;
+
+                DerivationDetailsInput {
+                    app_index: app_binding.app_index,
+                    key_index: next_key_index,
+                }
+            },
+            Err(_) => DerivationDetailsInput {
+                app_index: crate::app_binding::query_next_app_index(())?,
+                key_index: 0,
+            },
+        }
+    )
+}
+
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppBindingInput {
     pub app_name: String,
+    pub installed_app_id: String,
     pub dna_hashes: Vec<DnaHash>,
 }
 
@@ -38,13 +61,13 @@ pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
     let key_gen = input.key_generation;
     let given_app_index = input.derivation_details.app_index;
     let given_key_index = input.derivation_details.key_index;
-    let chain_app_index = crate::app_binding::query_app_bindings(())?.len() as u32;
+    let next_app_index = crate::app_binding::query_next_app_index(())?;
 
     // Check that derivation details match the chain state
-    if given_app_index != chain_app_index {
+    if given_app_index != next_app_index {
         Err(guest_error!(format!(
-            "The derivation app index does not match the chain state: [given] {} != {} [chain]",
-            given_app_index, chain_app_index,
+            "The derivation app index does not match the chain state: [given] {} != {} [next]",
+            given_app_index, next_app_index,
         )))?
     }
     if given_key_index != 0 {
@@ -56,7 +79,6 @@ pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
 
     // Derive Key Anchor
     let key_anchor = KeyAnchor::try_from( &key_gen.new_key )?;
-    let key_anchor_hash = hash_entry( &key_anchor.to_input() )?;
 
     // Create Registration
     let key_reg = KeyRegistration::Create(
@@ -74,6 +96,7 @@ pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
     let app_binding = AppBinding {
         app_index: given_app_index,
         app_name: input.app_binding.app_name,
+        installed_app_id: input.app_binding.installed_app_id,
         dna_hashes: input.app_binding.dna_hashes,
         key_anchor_addr: key_anchor_addr.clone(),
     };
@@ -86,24 +109,7 @@ pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
         key_registration_addr: key_reg_addr.clone(),
         key_anchor_addr: key_anchor_addr.clone(),
     };
-    let key_meta_addr = create_entry( key_meta.to_input() )?;
-
-    // Link Binding -> Meta
-    create_link(
-        app_binding_addr.clone(),
-        key_meta_addr.clone(),
-        LinkTypes::AppBindingToKeyMeta,
-        (),
-    )?;
-
-    // Link Device -> Registration::Create
-    let device_base = agent_id()?;
-    create_link(
-        device_base,
-        key_anchor_hash,
-        LinkTypes::DeviceToKeyAnchor,
-        (),
-    )?;
+    create_entry( key_meta.to_input() )?;
 
     Ok((
         key_reg_addr,
@@ -129,11 +135,8 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
     let given_app_index = input.derivation_details.app_index;
     let given_key_index = input.derivation_details.key_index;
 
-    let (app_binding_addr, _) = crate::app_binding::query_app_binding_for_index( given_app_index )?;
-
-    let state_key_index = crate::key_meta::query_key_metas_for_app_binding(
-        app_binding_addr.clone()
-    )?.len() as u32;
+    let next_key_index = crate::key_meta::query_next_key_index_for_app_index( given_app_index )?;
+    let (app_binding_addr, _) = crate::app_binding::query_app_binding_by_index( given_app_index )?;
 
     // Check that prior key meta has the same app index
     let prior_key_meta = crate::key_meta::query_key_meta_for_registration(
@@ -147,16 +150,15 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
         )))?
     }
 
-    if given_key_index != state_key_index {
+    if given_key_index != next_key_index {
         Err(guest_error!(format!(
-            "The derivation key index does not match the key state: [given] {} != {} [state]",
-            given_key_index, state_key_index
+            "The derivation key index does not match the chain state: [given] {} != {} [next]",
+            given_key_index, next_key_index
         )))?
     }
 
     // Derive Key Anchor
     let key_anchor = KeyAnchor::try_from( &key_gen.new_key )?;
-    let key_anchor_hash = hash_entry( &key_anchor.to_input() )?;
 
     // Create Registration
     let key_reg = KeyRegistration::Update( key_rev, key_gen );
@@ -175,24 +177,7 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
         key_registration_addr: key_reg_addr.clone(),
         key_anchor_addr: key_anchor_addr.clone(),
     };
-    let key_meta_addr = create_entry( key_meta.to_input() )?;
-
-    // Link Binding -> Meta
-    create_link(
-        app_binding_addr.clone(),
-        key_meta_addr.clone(),
-        LinkTypes::AppBindingToKeyMeta,
-        (),
-    )?;
-
-    // Link Device -> Registration
-    let device_base = agent_id()?;
-    create_link(
-        device_base,
-        key_anchor_hash,
-        LinkTypes::DeviceToKeyAnchor,
-        (),
-    )?;
+    create_entry( key_meta.to_input() )?;
 
     Ok((
         key_reg_addr,

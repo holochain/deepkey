@@ -11,6 +11,7 @@ pub struct AppBinding {
     // make sense to point to 1 key meta when there could be many in the series.
     pub app_index: u32,
     pub app_name: String,
+    pub installed_app_id: String,
     pub dna_hashes: Vec<DnaHash>,
     pub key_anchor_addr: ActionHash,
 }

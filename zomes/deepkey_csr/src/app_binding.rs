@@ -29,11 +29,24 @@ pub fn query_app_bindings(_: ()) -> ExternResult<Vec<(ActionHash, AppBinding)>> 
 }
 
 #[hdk_extern]
-pub fn query_app_binding_for_index(index: u32) -> ExternResult<(ActionHash, AppBinding)> {
+pub fn query_next_app_index(_: ()) -> ExternResult<u32> {
+    Ok( query_app_bindings(())?.len() as u32 )
+}
+
+#[hdk_extern]
+pub fn query_app_binding_by_index(index: u32) -> ExternResult<(ActionHash, AppBinding)> {
     query_app_bindings(())?
         .into_iter()
         .find( |(_, app_binding)| app_binding.app_index == index  )
-        .ok_or(guest_error!(format!("No AppBinding for index: {}", index )))
+        .ok_or(guest_error!(format!("No AppBinding with index: {}", index )))
+}
+
+#[hdk_extern]
+pub fn query_app_binding_by_id(installed_app_id: String) -> ExternResult<(ActionHash, AppBinding)> {
+    query_app_bindings(())?
+        .into_iter()
+        .find( |(_, app_binding)| app_binding.installed_app_id == installed_app_id  )
+        .ok_or(guest_error!(format!("No AppBinding with installed ID: {}", installed_app_id )))
 }
 
 

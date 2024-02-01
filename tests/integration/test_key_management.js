@@ -146,22 +146,23 @@ function basic_tests () {
     it("should register new key (alice1)", async function () {
 	this.timeout( 5_000 );
 
+	const installed_app_id		= "alice1-app1";
+	const derivation_details	= await alice1_deepkey.next_derivation_details( installed_app_id );
+
 	const secret			= ed.utils.randomPrivateKey();
 	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
 
 	const [ addr, key_reg, key_meta ]	= await alice1_deepkey.create_key({
 	    "app_binding": {
 		"app_name":		"Alice1 - App #1",
+		"installed_app_id":	installed_app_id,
 		"dna_hashes":		[ dna1_hash ],
 	    },
 	    "key_generation": {
 		"new_key":			new AgentPubKey( pubkey_bytes ),
 		"new_key_signing_of_author":	await ed.signAsync( alice1_client.agent_id, secret ),
 	    },
-	    "derivation_details": {
-		"app_index": 0,
-		"key_index": 0,
-	    },
+	    "derivation_details": derivation_details,
 	});
 	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
 	log.normal("Key Meta: %s", json.debug(key_meta) );
@@ -182,22 +183,23 @@ function basic_tests () {
     it("should register new key (alice2)", async function () {
 	this.timeout( 5_000 );
 
+	const installed_app_id		= "alice2-app1";
+	const derivation_details	= await alice2_deepkey.next_derivation_details( installed_app_id );
+
 	const secret			= ed.utils.randomPrivateKey();
 	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
 
 	const [ addr, key_reg, key_meta ]	= await alice2_deepkey.create_key({
 	    "app_binding": {
 		"app_name":		"Alice2 - App #1",
+		"installed_app_id":	installed_app_id,
 		"dna_hashes":		[ dna1_hash ],
 	    },
 	    "key_generation": {
 		"new_key":			new AgentPubKey( pubkey_bytes ),
 		"new_key_signing_of_author":	await ed.signAsync( alice2_client.agent_id, secret ),
 	    },
-	    "derivation_details": {
-		"app_index": 0,
-		"key_index": 0,
-	    },
+	    "derivation_details": derivation_details,
 	});
 	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
 	log.normal("Key Meta: %s", json.debug(key_meta) );
@@ -233,6 +235,9 @@ function basic_tests () {
     it("should update key (alice1)", async function () {
 	this.timeout( 5_000 );
 
+	const installed_app_id		= "alice1-app1";
+	const derivation_details	= await alice1_deepkey.next_derivation_details( installed_app_id );
+
 	const secret			= ed.utils.randomPrivateKey();
 	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
 
@@ -247,10 +252,7 @@ function basic_tests () {
 		"new_key":			new AgentPubKey( pubkey_bytes ),
 		"new_key_signing_of_author":	await ed.signAsync( alice1_client.agent_id, secret ),
 	    },
-	    "derivation_details": {
-		"app_index": 0,
-		"key_index": 1,
-	    },
+	    "derivation_details":	derivation_details,
 	});
 	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
 	log.normal("Key Meta: %s", json.debug(key_meta) );
@@ -332,15 +334,6 @@ function basic_tests () {
     // 	expect( keys			).to.have.length( 1 );
     // });
 
-    // it("should query (alice1) key info", async function () {
-    // 	this.skip();
-
-    // 	let key_info			= await alice1_deepkey.query_key_info();
-    // 	log.normal("Key info: %s", json.debug(key_info) );
-
-    // 	expect( key_info		).to.have.length( 1 );
-    // });
-
     // it("should query (alice1) app bindings", async function () {
     // 	this.skip();
 
@@ -394,13 +387,14 @@ function basic_tests () {
 	it("should fail to register invalid key", async function () {
 	    await expect_reject(async () => {
 		await alice1_deepkey.create_key({
+		    "app_binding": {
+			"app_name":		"?",
+			"installed_app_id":	"?",
+			"dna_hashes":		[ dna1_hash ],
+		    },
 		    "key_generation": {
 			"new_key":			new AgentPubKey( crypto.randomBytes( 32 ) ),
 			"new_key_signing_of_author":	crypto.randomBytes( 64 ),
-		    },
-		    "app_binding": {
-			"app_name":		"?",
-			"dna_hashes":		[ dna1_hash ],
 		    },
 		    "derivation_details": {
 			"app_index": 1,

@@ -21,6 +21,20 @@ pub fn query_key_metas_for_app_binding(addr: ActionHash) -> ExternResult<Vec<Key
 
 
 #[hdk_extern]
+pub fn query_key_metas_for_app_index(app_index: u32) -> ExternResult<Vec<KeyMeta>> {
+    query_key_metas_for_app_binding(
+        crate::app_binding::query_app_binding_by_index( app_index )?.0
+    )
+}
+
+
+#[hdk_extern]
+pub fn query_next_key_index_for_app_index(app_index: u32) -> ExternResult<u32> {
+    Ok( query_key_metas_for_app_index( app_index )?.len() as u32 )
+}
+
+
+#[hdk_extern]
 pub fn query_key_meta_records(_: ()) -> ExternResult<Vec<Record>> {
     utils::query_entry_type( EntryTypesUnit::KeyMeta )
 }
