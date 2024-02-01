@@ -186,6 +186,7 @@ export function KeyAnchor ( data ) {
 export const AppBindingStruct		= {
     "app_index":		Number,
     "app_name":			String,
+    "installed_app_id":		String,
     "dna_hashes":		VecType( DnaHash ),
     "key_anchor_addr":		ActionHash,
 };

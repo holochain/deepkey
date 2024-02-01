@@ -170,6 +170,7 @@ pub fn query_keyset_members(ksr_addr: ActionHash) -> ExternResult<Vec<AgentPubKe
     Ok(dia_author_pubkeys)
 }
 
+
 #[hdk_extern]
 pub fn query_keyset_keys_with_authors(
     ksr_addr: ActionHash,
@@ -187,6 +188,7 @@ pub fn query_keyset_keys_with_authors(
     )
 }
 
+
 // Get all of the keys registered on the keyset, across all the deepkey agents
 #[hdk_extern]
 pub fn query_keyset_keys(ksr_addr: ActionHash) -> ExternResult<Vec<KeyRegistration>> {
@@ -197,6 +199,41 @@ pub fn query_keyset_keys(ksr_addr: ActionHash) -> ExternResult<Vec<KeyRegistrati
 
     Ok(key_registrations)
 }
+
+
+// Get all of the keys registered on the keyset, across all the deepkey agents
+#[hdk_extern]
+pub fn query_keyset_app_keys(_:()) -> ExternResult<Vec<(AppBinding, Vec<KeyMeta>)>> {
+    let key_metas : Vec<(ActionHash, KeyMeta)> = utils::query_entry_type( EntryTypesUnit::KeyMeta )?
+        .into_iter()
+        .filter_map( |record| Some((
+            record.action_address().to_owned(),
+            KeyMeta::try_from(record).ok()?,
+        )))
+        .collect();
+
+    Ok(
+        utils::query_entry_type( EntryTypesUnit::AppBinding )?
+            .into_iter()
+            .filter( |record| record.action().action_type() == ActionType::Create )
+            .filter_map( |record| Some((
+                record.action_address().to_owned(),
+                AppBinding::try_from(record).ok()?,
+            )))
+            .map( |(addr, app_binding)| {
+                (
+                    app_binding,
+                    key_metas.iter()
+                        .filter( |(_, key_meta)| key_meta.app_binding_addr == addr )
+                        .map( |(_, key_meta)| key_meta )
+                        .cloned()
+                        .collect(),
+                )
+            })
+            .collect()
+    )
+}
+
 
 // Get all of the keys registered on the keyset, across all the deepkey agents
 pub fn query_keyset_key_registration_records(
@@ -220,6 +257,7 @@ pub fn query_keyset_key_registration_records(
 
     Ok(key_registration_records)
 }
+
 
 #[hdk_extern]
 pub fn query_keyset_key_anchors(ksr_addr: ActionHash) -> ExternResult<Vec<KeyAnchor>> {

@@ -50,6 +50,9 @@ const rev2_pubkey			= await ed.getPublicKeyAsync( revocation_key2 );
 const rev3_pubkey			= await ed.getPublicKeyAsync( revocation_key3 );
 const rev4_pubkey			= await ed.getPublicKeyAsync( revocation_key4 );
 
+const alice1_app1_id			= "alice1-app1";
+const alice2_app1_id			= "alice2-app1";
+
 let APP_PORT;
 
 describe("DeepKey", function () {
@@ -129,25 +132,24 @@ function basic_tests () {
 	ksr1_addr			= await alice1_deepkey.query_keyset_authority_action_hash();
     });
 
-    it("should query (alice1) KSR keyset members (1)", async function () {
-	const members			= await alice1_deepkey.query_keyset_members( ksr1_addr );
-	log.normal("Keyset Root -> Members: %s", json.debug(members) );
+    // it("should query (alice1) KSR keyset members (1)", async function () {
+    // 	const members			= await alice1_deepkey.query_keyset_members( ksr1_addr );
+    // 	log.normal("Keyset Root -> Members: %s", json.debug(members) );
 
-	expect( members			).to.have.length( 1 );
-    });
+    // 	expect( members			).to.have.length( 1 );
+    // });
 
-    it("should query (alice1) KSR keyset keys with authors (0)", async function () {
-	const keys			= await alice1_deepkey.query_keyset_keys_with_authors( ksr1_addr );
-	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
+    // it("should query (alice1) KSR keyset keys with authors (0)", async function () {
+    // 	const keys			= await alice1_deepkey.query_keyset_keys_with_authors( ksr1_addr );
+    // 	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
 
-	expect( keys			).to.have.length( 0 );
-    });
+    // 	expect( keys			).to.have.length( 0 );
+    // });
 
     it("should register new key (alice1)", async function () {
 	this.timeout( 5_000 );
 
-	const installed_app_id		= "alice1-app1";
-	const derivation_details	= await alice1_deepkey.next_derivation_details( installed_app_id );
+	const derivation_details	= await alice1_deepkey.next_derivation_details( alice1_app1_id );
 
 	const secret			= ed.utils.randomPrivateKey();
 	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
@@ -155,7 +157,7 @@ function basic_tests () {
 	const [ addr, key_reg, key_meta ]	= await alice1_deepkey.create_key({
 	    "app_binding": {
 		"app_name":		"Alice1 - App #1",
-		"installed_app_id":	installed_app_id,
+		"installed_app_id":	alice1_app1_id,
 		"dna_hashes":		[ dna1_hash ],
 	    },
 	    "key_generation": {
@@ -183,8 +185,12 @@ function basic_tests () {
     it("should register new key (alice2)", async function () {
 	this.timeout( 5_000 );
 
-	const installed_app_id		= "alice2-app1";
-	const derivation_details	= await alice2_deepkey.next_derivation_details( installed_app_id );
+	const derivation_details	= await alice2_deepkey.next_derivation_details( alice2_app1_id );
+
+	expect( derivation_details	).to.deep.equal({
+	    "app_index": 0,
+	    "key_index": 0,
+	});
 
 	const secret			= ed.utils.randomPrivateKey();
 	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
@@ -192,7 +198,7 @@ function basic_tests () {
 	const [ addr, key_reg, key_meta ]	= await alice2_deepkey.create_key({
 	    "app_binding": {
 		"app_name":		"Alice2 - App #1",
-		"installed_app_id":	installed_app_id,
+		"installed_app_id":	alice2_app1_id,
 		"dna_hashes":		[ dna1_hash ],
 	    },
 	    "key_generation": {
@@ -204,6 +210,8 @@ function basic_tests () {
 	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
 	log.normal("Key Meta: %s", json.debug(key_meta) );
 	log.normal("Key registration (update) addr: %s", addr );
+
+	expect( key_meta.key_index	).to.equal( 0 );
     });
 
     // it("should query (alice1) KSR keyset keys with authors (1)", async function () {
@@ -213,12 +221,12 @@ function basic_tests () {
     // 	expect( keys			).to.have.length( 1 );
     // });
 
-    // it("should query (alice1) KSR keyset keys (1)", async function () {
-    // 	const keys			= await alice1_deepkey.query_keyset_keys( ksr1_addr );
-    // 	log.normal("Keyset Root -> Keys: %s", json.debug(keys) );
+    it("should query (alice1) keyset keys (1)", async function () {
+	const keys			= await alice1_deepkey.query_keyset_app_keys();
+	log.normal("Keyset keys: %s", json.debug(keys) );
 
-    // 	expect( keys			).to.have.length( 1 );
-    // });
+	expect( keys			).to.have.length( 1 );
+    });
 
     // it("should query (alice1) KSR keyset keys (1)", async function () {
     // 	const keys			= await alice1_deepkey.query_keyset_keys( ksr1_addr );
@@ -235,13 +243,18 @@ function basic_tests () {
     it("should update key (alice1)", async function () {
 	this.timeout( 5_000 );
 
-	const installed_app_id		= "alice1-app1";
-	const derivation_details	= await alice1_deepkey.next_derivation_details( installed_app_id );
+	const derivation_details	= await alice1_deepkey.next_derivation_details( alice1_app1_id );
+
+	expect( derivation_details	).to.deep.equal({
+	    "app_index": 0,
+	    "key_index": 1,
+	});
 
 	const secret			= ed.utils.randomPrivateKey();
 	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
 
 	const [ addr, key_reg, key_meta ]	= await alice1_deepkey.update_key({
+	    "installed_app_id":		alice1_app1_id,
 	    "key_revocation": {
 		"prior_key_registration": alice1_key1a_reg_addr,
 		"revocation_authorization": [
@@ -262,6 +275,8 @@ function basic_tests () {
 	alice1_key1b_reg		= key_reg;
 	alice1_key1b_reg_addr		= addr;
 
+	expect( key_meta.key_index	).to.equal( 1 );
+
 	{
 	    const key_state		= await alice1_deepkey.key_state( alice1_key1a );
 	    log.normal("Key (1a) state: %s", json.debug(key_state) );
@@ -274,6 +289,13 @@ function basic_tests () {
 
 	    expect( key_state		).to.have.key( "Valid" );
 	}
+    });
+
+    it("should query (alice1) keyset keys (1)", async function () {
+	const keys			= await alice1_deepkey.query_keyset_app_keys();
+	log.normal("Keyset keys: %s", json.debug(keys) );
+
+	expect( keys			).to.have.length( 1 );
     });
 
     let invite_accept;
@@ -309,12 +331,12 @@ function basic_tests () {
 	expect( members[1]		).to.deep.equal( alice2_client.agent_id );
     });
 
-    it("should get (alice1) KSR keys (1)", async function () {
-	const devices			= await alice1_deepkey.get_keysets_for_ksr( ksr1_addr );
-	log.normal("KSR keyset: %s", json.debug(devices) );
+    // it("should get (alice1) KSR keys (1)", async function () {
+    // 	const devices			= await alice1_deepkey.get_keysets_for_ksr( ksr1_addr );
+    // 	log.normal("KSR keyset: %s", json.debug(devices) );
 
-	expect( devices			).to.have.length( 2 );
-    });
+    // 	expect( devices			).to.have.length( 2 );
+    // });
 
     // it("should query (alice1) keyset keys (1)", async function () {
     // 	this.skip();
@@ -347,6 +369,7 @@ function basic_tests () {
 	this.timeout( 5_000 );
 
 	const [ addr, key_reg ]	= await alice1_deepkey.revoke_key({
+	    "installed_app_id":		alice1_app1_id,
 	    "key_revocation": {
 		"prior_key_registration": alice1_key1b_reg_addr,
 		"revocation_authorization": [

@@ -121,6 +121,7 @@ pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateKeyInput {
+    pub installed_app_id: String,
     pub key_revocation: KeyRevocation,
     pub key_generation: KeyGeneration,
     pub derivation_details: DerivationDetailsInput,
@@ -136,24 +137,33 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
     let given_key_index = input.derivation_details.key_index;
 
     let next_key_index = crate::key_meta::query_next_key_index_for_app_index( given_app_index )?;
-    let (app_binding_addr, _) = crate::app_binding::query_app_binding_by_index( given_app_index )?;
+    let (app_binding_addr, app_binding) = crate::app_binding::query_app_binding_by_id( input.installed_app_id.clone() )?;
 
-    // Check that prior key meta has the same app index
-    let prior_key_meta = crate::key_meta::query_key_meta_for_registration(
-        prior_key_reg_addr.clone()
-    )?;
-
-    if prior_key_meta.app_binding_addr != app_binding_addr {
+    // Check that derivation details has the correct 'app_index'
+    if given_app_index != app_binding.app_index {
         Err(guest_error!(format!(
-            "Prior app binding ({}) does not match the app binding ({}) found for index: {}",
-            prior_key_meta.app_binding_addr, app_binding_addr, given_app_index,
+            "The derivation app index does not match the app binding: [given] {} != {} [prior]",
+            given_app_index, app_binding.app_index,
         )))?
     }
 
+    // Check that derivation details has the correct 'key_index'
     if given_key_index != next_key_index {
         Err(guest_error!(format!(
             "The derivation key index does not match the chain state: [given] {} != {} [next]",
             given_key_index, next_key_index
+        )))?
+    }
+
+    let prior_key_meta = crate::key_meta::query_key_meta_for_registration(
+        prior_key_reg_addr.clone()
+    )?;
+
+    // Check that prior key meta has the same app binding
+    if prior_key_meta.app_binding_addr != app_binding_addr {
+        Err(guest_error!(format!(
+            "Prior app binding ({}) does not match the app binding ({}) found for ID: {}",
+            prior_key_meta.app_binding_addr, app_binding_addr, input.installed_app_id,
         )))?
     }
 
@@ -173,7 +183,7 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
     // Create Meta
     let key_meta = KeyMeta {
         app_binding_addr: app_binding_addr.clone(),
-        key_index: 0,
+        key_index: given_key_index,
         key_registration_addr: key_reg_addr.clone(),
         key_anchor_addr: key_anchor_addr.clone(),
     };
@@ -189,28 +199,43 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RevokeKeyInput {
+    pub installed_app_id: String,
     pub key_revocation: KeyRevocation,
 }
 
 #[hdk_extern]
 pub fn revoke_key(input: RevokeKeyInput) -> ExternResult<(ActionHash, KeyRegistration)> {
     let key_rev = input.key_revocation;
+    let prior_key_reg_addr = key_rev.prior_key_registration.clone();
+    let prior_key_meta = crate::key_meta::query_key_meta_for_registration(
+        prior_key_reg_addr.clone()
+    )?;
+
+    let (app_binding_addr, _) = crate::app_binding::query_app_binding_by_id( input.installed_app_id.clone() )?;
+
+    // Check that prior key meta has the same app binding
+    if prior_key_meta.app_binding_addr != app_binding_addr {
+        Err(guest_error!(format!(
+            "Prior app binding ({}) does not match the app binding ({}) found for ID: {}",
+            prior_key_meta.app_binding_addr, app_binding_addr, input.installed_app_id,
+        )))?
+    }
 
     // Get key anchor create action
     let prior_key_addr = crate::key_anchor::get_key_anchor_for_registration(
-        key_rev.prior_key_registration.clone()
+        prior_key_reg_addr.clone()
     )?.0;
     delete_entry( prior_key_addr )?;
 
     let key_revocation = KeyRevocation {
-        prior_key_registration: key_rev.prior_key_registration.clone(),
+        prior_key_registration: prior_key_reg_addr.clone(),
         revocation_authorization: key_rev.revocation_authorization,
     };
     let revocation_registration = KeyRegistration::Delete(key_revocation);
 
     // TODO: Fill out the validation for KeyRevocation so it actually validates the revocation_authorization signatures.
     let key_reg_addr = update_entry(
-        key_rev.prior_key_registration,
+        prior_key_reg_addr,
         revocation_registration.to_input(),
     )?;
 

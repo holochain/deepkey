@@ -66,6 +66,16 @@ const functions				= {
 
 	return result.map( entry => AppBinding( entry ) );
     },
+    async query_keyset_app_keys () {
+	const result			= await this.call();
+
+	return result.map( ([app_binding, key_metas]) => {
+	    return [
+		AppBinding( app_binding ),
+		key_metas.map( key_meta => KeyMeta( key_meta ) ),
+	    ];
+	});
+    },
 
     // Public reading
     async get_keyset_root ( input ) {
