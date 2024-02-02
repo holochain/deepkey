@@ -9,9 +9,6 @@ import crypto				from 'crypto';
 
 import { expect }			from 'chai';
 
-import * as ed				from '@noble/ed25519';
-import { hmac }				from '@noble/hashes/hmac';
-
 import json				from '@whi/json';
 import {
     HoloHash,
@@ -32,6 +29,9 @@ import {
     expect_reject,
     linearSuite,
 }					from '../utils.js';
+import {
+    KeyStore,
+}					from '../key_store.js';
 
 
 const __dirname				= path.dirname( new URL(import.meta.url).pathname );
@@ -40,20 +40,17 @@ const DEEPKEY_DNA_NAME			= "deepkey";
 
 const dna1_hash				= new DnaHash( crypto.randomBytes( 32 ) );
 
-const revocation_key1			= ed.utils.randomPrivateKey();
-const revocation_key2			= ed.utils.randomPrivateKey();
-const revocation_key3			= ed.utils.randomPrivateKey();
-const revocation_key4			= ed.utils.randomPrivateKey();
+const ALICE1_DEVICE_SEED		= Buffer.from("jJQhp80zPT+XBMOZmtfwdBqY9ay9k2w520iwaet1if4=", "base64");
+const ALICE2_DEVICE_SEED		= Buffer.from("qSKAyTvyer6o1auniyUiR4JayCcB5qxfwL3PE8oBakc=", "base64");
 
-const rev1_pubkey			= await ed.getPublicKeyAsync( revocation_key1 );
-const rev2_pubkey			= await ed.getPublicKeyAsync( revocation_key2 );
-const rev3_pubkey			= await ed.getPublicKeyAsync( revocation_key3 );
-const rev4_pubkey			= await ed.getPublicKeyAsync( revocation_key4 );
+const alice1_key_store			= new KeyStore( ALICE1_DEVICE_SEED, "alice1" );
+const alice2_key_store			= new KeyStore( ALICE2_DEVICE_SEED, "alice2" );
 
 const alice1_app1_id			= "alice1-app1";
 const alice2_app1_id			= "alice2-app1";
 
 let APP_PORT;
+
 
 describe("DeepKey", function () {
     const holochain			= new Holochain({
@@ -150,9 +147,12 @@ function basic_tests () {
 	this.timeout( 5_000 );
 
 	const derivation_details	= await alice1_deepkey.next_derivation_details( alice1_app1_id );
-
-	const secret			= ed.utils.randomPrivateKey();
-	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
+	const {
+	    app_index,
+	    key_index,
+	}				= derivation_details;
+	const path			= `app/${app_index}/key/${key_index}`;
+	const new_key			= await alice1_key_store.createKey( path );
 
 	const [ addr, key_reg, key_meta ]	= await alice1_deepkey.create_key({
 	    "app_binding": {
@@ -161,16 +161,16 @@ function basic_tests () {
 		"dna_hashes":		[ dna1_hash ],
 	    },
 	    "key_generation": {
-		"new_key":			new AgentPubKey( pubkey_bytes ),
-		"new_key_signing_of_author":	await ed.signAsync( alice1_client.agent_id, secret ),
+		"new_key":			await new_key.getAgent(),
+		"new_key_signing_of_author":	await new_key.sign( alice1_client.agent_id ),
 	    },
-	    "derivation_details": derivation_details,
+	    "derivation_details":	derivation_details,
 	});
 	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
 	log.normal("Key Meta: %s", json.debug(key_meta) );
 	log.normal("Key registration (create) addr: %s", addr );
 
-	alice1_key1a			= pubkey_bytes;
+	alice1_key1a			= await new_key.getBytes();
 	alice1_key1a_reg		= key_reg;
 	alice1_key1a_reg_addr		= addr;
 
@@ -186,14 +186,17 @@ function basic_tests () {
 	this.timeout( 5_000 );
 
 	const derivation_details	= await alice2_deepkey.next_derivation_details( alice2_app1_id );
+	const {
+	    app_index,
+	    key_index,
+	}				= derivation_details;
+	const path			= `app/${app_index}/key/${key_index}`;
+	const new_key			= await alice2_key_store.createKey( path );
 
 	expect( derivation_details	).to.deep.equal({
 	    "app_index": 0,
 	    "key_index": 0,
 	});
-
-	const secret			= ed.utils.randomPrivateKey();
-	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
 
 	const [ addr, key_reg, key_meta ]	= await alice2_deepkey.create_key({
 	    "app_binding": {
@@ -202,10 +205,10 @@ function basic_tests () {
 		"dna_hashes":		[ dna1_hash ],
 	    },
 	    "key_generation": {
-		"new_key":			new AgentPubKey( pubkey_bytes ),
-		"new_key_signing_of_author":	await ed.signAsync( alice2_client.agent_id, secret ),
+		"new_key":			await new_key.getAgent(),
+		"new_key_signing_of_author":	await new_key.sign( alice2_client.agent_id ),
 	    },
-	    "derivation_details": derivation_details,
+	    "derivation_details":	derivation_details,
 	});
 	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
 	log.normal("Key Meta: %s", json.debug(key_meta) );
@@ -244,14 +247,17 @@ function basic_tests () {
 	this.timeout( 5_000 );
 
 	const derivation_details	= await alice1_deepkey.next_derivation_details( alice1_app1_id );
+	const {
+	    app_index,
+	    key_index,
+	}				= derivation_details;
+	const path			= `app/${app_index}/key/${key_index}`;
+	const new_key			= await alice1_key_store.createKey( path );
 
 	expect( derivation_details	).to.deep.equal({
 	    "app_index": 0,
 	    "key_index": 1,
 	});
-
-	const secret			= ed.utils.randomPrivateKey();
-	const pubkey_bytes		= await ed.getPublicKeyAsync( secret );
 
 	const [ addr, key_reg, key_meta ]	= await alice1_deepkey.update_key({
 	    "installed_app_id":		alice1_app1_id,
@@ -262,8 +268,8 @@ function basic_tests () {
 		],
 	    },
 	    "key_generation": {
-		"new_key":			new AgentPubKey( pubkey_bytes ),
-		"new_key_signing_of_author":	await ed.signAsync( alice1_client.agent_id, secret ),
+		"new_key":			await new_key.getAgent(),
+		"new_key_signing_of_author":	await new_key.sign( alice1_client.agent_id ),
 	    },
 	    "derivation_details":	derivation_details,
 	});
@@ -271,7 +277,7 @@ function basic_tests () {
 	log.normal("Key Meta: %s", json.debug(key_meta) );
 	log.normal("Key registration (update) addr: %s", addr );
 
-	alice1_key1b			= pubkey_bytes;
+	alice1_key1b			= await new_key.getBytes();
 	alice1_key1b_reg		= key_reg;
 	alice1_key1b_reg_addr		= addr;
 
