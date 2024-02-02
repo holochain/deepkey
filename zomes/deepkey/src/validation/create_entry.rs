@@ -19,8 +19,8 @@ use hdi_extensions::{
     guest_error,
 };
 
-const KEYSET_ROOT_ACTION_SEQ : u32 = 4;
-const CHANGE_RULE_ACTION_SEQ : u32 = 5;
+const KEYSET_ROOT_ACTION_SEQ : u32 = 3;
+const CHANGE_RULE_ACTION_SEQ : u32 = 4;
 
 
 pub fn validation(
@@ -30,12 +30,12 @@ pub fn validation(
     match app_entry {
         EntryTypes::KeysetRoot(ksr_entry) => {
             // Check action seq
-            if create.action_seq != KEYSET_ROOT_ACTION_SEQ {
-                invalid!(format!(
-                    "KeysetRoot has invalid chain index ({}); must be chain index {}",
-                    create.action_seq, KEYSET_ROOT_ACTION_SEQ,
-                ));
-            }
+            // if create.action_seq != KEYSET_ROOT_ACTION_SEQ {
+            //     invalid!(format!(
+            //         "KeysetRoot has invalid chain index ({}); must be chain index {}",
+            //         create.action_seq, KEYSET_ROOT_ACTION_SEQ,
+            //     ));
+            // }
 
             // Check signature matches root pub key
             if verify_signature_raw(
@@ -58,12 +58,12 @@ pub fn validation(
         },
         EntryTypes::ChangeRule(change_rule_entry) => {
             // Check action seq
-            if create.action_seq != CHANGE_RULE_ACTION_SEQ {
-                invalid!(format!(
-                    "ChangeRule has invalid chain index ({}); must be chain index {}",
-                    create.action_seq, CHANGE_RULE_ACTION_SEQ,
-                ));
-            }
+            // if create.action_seq != CHANGE_RULE_ACTION_SEQ {
+            //     invalid!(format!(
+            //         "ChangeRule has invalid chain index ({}); must be chain index {}",
+            //         create.action_seq, CHANGE_RULE_ACTION_SEQ,
+            //     ));
+            // }
 
             // There are no DeviceInviteAcceptance's in the chain
             if let Some(activity) = utils::get_latest_activity_for_entry_type(
