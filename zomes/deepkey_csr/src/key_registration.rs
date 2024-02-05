@@ -90,7 +90,7 @@ pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
     let key_reg_addr = create_entry( key_reg.to_input() )?;
 
     // Create Anchor
-    let key_anchor_addr = create_entry( key_anchor.to_input() )?;
+    let key_anchor_addr = crate::key_anchor::create_key_anchor( key_anchor )?;
 
     // Create App Binding
     let app_binding = AppBinding {

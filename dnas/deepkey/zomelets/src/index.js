@@ -29,11 +29,6 @@ import {
 
 const functions				= {
     // Local reading
-    async query_key_info () {
-	const result			= await this.call();
-
-	return result.map( info => KeyInfo( info ) );
-    },
     async query_keyset_authority_action_hash () {
 	const result			= await this.call();
 
@@ -44,29 +39,15 @@ const functions				= {
 
 	return new ActionHash( result );
     },
-    async query_keyset_members ( input ) {
-	const result			= await this.call( input );
+    async query_app_bindings () {
+	const result			= await this.call();
 
-	return result.map( pubkey => new AgentPubKey(pubkey) );
-    },
-    async query_keyset_keys_with_authors ( input ) {
-	const result			= await this.call( input );
-
-	return result.map( ([author, key_registration]) => [
-	    new AgentPubKey(author), KeyRegistrationEntry( key_registration )
+	return result.map( ([addr, app_binding]) => [
+	    new ActionHash( addr ),
+	    AppBinding( app_binding ),
 	]);
     },
-    async query_keyset_keys ( input ) {
-	const result			= await this.call( input );
-
-	return result.map( key_registration => KeyRegistrationEntry( key_registration ) );
-    },
-    async query_app_bindings ( input ) {
-	const result			= await this.call( input );
-
-	return result.map( entry => AppBinding( entry ) );
-    },
-    async query_keyset_app_keys () {
+    async query_apps_with_keys () {
 	const result			= await this.call();
 
 	return result.map( ([app_binding, key_metas]) => {
@@ -75,6 +56,11 @@ const functions				= {
 		key_metas.map( key_meta => KeyMeta( key_meta ) ),
 	    ];
 	});
+    },
+    async sign ( bytes ) {
+	const result			= await this.call( bytes );
+
+	return new Signature( result );
     },
 
     // Public reading
@@ -88,10 +74,24 @@ const functions				= {
 
 	return result.map( agent => new AgentPubKey(agent) );
     },
+    // async get_ksr_members_with_keys ( input ) {
+    // 	const result			= await this.call( input );
+
+    // 	return result.map( ([ agent, keys ]) => ({
+    // 	    "member":		new AgentPubKey(agent),
+    // 	    "keys": keys.map( ([ hash, key_anchor ]) => ({
+    // 		"hash":		new EntryHash( hash ),
+    // 		"anchor":	KeyAnchor( key_anchor ),
+    // 	    }) ),
+    // 	}) );
+    // },
     async get_device_keys ( input ) {
 	const result			= await this.call( input );
 
-	return result.map( key_anchor => KeyAnchor( key_anchor ) );
+	return result.map( ([ hash, key_anchor ]) => ({
+	    "hash":	new EntryHash( hash ),
+	    "anchor":	KeyAnchor( key_anchor ),
+	}) );
     },
     async key_state ( input, options ) {
 	if ( !Array.isArray( input ) )
@@ -176,7 +176,7 @@ const functions				= {
     //
     // Virtual functions
     //
-    async get_keysets_for_ksr ( input ) {
+    async get_ksr_members_with_keys ( input ) {
 	const devices			= [];
 	const members			= await this.functions.get_ksr_members( input );
 
@@ -188,6 +188,23 @@ const functions				= {
 	}
 
 	return devices;
+    },
+    async get_ksr_keys ( input ) {
+	const keys			= [];
+	const members			= await this.functions.get_ksr_members( input );
+
+	for ( let agent of members ) {
+	    const device_keys		= await this.functions.get_device_keys( agent );
+
+	    keys.push(
+		...device_keys.map( key_anchor => ({
+		    "member": agent,
+		    "anchor": key_anchor,
+		}) )
+	    );
+	}
+
+	return keys;
     },
 };
 

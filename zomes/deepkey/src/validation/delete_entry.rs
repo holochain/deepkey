@@ -44,6 +44,8 @@ pub fn validation(
             valid!()
         },
         EntryTypesUnit::KeyAnchor => {
+            // Check previous action is key registration revoke.
+
             valid!()
         },
         EntryTypesUnit::KeyMeta => {

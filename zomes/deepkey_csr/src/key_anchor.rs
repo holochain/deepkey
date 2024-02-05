@@ -3,11 +3,28 @@ use serde_bytes::ByteArray;
 
 use hdk::prelude::*;
 use hdk_extensions::{
+    agent_id,
     must_get,
     hdi_extensions::{
         guest_error,
+        ScopedTypeConnector,
     },
 };
+
+
+#[hdk_extern]
+pub fn create_key_anchor(key_anchor: KeyAnchor) -> ExternResult<ActionHash> {
+    let create_addr = create_entry( key_anchor.to_input() )?;
+
+    create_link(
+        agent_id()?,
+        create_addr.clone(),
+        LinkTypes::DeviceToKeyAnchor,
+        "create".as_bytes().to_vec(),
+    )?;
+
+    Ok( create_addr )
+}
 
 
 #[hdk_entry_helper]

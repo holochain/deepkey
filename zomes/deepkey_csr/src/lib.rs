@@ -1,4 +1,5 @@
 pub mod change_rule;
+pub mod device;
 pub mod device_invite;
 pub mod device_invite_acceptance;
 pub mod device_name;
@@ -14,11 +15,15 @@ pub use hdk_extensions;
 pub use hdk_extensions::hdi_extensions;
 
 use deepkey::*;
-use hdk::prelude::*;
 use hdi_extensions::{
     guest_error,
 };
+use hdk::prelude::*;
+use hdk_extensions::{
+    agent_id,
+};
 use keyset_root::create_keyset_root;
+
 
 #[hdk_extern]
 pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
@@ -40,6 +45,7 @@ pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
 
     Ok(InitCallbackResult::Pass)
 }
+
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "type")]
@@ -69,6 +75,8 @@ pub enum Signal {
         device_invite_acceptance: Vec<u8>,
     },
 }
+
+
 #[hdk_extern(infallible)]
 pub fn post_commit(committed_actions: Vec<SignedActionHashed>) {
     for action in committed_actions {
@@ -77,6 +85,8 @@ pub fn post_commit(committed_actions: Vec<SignedActionHashed>) {
         }
     }
 }
+
+
 fn signal_action(action: SignedActionHashed) -> ExternResult<()> {
     match action.hashed.content.clone() {
         Action::Create(_create) => {
@@ -141,6 +151,8 @@ fn signal_action(action: SignedActionHashed) -> ExternResult<()> {
         _ => Ok(()),
     }
 }
+
+
 fn get_entry_for_action(action_hash: &ActionHash) -> ExternResult<Option<EntryTypes>> {
     let record = match get_details(action_hash.clone(), GetOptions::default())? {
         Some(Details::Record(record_details)) => record_details.record,
@@ -171,6 +183,7 @@ fn get_entry_for_action(action_hash: &ActionHash) -> ExternResult<Option<EntryTy
     )?)
 }
 
+
 #[hdk_extern]
 pub fn receive_device_invitation(dia: DeviceInviteAcceptance) -> ExternResult<()> {
     let dia_bytes: SerializedBytes = dia.try_into().map_err(|err| {
@@ -184,4 +197,13 @@ pub fn receive_device_invitation(dia: DeviceInviteAcceptance) -> ExternResult<()
         device_invite_acceptance: dia_bytes.bytes().to_owned(),
     })?;
     Ok(())
+}
+
+
+#[hdk_extern]
+pub fn sign(bytes: serde_bytes::ByteBuf) -> ExternResult<Signature> {
+    sign_raw(
+        agent_id()?,
+        bytes.into_vec(),
+    )
 }

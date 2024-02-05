@@ -6,7 +6,6 @@ use crate::{
     DeviceInvite,
     KeyRegistration,
     KeyGeneration,
-    KeyRevocation,
 
     utils,
 };
@@ -115,43 +114,39 @@ pub fn validation(
         EntryTypes::KeyRegistration(key_registration_entry) => {
             match key_registration_entry {
                 KeyRegistration::Create( key_gen ) => {
-                    validate_key_generation( &key_gen, &create )?;
+                    validate_key_generation( &key_gen, &create.into() )?;
 
                     valid!()
                 },
                 KeyRegistration::CreateOnly( key_gen ) => {
-                    validate_key_generation( &key_gen, &create )?;
+                    validate_key_generation( &key_gen, &create.into() )?;
 
                     valid!()
                 },
-                KeyRegistration::Update( key_rev, key_gen ) => {
-                    validate_key_revocation( &key_rev, &create )?;
-                    validate_key_generation( &key_gen, &create )?;
-
-                    valid!()
-                },
-                KeyRegistration::Delete( key_rev ) => {
-                    validate_key_revocation( &key_rev, &create )?;
-
-                    valid!()
+                KeyRegistration::Update(..) |
+                KeyRegistration::Delete(..) => {
+                    invalid!("KeyRegistration enum must be 'Create' or 'CreateOnly'; not 'Update' or 'Delete'".to_string())
                 },
             }
         },
         EntryTypes::KeyAnchor(_key_anchor_entry) => {
             valid!()
         },
+
+        // Private Records
         EntryTypes::KeyMeta(_key_meta_entry) => {
             valid!()
         },
         EntryTypes::AppBinding(_app_binding_entry) => {
             valid!()
         },
+
         // _ => invalid!(format!("Create validation not implemented for entry type: {:#?}", create.entry_type )),
     }
 }
 
 
-fn validate_key_generation(key_gen: &KeyGeneration, create: &Create) -> ExternResult<()> {
+pub fn validate_key_generation(key_gen: &KeyGeneration, creation: &EntryCreationAction) -> ExternResult<()> {
     // KeyGeneration {
     //     new_key: AgentPubKey,
     //     new_key_signing_of_author: Signature,
@@ -161,28 +156,13 @@ fn validate_key_generation(key_gen: &KeyGeneration, create: &Create) -> ExternRe
     if verify_signature_raw(
         key_gen.new_key.to_owned(),
         key_gen.new_key_signing_of_author.to_owned(),
-        create.author.get_raw_39().to_vec(),
+        creation.author().get_raw_39().to_vec(),
     )? == false {
         Err(guest_error!(format!(
             "Signature does not match new key ({})",
             key_gen.new_key,
         )))?;
     }
-
-    Ok(())
-}
-
-fn validate_key_revocation(_key_rev: &KeyRevocation, _create: &Create) -> ExternResult<()> {
-    // KeyRevocation {
-    //     prior_key_registration: ActionHash,
-    //     revocation_authorization: Vec<Authorization>,
-    // }
-
-    // Trace the KSR this key is under at this time
-
-    // Get the current change rule
-
-    // Check authorizations against change rule authorities
 
     Ok(())
 }

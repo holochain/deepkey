@@ -54,7 +54,7 @@ let APP_PORT;
 
 describe("DeepKey", function () {
     const holochain			= new Holochain({
-	"timeout": 60_000,
+	"timeout": 10_000,
 	"default_stdout_loggers": log.level_rank > 3,
     });
 
@@ -252,12 +252,17 @@ function basic_tests () {
 
     function phase2 () {
 	let invite_accept;
+
 	it("(alice2) should invite device 'alice1'", async function () {
+	    this.timeout( 5_000 );
+
 	    invite_accept			= await alice2_deepkey.invite_agent( alice2_client.agent_id );
 	    log.normal("Device Invite Acceptance: %s", json.debug(invite_accept) );
 	});
 
 	it("(alice1) should accept invite from 'alice2'", async function () {
+	    this.timeout( 5_000 );
+
 	    const acceptance_addr		= await alice1_deepkey.accept_invite( invite_accept );
 	    log.normal("Acceptance [addr]: %s", acceptance_addr );
 	});

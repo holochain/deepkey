@@ -2,7 +2,14 @@ use crate::{
     EntryTypes,
     EntryTypesUnit,
 
+    KeyRegistration,
+    KeyRevocation,
+
     utils,
+
+    validation::create_entry::{
+        validate_key_generation,
+    },
 };
 
 use hdi::prelude::*;
@@ -86,18 +93,50 @@ pub fn validation(
         EntryTypes::DeviceInviteAcceptance(_device_invite_acceptance_entry) => {
             invalid!(format!("Device Invite Acceptances cannot be updated"))
         },
-        EntryTypes::KeyRegistration(_key_registration_entry) => {
-            valid!()
+        EntryTypes::KeyRegistration(key_registration_entry) => {
+            match key_registration_entry {
+                KeyRegistration::Create(..) |
+                KeyRegistration::CreateOnly(..)=> {
+                    invalid!("KeyRegistration enum must be 'Update' or 'Delete'; not 'Create' or 'CreateOnly'".to_string())
+                },
+                KeyRegistration::Update( key_rev, key_gen ) => {
+                    validate_key_revocation( &key_rev, &update )?;
+                    validate_key_generation( &key_gen, &update.into() )?;
+
+                    valid!()
+                 },
+                KeyRegistration::Delete( key_rev ) => {
+                    validate_key_revocation( &key_rev, &update )?;
+
+                    valid!()
+                },
+            }
         },
         EntryTypes::KeyAnchor(_key_anchor_entry) => {
             valid!()
         },
         EntryTypes::KeyMeta(_key_meta_entry) => {
-            valid!()
+            invalid!(format!("Key Meta cannot be updated"))
         },
         EntryTypes::AppBinding(_app_binding_entry) => {
-            valid!()
+            invalid!(format!("App Binding cannot be updated"))
         },
         // _ => invalid!(format!("Update validation not implemented for entry type: {:#?}", update.entry_type )),
     }
+}
+
+
+pub fn validate_key_revocation(_key_rev: &KeyRevocation, _update: &Update) -> ExternResult<()> {
+    // KeyRevocation {
+    //     prior_key_registration: ActionHash,
+    //     revocation_authorization: Vec<Authorization>,
+    // }
+
+    // Trace the KSR this key is under at this time
+
+    // Get the current change rule
+
+    // Check authorizations against change rule authorities
+
+    Ok(())
 }

@@ -40,6 +40,31 @@ pub fn create_keyset_root(_: ()) -> ExternResult<ActionHash> {
             )))?,
     ])?;
 
+    // Register the FDA as a key under this KSR
+    use crate::key_registration::{
+        CreateKeyInput,
+        AppBindingInput,
+        DerivationDetailsInput,
+    };
+
+    let dna_hash = dna_info()?.hash;
+
+    crate::key_registration::create_key(CreateKeyInput {
+        key_generation: KeyGeneration {
+            new_key: fda.clone(),
+            new_key_signing_of_author: sign_raw( fda, agent_id()?.into_inner() )?,
+        },
+        app_binding: AppBindingInput {
+            app_name: "deepkey".to_string(),
+            installed_app_id: "deepkey".to_string(),
+            dna_hashes: vec![ dna_hash ],
+        },
+        derivation_details: DerivationDetailsInput {
+            app_index: 0,
+            key_index: 0,
+        },
+    })?;
+
     Ok( create_hash )
 }
 
@@ -88,35 +113,12 @@ pub fn get_ksr_dia_links(ksr_addr: ActionHash) -> ExternResult<Vec<Link>> {
 
 
 #[hdk_extern]
-pub fn get_device_key_anchor_links(author: AgentPubKey) -> ExternResult<Vec<Link>> {
-    get_links(
-        GetLinksInputBuilder::try_new(
-            author,
-            LinkTypes::DeviceToKeyAnchor,
-        )?.build()
-    )
-}
-
-
-#[hdk_extern]
 pub fn get_ksr_dia_members(ksr_addr: ActionHash) -> ExternResult<Vec<AgentPubKey>> {
     Ok(
         get_ksr_dia_links( ksr_addr.clone() )?
             .into_iter()
             .filter_map( |link| must_get( &link.target.into_any_dht_hash()? ).ok() )
             .map( |record| record.action().author().to_owned() )
-            .collect()
-    )
-}
-
-
-#[hdk_extern]
-pub fn get_device_keys(author: AgentPubKey) -> ExternResult<Vec<KeyAnchor>> {
-    Ok(
-        get_device_key_anchor_links( author.clone() )?
-            .into_iter()
-            .filter_map( |link| must_get( &link.target.into_any_dht_hash()? ).ok() )
-            .filter_map( |record| KeyAnchor::try_from( record ).ok() )
             .collect()
     )
 }
@@ -134,54 +136,19 @@ pub fn get_ksr_members(ksr_addr: ActionHash) -> ExternResult<Vec<AgentPubKey>> {
 }
 
 
-// Get all of the members of the keyset: the first deepkey agent, and all the deepkey agents
 #[hdk_extern]
-pub fn query_keyset_members(ksr_addr: ActionHash) -> ExternResult<Vec<AgentPubKey>> {
-    // Get the PubKey of the Deepkey Agent who wrote the KeysetRoot
-    let keyset_root_record = must_get( &ksr_addr )?;
-    let ksr_chain_pubkey = keyset_root_record.action().author().clone();
-
-    let dia_hashes: Vec<ActionHash> = get_links(
-        GetLinksInputBuilder::try_new(
-            ksr_addr,
-            LinkTypes::KeysetRootToDeviceInviteAcceptances,
-        )?.build()
-    )?
-    .into_iter()
-    .filter_map(|link| link.target.into_action_hash())
-    .collect();
-    let dia_records: Vec<Record> = dia_hashes
-        .into_iter()
-        .map(|dia_hash| get(dia_hash, GetOptions::default()))
-        .collect::<ExternResult<Vec<Option<Record>>>>()?
-        .into_iter()
-        .filter_map(|x| x)
-        .collect();
-
-    // Query all the Deepkey Agents that wrote the DeviceInviteAcceptances
-    let mut dia_author_pubkeys = dia_records
-        .into_iter()
-        .map(|dia_record| dia_record.action().author().clone())
-        .collect::<Vec<AgentPubKey>>();
-
-    // Don't forget the First Deepkey Agent
-    dia_author_pubkeys.push(ksr_chain_pubkey);
-
-    Ok(dia_author_pubkeys)
-}
-
-
-#[hdk_extern]
-pub fn query_keyset_keys_with_authors(
+pub fn get_ksr_members_with_keys(
     ksr_addr: ActionHash,
-) -> ExternResult<Vec<(AgentPubKey, KeyRegistration)>> {
+) -> ExternResult<Vec<(AgentPubKey, Vec<(EntryHash, KeyAnchor)>)>> {
+    let members = get_ksr_members( ksr_addr )?;
+
     Ok(
-        query_keyset_key_registration_records( ksr_addr )?
+        members
             .into_iter()
-            .filter_map( |record| {
+            .filter_map( |agent| {
                 Some((
-                    record.action().author().to_owned(),
-                    KeyRegistration::try_from( record ).ok()?
+                    agent.clone(),
+                    crate::device::get_device_keys( agent.clone() ).ok()?,
                 ))
             })
             .collect()
@@ -191,19 +158,7 @@ pub fn query_keyset_keys_with_authors(
 
 // Get all of the keys registered on the keyset, across all the deepkey agents
 #[hdk_extern]
-pub fn query_keyset_keys(ksr_addr: ActionHash) -> ExternResult<Vec<KeyRegistration>> {
-    let key_registrations = query_keyset_key_registration_records(ksr_addr)?
-        .into_iter()
-        .map( |key_reg_record| KeyRegistration::try_from( key_reg_record ) )
-        .collect::<ExternResult<Vec<KeyRegistration>>>()?;
-
-    Ok(key_registrations)
-}
-
-
-// Get all of the keys registered on the keyset, across all the deepkey agents
-#[hdk_extern]
-pub fn query_keyset_app_keys(_:()) -> ExternResult<Vec<(AppBinding, Vec<KeyMeta>)>> {
+pub fn query_apps_with_keys(_:()) -> ExternResult<Vec<(AppBinding, Vec<KeyMeta>)>> {
     let key_metas : Vec<(ActionHash, KeyMeta)> = utils::query_entry_type( EntryTypesUnit::KeyMeta )?
         .into_iter()
         .filter_map( |record| Some((
@@ -235,45 +190,6 @@ pub fn query_keyset_app_keys(_:()) -> ExternResult<Vec<(AppBinding, Vec<KeyMeta>
 }
 
 
-// Get all of the keys registered on the keyset, across all the deepkey agents
-pub fn query_keyset_key_registration_records(
-    ksr_addr: ActionHash
-) -> ExternResult<Vec<Record>> {
-    let key_registration_records = get_links(
-        GetLinksInputBuilder::try_new(
-            ksr_addr,
-            LinkTypes::KeysetRootToKeyAnchors,
-        )?.build()
-    )?
-        .into_iter()
-        .filter_map( |link| link.target.into_entry_hash() )
-        .map( |key_anchor_hash| must_get( &key_anchor_hash ) )
-        .collect::<ExternResult<Vec<Record>>>()?
-        .into_iter()
-        .map( |record| record.action().prev_action().cloned() ) // Because the previous action should always be the registration record
-        .filter_map(|x| x) // Drop anything without a prev action (should be unreachable)
-        .map( |key_reg_actionhash| must_get( &key_reg_actionhash ) )
-        .collect::<ExternResult<Vec<Record>>>()?;
-
-    Ok(key_registration_records)
-}
-
-
-#[hdk_extern]
-pub fn query_keyset_key_anchors(ksr_addr: ActionHash) -> ExternResult<Vec<KeyAnchor>> {
-    let key_anchors = get_links(
-        GetLinksInputBuilder::try_new(
-            ksr_addr,
-            LinkTypes::KeysetRootToKeyAnchors,
-        )?.build()
-    )?
-        .into_iter()
-        .filter_map( |link| link.target.into_entry_hash() )
-        .map( |key_anchor_hash| must_get( &key_anchor_hash ) )
-        .collect::<ExternResult<Vec<Record>>>()?
-        .into_iter()
-        .map( |key_anchor_record| KeyAnchor::try_from( key_anchor_record ) )
-        .collect::<ExternResult<Vec<KeyAnchor>>>()?;
-
-    Ok(key_anchors)
-}
+// #[hdk_extern]
+// pub fn query_key_registrations(_:()) -> ExternResult<Vec<(ActionHash, Vec<KeyRegistration>)>> {
+// }
