@@ -15,6 +15,8 @@ serde_bytes = "0.11"
 hdi = { version = "0.4.0-beta-dev.20" }
 hdk = { version = "0.3.0-beta-dev.24" }
 holo_hash = { version = "0.3.0-beta-dev.16", features = ["hashing"] }
+whi_hdi_extensions = { git = "https://github.com/mjbrisebois/rust-hdi-extensions.git", rev = "76a0dc37d7558f3d8f02a609c292ac37edfeec8a" }
+whi_hdk_extensions = { git = "https://github.com/mjbrisebois/rust-hdk-extensions.git", rev = "f115791d05c35de974968fa4a867b2f13f6e6a0b" }
 
 [workspace.dependencies.deepkey]
 path = "zomes/deepkey"

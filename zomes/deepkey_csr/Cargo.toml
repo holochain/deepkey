@@ -14,4 +14,4 @@ hdk = { workspace = true }
 rmp-serde = { workspace = true }
 serde = { workspace = true }
 serde_bytes = { workspace = true }
-whi_hdk_extensions = { git = "https://github.com/mjbrisebois/rust-hdk-extensions.git", rev = "f115791d05c35de974968fa4a867b2f13f6e6a0b" }
+whi_hdk_extensions = { workspace = true }

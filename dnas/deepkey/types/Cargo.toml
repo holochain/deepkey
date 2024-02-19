@@ -1,0 +1,18 @@
+[package]
+name = "hc_deepkey_types"
+version = "0.1.0"
+authors = ["Matthew Brisebois <matthew.brisebois@holo.host>"]
+edition = "2018"
+license = "CAL-1.0"
+repository = "https://github.com/holochain/deepkey"
+description = "Definitions used by the Deepkey DNA Zomes"
+readme = "README.md"
+
+[lib]
+name = "deepkey_types"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+hdi = { workspace = true }
+serde = "1"
+whi_hdi_extensions = { workspace = true }
