@@ -1,6 +1,5 @@
 use crate::{
     EntryTypes,
-    EntryTypesUnit,
 
     KeyRegistration,
     KeyRevocation,
@@ -45,19 +44,6 @@ pub fn validation(
                 ))
             }
 
-            // There are no DeviceInviteAcceptance's in the chain
-            if let Some(activity) = utils::get_latest_activity_for_entry_type(
-                EntryTypesUnit::DeviceInviteAcceptance,
-                &update.author,
-                &update.prev_action,
-            )? {
-                invalid!(format!(
-                    "Cannot change rules for KSR because a Device Invite was accepted at {} (action seq: {})",
-                    activity.action.action().timestamp(),
-                    activity.action.action().action_seq(),
-                ))
-            }
-
             // Get previous change rule
             let prev_change_rule = match utils::prev_change_rule( &update.author, &update.prev_action )? {
                 Some(change_rule) => change_rule,
@@ -86,12 +72,6 @@ pub fn validation(
             )?;
 
             valid!()
-        },
-        EntryTypes::DeviceInvite(_device_invite_entry) => {
-            invalid!(format!("Device Invites cannot be updated"))
-        },
-        EntryTypes::DeviceInviteAcceptance(_device_invite_acceptance_entry) => {
-            invalid!(format!("Device Invite Acceptances cannot be updated"))
         },
         EntryTypes::KeyRegistration(key_registration_entry) => {
             match key_registration_entry {

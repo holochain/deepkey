@@ -1,9 +1,6 @@
 use crate::{
     EntryTypes,
-    EntryTypesUnit,
 
-    KeysetRoot,
-    DeviceInvite,
     KeyRegistration,
     KeyGeneration,
 
@@ -12,7 +9,6 @@ use crate::{
 
 use hdi::prelude::*;
 use hdi_extensions::{
-    verify_app_entry_struct,
     // Macros
     valid, invalid,
     guest_error,
@@ -64,19 +60,6 @@ pub fn validation(
             //     ));
             // }
 
-            // There are no DeviceInviteAcceptance's in the chain
-            if let Some(activity) = utils::get_latest_activity_for_entry_type(
-                EntryTypesUnit::DeviceInviteAcceptance,
-                &create.author,
-                &create.prev_action,
-            )? {
-                invalid!(format!(
-                    "Cannot change rules for KSR because a Device Invite was accepted at {} (action seq: {})",
-                    activity.action.action().timestamp(),
-                    activity.action.action().action_seq(),
-                ))
-            }
-
             // KeysetRoot originates in this chain (perhaps it should also be the previous action)
             let (signed_action, _) = utils::get_keyset_root(
                 &create.author,
@@ -98,16 +81,6 @@ pub fn validation(
                     change_rule_entry.keyset_root,
                 ))
             }
-
-            valid!()
-        },
-        EntryTypes::DeviceInvite(device_invite_entry) => {
-            verify_app_entry_struct::<KeysetRoot>( &device_invite_entry.keyset_root.into() )?;
-
-            valid!()
-        },
-        EntryTypes::DeviceInviteAcceptance(device_invite_acceptance_entry) => {
-            verify_app_entry_struct::<DeviceInvite>( &device_invite_acceptance_entry.invite.into() )?;
 
             valid!()
         },

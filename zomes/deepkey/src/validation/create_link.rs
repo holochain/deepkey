@@ -25,9 +25,6 @@ pub fn validation(
             valid!()
         },
         LinkTypes::KSRToChangeRule |
-        LinkTypes::KeysetRootToDeviceInviteAcceptances |
-        LinkTypes::InviteeToDeviceInviteAcceptances |
-        LinkTypes::DeviceInviteToDeviceInviteAcceptances |
         LinkTypes::DeviceToKeyAnchor |
         LinkTypes::DeviceName |
         LinkTypes::AppBindingToKeyMeta => {

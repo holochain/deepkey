@@ -2,6 +2,7 @@
 //     guest_error,
 // };
 use crate::hdk_extensions::{
+    agent_id,
     must_get,
 };
 
@@ -21,9 +22,9 @@ pub fn get_device_key_links(author: AgentPubKey) -> ExternResult<Vec<Link>> {
 
 
 #[hdk_extern]
-pub fn get_device_keys(agent: AgentPubKey) -> ExternResult<Vec<(EntryHash, KeyAnchor)>> {
+pub fn get_device_keys(agent: Option<AgentPubKey>) -> ExternResult<Vec<(EntryHash, KeyAnchor)>> {
     Ok(
-        get_device_key_links( agent )?
+        get_device_key_links( agent.unwrap_or( agent_id()? ) )?
             .into_iter()
             .filter_map( |link| must_get( &link.target.into_any_dht_hash()? ).ok() )
             .filter_map( |record| Some((

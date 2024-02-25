@@ -31,15 +31,6 @@ pub fn validation(
         LinkTypes::KSRToChangeRule => {
             invalid!(format!("KSRToChangeRule links cannot be deleted"))
         },
-        LinkTypes::KeysetRootToDeviceInviteAcceptances => {
-            invalid!(format!("KeysetRootToDeviceInvites links cannot be deleted"))
-        },
-        LinkTypes::InviteeToDeviceInviteAcceptances => {
-            invalid!(format!("InviteeToDeviceInvites links cannot be deleted"))
-        },
-        LinkTypes::DeviceInviteToDeviceInviteAcceptances => {
-            invalid!(format!("DeviceInviteToDeviceInviteAcceptances links cannot be deleted"))
-        },
         LinkTypes::DeviceToKeyAnchor => {
             invalid!(format!("DeviceToKeyAnchor links cannot be deleted"))
         },

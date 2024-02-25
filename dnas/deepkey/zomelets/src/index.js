@@ -19,8 +19,6 @@ import {
     KeyAnchor,
     KeyState,
     AppBinding,
-    DeviceInvite,
-    DeviceInviteAcceptance,
 
     KeyRegistrationEntry,
     KeyInfo,
@@ -69,22 +67,6 @@ const functions				= {
 
 	return KeysetRoot( result );
     },
-    async get_ksr_members ( input ) {
-	const result			= await this.call( input );
-
-	return result.map( agent => new AgentPubKey(agent) );
-    },
-    // async get_ksr_members_with_keys ( input ) {
-    // 	const result			= await this.call( input );
-
-    // 	return result.map( ([ agent, keys ]) => ({
-    // 	    "member":		new AgentPubKey(agent),
-    // 	    "keys": keys.map( ([ hash, key_anchor ]) => ({
-    // 		"hash":		new EntryHash( hash ),
-    // 		"anchor":	KeyAnchor( key_anchor ),
-    // 	    }) ),
-    // 	}) );
-    // },
     async get_device_keys ( input ) {
 	const result			= await this.call( input );
 
@@ -139,18 +121,6 @@ const functions				= {
 	];
     },
 
-    // Device Inviting
-    async invite_agent ( input ) {
-	const result			= await this.call( input );
-
-	return DeviceInviteAcceptance( result );
-    },
-    async accept_invite ( input ) {
-	const result			= await this.call( input );
-
-	return new ActionHash( result );
-    },
-
     // Change Rules
     async update_change_rule ( input ) {
 	const result			= await this.call( input );
@@ -176,35 +146,10 @@ const functions				= {
     //
     // Virtual functions
     //
-    async get_ksr_members_with_keys ( input ) {
-	const devices			= [];
-	const members			= await this.functions.get_ksr_members( input );
-
-	for ( let agent of members ) {
-	    devices.push({
-		"member": agent,
-		"keys": await this.functions.get_device_keys( agent ),
-	    });
-	}
-
-	return devices;
-    },
     async get_ksr_keys ( input ) {
-	const keys			= [];
-	const members			= await this.functions.get_ksr_members( input );
+	const ksr			= await this.functions.get_keyset_root ( input );
 
-	for ( let agent of members ) {
-	    const device_keys		= await this.functions.get_device_keys( agent );
-
-	    keys.push(
-		...device_keys.map( key_anchor => ({
-		    "member": agent,
-		    "anchor": key_anchor,
-		}) )
-	    );
-	}
-
-	return keys;
+	return await this.functions.get_device_keys( ksr.first_deepkey_agent );
     },
 };
 
@@ -214,8 +159,6 @@ const APP_ENTRY_STRUCTS_MAP		= {
     KeyMeta,
     KeyAnchor,
     AppBinding,
-    DeviceInvite,
-    DeviceInviteAcceptance,
     "KeyRegistration": KeyRegistrationEntry,
 };
 

@@ -34,12 +34,6 @@ pub fn validation(
         EntryTypesUnit::ChangeRule => {
             invalid!(format!("Change Rules cannot be deleted"))
         },
-        EntryTypesUnit::DeviceInvite => {
-            invalid!(format!("Device Invites cannot be deleted"))
-        },
-        EntryTypesUnit::DeviceInviteAcceptance => {
-            invalid!(format!("Device Invite Acceptances cannot be deleted"))
-        },
         EntryTypesUnit::KeyRegistration => {
             valid!()
         },

@@ -118,19 +118,11 @@ function basic_tests () {
 	await alice1_deepkey.query_keyset_root_action_hash();
     });
 
-    it("should get KSR members (1)", async function () {
-	const members			= await alice1_deepkey.get_ksr_members( ksr1_addr );
-	log.normal("Members (devices): %s", json.debug(members) );
+    it("should get KSR keys (1)", async function () {
+	const keys			= await alice1_deepkey.get_ksr_keys( ksr1_addr );
+	log.normal("KSR keys: %s", json.debug(keys) );
 
-	expect( members			).to.have.length( 1 );
-    });
-
-    it("should get KSR members (1) with keys (1)", async function () {
-	const members			= await alice1_deepkey.get_ksr_members_with_keys( ksr1_addr );
-	log.normal("Members (devices) with keys: %s", json.debug(members) );
-
-	expect( members			).to.have.length( 1 );
-	expect( members[0].keys		).to.have.length( 1 );
+	expect( keys			).to.have.length( 1 );
     });
 
     it("should register new key", async function () {
@@ -161,12 +153,11 @@ function basic_tests () {
 	log.normal("Key registration (update) addr: %s", addr );
     });
 
-    it("should get KSR members (1) with keys (2)", async function () {
-	const members			= await alice1_deepkey.get_ksr_members_with_keys( ksr1_addr );
-	log.normal("Members (devices) with keys: %s", json.debug(members) );
+    it("should get KSR keys (2)", async function () {
+	const keys			= await alice1_deepkey.get_ksr_keys( ksr1_addr );
+	log.normal("KSR keys: %s", json.debug(keys) );
 
-	expect( members			).to.have.length( 1 );
-	expect( members[0].keys		).to.have.length( 2 );
+	expect( keys			).to.have.length( 2 );
     });
 
     after(async function () {

@@ -1,7 +1,5 @@
 pub mod change_rule;
 pub mod device;
-pub mod device_invite;
-pub mod device_invite_acceptance;
 pub mod device_name;
 pub mod key_anchor;
 pub mod key_registration;
@@ -70,9 +68,6 @@ pub enum Signal {
     LinkDeleted {
         action: SignedActionHashed,
         link_type: LinkTypes,
-    },
-    InvitationReceived {
-        device_invite_acceptance: Vec<u8>,
     },
 }
 
@@ -181,22 +176,6 @@ fn get_entry_for_action(action_hash: &ActionHash) -> ExternResult<Option<EntryTy
         entry_index.clone(),
         entry,
     )?)
-}
-
-
-#[hdk_extern]
-pub fn receive_device_invitation(dia: DeviceInviteAcceptance) -> ExternResult<()> {
-    let dia_bytes: SerializedBytes = dia.try_into().map_err(|err| {
-        guest_error!(format!(
-            "Can't serialize object: {:?}",
-            err
-        ))
-    })?;
-
-    emit_signal(Signal::InvitationReceived {
-        device_invite_acceptance: dia_bytes.bytes().to_owned(),
-    })?;
-    Ok(())
 }
 
 
