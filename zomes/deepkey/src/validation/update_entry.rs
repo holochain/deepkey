@@ -14,6 +14,7 @@ use crate::{
 use hdi::prelude::*;
 use hdi_extensions::{
     // Macros
+    guest_error,
     valid, invalid,
 };
 
@@ -106,17 +107,46 @@ pub fn validation(
 }
 
 
-pub fn validate_key_revocation(_key_rev: &KeyRevocation, _update: &Update) -> ExternResult<()> {
+pub fn validate_key_revocation(key_rev: &KeyRevocation, update: &Update) -> ExternResult<()> {
     // KeyRevocation {
     //     prior_key_registration: ActionHash,
     //     revocation_authorization: Vec<Authorization>,
     // }
 
-    // Trace the KSR this key is under at this time
+    // Make sure the target key belongs to this KSR
+    let key_registration_action = must_get_action( key_rev.prior_key_registration.to_owned() )?;
+
+    if *key_registration_action.hashed.author() != update.author {
+        Err(guest_error!(format!(
+            "Author '{}' cannot revoke key registered by another author ({})",
+            update.author, key_registration_action.hashed.author(),
+        )))?
+    }
 
     // Get the current change rule
+    let prev_change_rule = utils::prev_change_rule( &update.author, &update.prev_action )?
+        .ok_or(guest_error!(format!(
+            "No change rule found before action seq ({}) [{}]",
+            update.action_seq, update.prev_action
+        )))?;
+
+    let sigs_required = &prev_change_rule.spec_change.new_spec.sigs_required;
+    let authorities = &prev_change_rule.spec_change.new_spec.authorized_signers;
+    let sig_count = key_rev.revocation_authorization.len() as u8;
+
+    if sig_count < *sigs_required {
+        Err(guest_error!(format!(
+            "Signature count ({}) is not enough; key revocation requires at least {} signatures",
+            sig_count, sigs_required,
+        )))?
+    }
 
     // Check authorizations against change rule authorities
+    utils::check_authorities(
+        authorities,
+        &key_rev.revocation_authorization,
+        &key_rev.prior_key_registration.clone().into_inner(),
+    )?;
 
     Ok(())
 }

@@ -14,8 +14,8 @@ use hdi_extensions::{
     guest_error,
 };
 
-const KEYSET_ROOT_ACTION_SEQ : u32 = 3;
-const CHANGE_RULE_ACTION_SEQ : u32 = 4;
+// const KEYSET_ROOT_ACTION_SEQ : u32 = 3;
+// const CHANGE_RULE_ACTION_SEQ : u32 = 4;
 
 
 pub fn validation(

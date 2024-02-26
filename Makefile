@@ -14,7 +14,8 @@ DEEPKEY_CSR_WASM	= zomes/deepkey_csr.wasm
 
 TARGET			= release
 TARGET_DIR		= target/wasm32-unknown-unknown/release
-COMMON_SOURCE_FILES	= Makefile Cargo.toml
+COMMON_SOURCE_FILES	= Makefile Cargo.toml \
+				dnas/deepkey/types/Cargo.toml dnas/deepkey/types/src/*.rs
 INT_SOURCE_FILES	= $(COMMON_SOURCE_FILES) \
 				$(INT_DIR)/Cargo.toml $(INT_DIR)/src/*.rs $(INT_DIR)/src/validation/*.rs
 CSR_SOURCE_FILES	= $(INT_SOURCE_FILES) \

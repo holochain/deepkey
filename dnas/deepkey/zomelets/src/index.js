@@ -120,6 +120,14 @@ const functions				= {
 	    KeyRegistrationEntry( result[1] ),
 	];
     },
+    async delete_key_registration ( input ) {
+	const result			= await this.call( input );
+
+	return [
+	    new ActionHash( result[0] ),
+	    KeyRegistrationEntry( input[1] ),
+	];
+    },
 
     // Change Rules
     async update_change_rule ( input ) {

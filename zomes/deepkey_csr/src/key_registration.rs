@@ -1,4 +1,5 @@
 use crate::utils;
+use serde_bytes::ByteArray;
 use deepkey::*;
 use hdk::prelude::{
     *,
@@ -243,6 +244,36 @@ pub fn revoke_key(input: RevokeKeyInput) -> ExternResult<(ActionHash, KeyRegistr
         key_reg_addr,
         revocation_registration,
     ))
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KeyRevocationInput {
+    pub prior_key_registration: ActionHash,
+    pub revocation_authorization: Vec<(u8, ByteArray<64>)>,
+}
+
+impl TryFrom<KeyRevocationInput> for KeyRevocation {
+    type Error = WasmError;
+
+    fn try_from(input: KeyRevocationInput) -> ExternResult<Self> {
+        Ok(Self {
+            prior_key_registration: input.prior_key_registration,
+            revocation_authorization: input.revocation_authorization.into_iter()
+                .map( |(index, signature)| (index, Signature::from( signature.into_array() )) )
+                .collect(),
+        })
+    }
+}
+
+#[hdk_extern]
+pub fn delete_key_registration(
+    input: (ActionHash, KeyRevocationInput),
+) -> ExternResult<ActionHash> {
+    update_entry(
+        input.0,
+        KeyRegistration::Delete( KeyRevocation::try_from( input.1 )? ).to_input(),
+    )
 }
 
 
