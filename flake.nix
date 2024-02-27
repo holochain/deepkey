@@ -8,8 +8,8 @@
 
     holochain-flake = {
       url = "github:holochain/holochain";
-      inputs.holochain.url = "github:holochain/holochain/ecb2576372a2bbc05985725e7f1558029871cc72";
-      inputs.lair.url = "github:holochain/lair/lair_keystore-v0.3.0";
+      inputs.holochain.url = "github:holochain/holochain/holochain-0.3.0-beta-dev.37";
+      inputs.lair.url = "github:holochain/lair/lair_keystore-v0.4.3";
     };
   };
 

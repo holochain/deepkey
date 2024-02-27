@@ -9,7 +9,7 @@ crate-type = ["cdylib", "rlib"]
 name = "deepkey"
 
 [dependencies]
-hc_deepkey_types = { path = "../../dnas/deepkey/types" }
+hc_deepkey_types = { workspace = true }
 hdi = { workspace = true }
 hdk = { workspace = true }
 holo_hash = { workspace = true }

@@ -43,10 +43,13 @@ pub fn query_app_binding_by_index(index: u32) -> ExternResult<(ActionHash, AppBi
 
 #[hdk_extern]
 pub fn query_app_binding_by_id(installed_app_id: String) -> ExternResult<(ActionHash, AppBinding)> {
-    query_app_bindings(())?
+    let (addr, app_binding) = query_app_bindings(())?
         .into_iter()
         .find( |(_, app_binding)| app_binding.installed_app_id == installed_app_id  )
-        .ok_or(guest_error!(format!("No AppBinding with installed ID: {}", installed_app_id )))
+        .ok_or(guest_error!(format!("No AppBinding with installed ID: {}", installed_app_id )))?;
+
+    debug!("Found AppBinding ({}) for installed app ID: {}", addr, installed_app_id );
+    Ok((addr, app_binding))
 }
 
 

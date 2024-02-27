@@ -17,14 +17,7 @@ use hdk::prelude::*;
 // If this is not the case, we find and return the actual keyset root entry on this chain.
 #[hdk_extern]
 pub fn query_keyset_authority_action_hash(_: ()) -> ExternResult<ActionHash> {
-    match utils::query_entry_type_latest( EntryTypesUnit::DeviceInviteAcceptance )? {
-        Some(dia_record) => {
-            let device_invite_acceptance : DeviceInviteAcceptance = dia_record.try_into()?;
-
-            Ok(device_invite_acceptance.keyset_root_authority)
-        },
-        None => query_keyset_root_action_hash(()),
-    }
+    query_keyset_root_action_hash(())
 }
 
 // This function queries for the keyset root, and returns its action hash.

@@ -196,27 +196,6 @@ export function AppBinding ( data ) {
 }
 
 
-export const DeviceInviteStruct		= {
-    "keyset_root":		ActionHash,
-    "parent":			ActionHash,
-    "invitee":			AgentPubKey,
-};
-
-export function DeviceInvite ( data ) {
-    return intoStruct( data, DeviceInviteStruct );
-}
-
-
-export const DeviceInviteAcceptanceStruct = {
-    "keyset_root_authority":	ActionHash,
-    "invite":			ActionHash,
-};
-
-export function DeviceInviteAcceptance ( data ) {
-    return intoStruct( data, DeviceInviteAcceptanceStruct );
-}
-
-
 export const KeyGenerationStruct = {
     "new_key":				AgentPubKey,
     "new_key_signing_of_author":	Signature,
@@ -297,12 +276,6 @@ export default {
 
     AppBindingStruct,
     AppBinding,
-
-    DeviceInviteStruct,
-    DeviceInvite,
-
-    DeviceInviteAcceptanceStruct,
-    DeviceInviteAcceptance,
 
     KeyGenerationStruct,
     KeyRevocationStruct,

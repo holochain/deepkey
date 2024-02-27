@@ -1,4 +1,5 @@
 use crate::utils;
+use serde_bytes::ByteArray;
 use deepkey::*;
 use hdk::prelude::{
     *,
@@ -221,28 +222,58 @@ pub fn revoke_key(input: RevokeKeyInput) -> ExternResult<(ActionHash, KeyRegistr
         )))?
     }
 
-    // Get key anchor create action
+    let key_revocation = KeyRevocation {
+        prior_key_registration: prior_key_reg_addr.clone(),
+        revocation_authorization: key_rev.revocation_authorization,
+    };
+    let registration_delete = KeyRegistration::Delete(key_revocation);
+
+    // TODO: Fill out the validation for KeyRevocation so it actually validates the revocation_authorization signatures.
+    let key_reg_addr = update_entry(
+        prior_key_reg_addr.clone(),
+        registration_delete.to_input(),
+    )?;
+
+    // Terminate key anchor
     let prior_key_addr = crate::key_anchor::get_key_anchor_for_registration(
         prior_key_reg_addr.clone()
     )?.0;
     delete_entry( prior_key_addr )?;
 
-    let key_revocation = KeyRevocation {
-        prior_key_registration: prior_key_reg_addr.clone(),
-        revocation_authorization: key_rev.revocation_authorization,
-    };
-    let revocation_registration = KeyRegistration::Delete(key_revocation);
-
-    // TODO: Fill out the validation for KeyRevocation so it actually validates the revocation_authorization signatures.
-    let key_reg_addr = update_entry(
-        prior_key_reg_addr,
-        revocation_registration.to_input(),
-    )?;
-
     Ok((
         key_reg_addr,
-        revocation_registration,
+        registration_delete,
     ))
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KeyRevocationInput {
+    pub prior_key_registration: ActionHash,
+    pub revocation_authorization: Vec<(u8, ByteArray<64>)>,
+}
+
+impl TryFrom<KeyRevocationInput> for KeyRevocation {
+    type Error = WasmError;
+
+    fn try_from(input: KeyRevocationInput) -> ExternResult<Self> {
+        Ok(Self {
+            prior_key_registration: input.prior_key_registration,
+            revocation_authorization: input.revocation_authorization.into_iter()
+                .map( |(index, signature)| (index, Signature::from( signature.into_array() )) )
+                .collect(),
+        })
+    }
+}
+
+#[hdk_extern]
+pub fn delete_key_registration(
+    input: (ActionHash, KeyRevocationInput),
+) -> ExternResult<ActionHash> {
+    update_entry(
+        input.0,
+        KeyRegistration::Delete( KeyRevocation::try_from( input.1 )? ).to_input(),
+    )
 }
 
 

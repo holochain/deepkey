@@ -1,7 +1,4 @@
 use hdi::prelude::*;
-use hdi_extensions::{
-    guest_error,
-};
 
 
 pub type KeyBytes = [u8; 32];
@@ -29,9 +26,9 @@ impl TryFrom<AgentPubKey> for KeyAnchor {
         Ok(
             Self {
                 bytes: input.get_raw_32().try_into()
-                    .map_err( |e| guest_error!(format!(
+                    .map_err( |e| wasm_error!(WasmErrorInner::Guest(format!(
                         "Failed AgentPubKey to [u8;32] conversion: {:?}", e
-                    )) )?,
+                    ))) )?,
             }
         )
     }

@@ -29,9 +29,6 @@ pub enum EntryTypes {
 
     ChangeRule(ChangeRule),
 
-    DeviceInvite(DeviceInvite),
-    DeviceInviteAcceptance(DeviceInviteAcceptance),
-
     KeyRegistration(KeyRegistration),
     KeyAnchor(KeyAnchor),
 
@@ -48,14 +45,6 @@ scoped_type_connector!(
 scoped_type_connector!(
     EntryTypesUnit::ChangeRule,
     EntryTypes::ChangeRule( ChangeRule )
-);
-scoped_type_connector!(
-    EntryTypesUnit::DeviceInvite,
-    EntryTypes::DeviceInvite( DeviceInvite )
-);
-scoped_type_connector!(
-    EntryTypesUnit::DeviceInviteAcceptance,
-    EntryTypes::DeviceInviteAcceptance( DeviceInviteAcceptance )
 );
 scoped_type_connector!(
     EntryTypesUnit::KeyRegistration,
@@ -79,10 +68,7 @@ scoped_type_connector!(
 #[hdk_link_types]
 pub enum LinkTypes {
     KSRToChangeRule,
-    KeysetRootToDeviceInviteAcceptances,
     KeysetRootToKeyAnchors,
-    InviteeToDeviceInviteAcceptances,
-    DeviceInviteToDeviceInviteAcceptances, // unused for now
     DeviceToKeyAnchor,
     DeviceName,
     AppBindingToKeyMeta,

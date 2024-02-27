@@ -1,9 +1,7 @@
 use crate::{
     EntryTypes,
-    EntryTypesUnit,
 
-    KeysetRoot,
-    DeviceInvite,
+    KeyAnchor,
     KeyRegistration,
     KeyGeneration,
 
@@ -12,14 +10,15 @@ use crate::{
 
 use hdi::prelude::*;
 use hdi_extensions::{
-    verify_app_entry_struct,
+    summon_app_entry,
+
     // Macros
     valid, invalid,
     guest_error,
 };
 
-const KEYSET_ROOT_ACTION_SEQ : u32 = 3;
-const CHANGE_RULE_ACTION_SEQ : u32 = 4;
+// const KEYSET_ROOT_ACTION_SEQ : u32 = 3;
+// const CHANGE_RULE_ACTION_SEQ : u32 = 4;
 
 
 pub fn validation(
@@ -64,19 +63,6 @@ pub fn validation(
             //     ));
             // }
 
-            // There are no DeviceInviteAcceptance's in the chain
-            if let Some(activity) = utils::get_latest_activity_for_entry_type(
-                EntryTypesUnit::DeviceInviteAcceptance,
-                &create.author,
-                &create.prev_action,
-            )? {
-                invalid!(format!(
-                    "Cannot change rules for KSR because a Device Invite was accepted at {} (action seq: {})",
-                    activity.action.action().timestamp(),
-                    activity.action.action().action_seq(),
-                ))
-            }
-
             // KeysetRoot originates in this chain (perhaps it should also be the previous action)
             let (signed_action, _) = utils::get_keyset_root(
                 &create.author,
@@ -101,16 +87,6 @@ pub fn validation(
 
             valid!()
         },
-        EntryTypes::DeviceInvite(device_invite_entry) => {
-            verify_app_entry_struct::<KeysetRoot>( &device_invite_entry.keyset_root.into() )?;
-
-            valid!()
-        },
-        EntryTypes::DeviceInviteAcceptance(device_invite_acceptance_entry) => {
-            verify_app_entry_struct::<DeviceInvite>( &device_invite_acceptance_entry.invite.into() )?;
-
-            valid!()
-        },
         EntryTypes::KeyRegistration(key_registration_entry) => {
             match key_registration_entry {
                 KeyRegistration::Create( key_gen ) => {
@@ -129,7 +105,23 @@ pub fn validation(
                 },
             }
         },
-        EntryTypes::KeyAnchor(_key_anchor_entry) => {
+        EntryTypes::KeyAnchor(key_anchor_entry) => {
+            // Check previous action is a key registration that matches this key anchor
+            let key_reg : KeyRegistration = summon_app_entry( &create.prev_action.into() )?;
+
+            let key_gen = match key_reg {
+                KeyRegistration::Create(key_gen) => key_gen,
+                KeyRegistration::CreateOnly(key_gen) => key_gen,
+                _ => invalid!(format!("KeyAnchor create must be preceeded by a KeyRegistration::[Create | CreateOnly]")),
+            };
+
+            if KeyAnchor::try_from( &key_gen.new_key )? != key_anchor_entry {
+                invalid!(format!(
+                    "KeyAnchor does not match KeyRegistration new key: {:#?} != {}",
+                    key_anchor_entry, key_gen.new_key,
+                ))
+            }
+
             valid!()
         },
 

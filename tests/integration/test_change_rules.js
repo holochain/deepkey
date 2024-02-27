@@ -63,7 +63,6 @@ describe("DeepKey", function () {
 
 	await holochain.install([
 	    "alice1",
-	    "alice2",
 	], {
 	    "app_name": "test",
 	    "bundle": {
@@ -89,10 +88,9 @@ describe("DeepKey", function () {
 
 function basic_tests () {
     let client;
-    let alice1_client, alice2_client;
+    let alice1_client;
     let deepkey;
     let alice1_deepkey;
-    let alice2_deepkey;
     let ksr1_addr;
 
     before(async function () {
@@ -102,7 +100,6 @@ function basic_tests () {
 	    "logging": process.env.LOG_LEVEL || "normal",
 	});
 	alice1_client			= await client.app( "test-alice1" );
-	alice2_client			= await client.app( "test-alice2" );
 
 	{
 	    ({
@@ -112,15 +109,6 @@ function basic_tests () {
 	    }));
 
 	    alice1_deepkey		= deepkey.zomes.deepkey_csr.functions;
-	}
-	{
-	    ({
-		deepkey,
-	    }				= alice2_client.createInterface({
-		[DEEPKEY_DNA_NAME]:	DeepKeyCell,
-	    }));
-
-	    alice2_deepkey		= deepkey.zomes.deepkey_csr.functions;
 	}
 
 	ksr1_addr			= await alice1_deepkey.query_keyset_authority_action_hash();
@@ -172,7 +160,7 @@ function basic_tests () {
 	expect( current_change_rule	).to.deep.equal( new_change_rule );
     });
 
-    linearSuite("Errors (pre invite acceptance)", function () {
+    linearSuite("Errors", function () {
 
 	it("should fail to update change rule entry because invalid signature for (alice1) KSR", async function () {
 	    await expect_reject(async () => {
@@ -247,46 +235,7 @@ function basic_tests () {
 	    }, "Required signatures cannot be 0" );
 	});
 
-	linearSuite("Phase 2", phase2 );
     });
-
-    function phase2 () {
-	let invite_accept;
-
-	it("(alice2) should invite device 'alice1'", async function () {
-	    this.timeout( 5_000 );
-
-	    invite_accept			= await alice2_deepkey.invite_agent( alice2_client.agent_id );
-	    log.normal("Device Invite Acceptance: %s", json.debug(invite_accept) );
-	});
-
-	it("(alice1) should accept invite from 'alice2'", async function () {
-	    this.timeout( 5_000 );
-
-	    const acceptance_addr		= await alice1_deepkey.accept_invite( invite_accept );
-	    log.normal("Acceptance [addr]: %s", acceptance_addr );
-	});
-
-	linearSuite("Errors (post invite acceptance)", function () {
-
-	    it("should fail to update change rule because of invite acceptance for (alice1) KSR", async function () {
-		await expect_reject(async () => {
-		    await alice1_deepkey.update_change_rule({
-			"authority_spec": {
-			    "sigs_required": 1,
-			    "authorized_signers": [
-				crypto.randomBytes(32),
-			    ],
-			},
-			"authorizations": [
-			    [ 0, crypto.randomBytes(64) ],
-			],
-		    });
-		}, "Cannot change rules for KSR because a Device Invite was accepted" );
-	    });
-
-	});
-    }
 
     after(async function () {
 	await client.close();

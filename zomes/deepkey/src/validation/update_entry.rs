@@ -1,7 +1,7 @@
 use crate::{
     EntryTypes,
-    EntryTypesUnit,
 
+    KeyAnchor,
     KeyRegistration,
     KeyRevocation,
 
@@ -14,7 +14,10 @@ use crate::{
 
 use hdi::prelude::*;
 use hdi_extensions::{
+    summon_app_entry,
+
     // Macros
+    guest_error,
     valid, invalid,
 };
 
@@ -22,7 +25,7 @@ use hdi_extensions::{
 pub fn validation(
     app_entry: EntryTypes,
     update: Update,
-    _original_action_hash: ActionHash,
+    original_action_hash: ActionHash,
     _original_entry_hash: EntryHash
 ) -> ExternResult<ValidateCallbackResult> {
     match app_entry {
@@ -42,19 +45,6 @@ pub fn validation(
                     "There are not enough authorities ({}) to satisfy the signatures required ({})",
                     new_authority_spec.authorized_signers.len(),
                     new_authority_spec.sigs_required,
-                ))
-            }
-
-            // There are no DeviceInviteAcceptance's in the chain
-            if let Some(activity) = utils::get_latest_activity_for_entry_type(
-                EntryTypesUnit::DeviceInviteAcceptance,
-                &update.author,
-                &update.prev_action,
-            )? {
-                invalid!(format!(
-                    "Cannot change rules for KSR because a Device Invite was accepted at {} (action seq: {})",
-                    activity.action.action().timestamp(),
-                    activity.action.action().action_seq(),
                 ))
             }
 
@@ -87,17 +77,13 @@ pub fn validation(
 
             valid!()
         },
-        EntryTypes::DeviceInvite(_device_invite_entry) => {
-            invalid!(format!("Device Invites cannot be updated"))
-        },
-        EntryTypes::DeviceInviteAcceptance(_device_invite_acceptance_entry) => {
-            invalid!(format!("Device Invite Acceptances cannot be updated"))
-        },
         EntryTypes::KeyRegistration(key_registration_entry) => {
             match key_registration_entry {
                 KeyRegistration::Create(..) |
                 KeyRegistration::CreateOnly(..)=> {
-                    invalid!("KeyRegistration enum must be 'Update' or 'Delete'; not 'Create' or 'CreateOnly'".to_string())
+                    invalid!(format!(
+                        "KeyRegistration enum must be 'Update' or 'Delete'; not 'Create' or 'CreateOnly'"
+                    ))
                 },
                 KeyRegistration::Update( key_rev, key_gen ) => {
                     validate_key_revocation( &key_rev, &update )?;
@@ -112,7 +98,38 @@ pub fn validation(
                 },
             }
         },
-        EntryTypes::KeyAnchor(_key_anchor_entry) => {
+        EntryTypes::KeyAnchor(key_anchor_entry) => {
+            // Check previous action is a key registration that matches this key anchor
+            let key_reg : KeyRegistration = summon_app_entry( &update.prev_action.into() )?;
+
+            let (key_rev, key_gen) = match key_reg {
+                KeyRegistration::Update(key_rev, key_gen) => (key_rev, key_gen),
+                _ => invalid!(format!(
+                    "KeyAnchor update must be preceeded by a KeyRegistration::Update"
+                )),
+            };
+
+            // Check new key
+            if KeyAnchor::try_from( &key_gen.new_key )? != key_anchor_entry {
+                invalid!(format!(
+                    "KeyAnchor does not match KeyRegistration new key: {:#?} != {}",
+                    key_anchor_entry, key_gen.new_key,
+                ))
+            }
+
+            // Check revoked key - updated anchor must match the revoked registrations anchor
+            let prior_key_anchor_entry : KeyAnchor = summon_app_entry( &original_action_hash.into() )?;
+            let prior_key_reg : KeyRegistration = summon_app_entry(
+                &key_rev.prior_key_registration.into()
+            )?;
+
+            if prior_key_reg.key_anchor()? != prior_key_anchor_entry {
+                invalid!(format!(
+                    "Original KeyAnchor does not match prior KeyRegistration key anchor: {:#?} != {:#?}",
+                    prior_key_anchor_entry, prior_key_reg.key_anchor()?,
+                ))
+            }
+
             valid!()
         },
         EntryTypes::KeyMeta(_key_meta_entry) => {
@@ -126,17 +143,46 @@ pub fn validation(
 }
 
 
-pub fn validate_key_revocation(_key_rev: &KeyRevocation, _update: &Update) -> ExternResult<()> {
+pub fn validate_key_revocation(key_rev: &KeyRevocation, update: &Update) -> ExternResult<()> {
     // KeyRevocation {
     //     prior_key_registration: ActionHash,
     //     revocation_authorization: Vec<Authorization>,
     // }
 
-    // Trace the KSR this key is under at this time
+    // Make sure the target key belongs to this KSR
+    let key_registration_action = must_get_action( key_rev.prior_key_registration.to_owned() )?;
+
+    if *key_registration_action.hashed.author() != update.author {
+        Err(guest_error!(format!(
+            "Author '{}' cannot revoke key registered by another author ({})",
+            update.author, key_registration_action.hashed.author(),
+        )))?
+    }
 
     // Get the current change rule
+    let prev_change_rule = utils::prev_change_rule( &update.author, &update.prev_action )?
+        .ok_or(guest_error!(format!(
+            "No change rule found before action seq ({}) [{}]",
+            update.action_seq, update.prev_action
+        )))?;
+
+    let sigs_required = &prev_change_rule.spec_change.new_spec.sigs_required;
+    let authorities = &prev_change_rule.spec_change.new_spec.authorized_signers;
+    let sig_count = key_rev.revocation_authorization.len() as u8;
+
+    if sig_count < *sigs_required {
+        Err(guest_error!(format!(
+            "Signature count ({}) is not enough; key revocation requires at least {} signatures",
+            sig_count, sigs_required,
+        )))?
+    }
 
     // Check authorizations against change rule authorities
+    utils::check_authorities(
+        authorities,
+        &key_rev.revocation_authorization,
+        &key_rev.prior_key_registration.clone().into_inner(),
+    )?;
 
     Ok(())
 }
