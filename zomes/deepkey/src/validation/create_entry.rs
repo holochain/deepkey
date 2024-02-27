@@ -1,6 +1,7 @@
 use crate::{
     EntryTypes,
 
+    KeyAnchor,
     KeyRegistration,
     KeyGeneration,
 
@@ -9,6 +10,8 @@ use crate::{
 
 use hdi::prelude::*;
 use hdi_extensions::{
+    summon_app_entry,
+
     // Macros
     valid, invalid,
     guest_error,
@@ -102,7 +105,23 @@ pub fn validation(
                 },
             }
         },
-        EntryTypes::KeyAnchor(_key_anchor_entry) => {
+        EntryTypes::KeyAnchor(key_anchor_entry) => {
+            // Check previous action is a key registration that matches this key anchor
+            let key_reg : KeyRegistration = summon_app_entry( &create.prev_action.into() )?;
+
+            let key_gen = match key_reg {
+                KeyRegistration::Create(key_gen) => key_gen,
+                KeyRegistration::CreateOnly(key_gen) => key_gen,
+                _ => invalid!(format!("KeyAnchor create must be preceeded by a KeyRegistration::[Create | CreateOnly]")),
+            };
+
+            if KeyAnchor::try_from( &key_gen.new_key )? != key_anchor_entry {
+                invalid!(format!(
+                    "KeyAnchor does not match KeyRegistration new key: {:#?} != {}",
+                    key_anchor_entry, key_gen.new_key,
+                ))
+            }
+
             valid!()
         },
 

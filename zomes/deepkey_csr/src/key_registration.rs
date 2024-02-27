@@ -222,27 +222,27 @@ pub fn revoke_key(input: RevokeKeyInput) -> ExternResult<(ActionHash, KeyRegistr
         )))?
     }
 
-    // Get key anchor create action
+    let key_revocation = KeyRevocation {
+        prior_key_registration: prior_key_reg_addr.clone(),
+        revocation_authorization: key_rev.revocation_authorization,
+    };
+    let registration_delete = KeyRegistration::Delete(key_revocation);
+
+    // TODO: Fill out the validation for KeyRevocation so it actually validates the revocation_authorization signatures.
+    let key_reg_addr = update_entry(
+        prior_key_reg_addr.clone(),
+        registration_delete.to_input(),
+    )?;
+
+    // Terminate key anchor
     let prior_key_addr = crate::key_anchor::get_key_anchor_for_registration(
         prior_key_reg_addr.clone()
     )?.0;
     delete_entry( prior_key_addr )?;
 
-    let key_revocation = KeyRevocation {
-        prior_key_registration: prior_key_reg_addr.clone(),
-        revocation_authorization: key_rev.revocation_authorization,
-    };
-    let revocation_registration = KeyRegistration::Delete(key_revocation);
-
-    // TODO: Fill out the validation for KeyRevocation so it actually validates the revocation_authorization signatures.
-    let key_reg_addr = update_entry(
-        prior_key_reg_addr,
-        revocation_registration.to_input(),
-    )?;
-
     Ok((
         key_reg_addr,
-        revocation_registration,
+        registration_delete,
     ))
 }
 

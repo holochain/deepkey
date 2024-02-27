@@ -1,6 +1,7 @@
 use crate::{
     EntryTypes,
 
+    KeyAnchor,
     KeyRegistration,
     KeyRevocation,
 
@@ -13,6 +14,8 @@ use crate::{
 
 use hdi::prelude::*;
 use hdi_extensions::{
+    summon_app_entry,
+
     // Macros
     guest_error,
     valid, invalid,
@@ -22,7 +25,7 @@ use hdi_extensions::{
 pub fn validation(
     app_entry: EntryTypes,
     update: Update,
-    _original_action_hash: ActionHash,
+    original_action_hash: ActionHash,
     _original_entry_hash: EntryHash
 ) -> ExternResult<ValidateCallbackResult> {
     match app_entry {
@@ -78,7 +81,9 @@ pub fn validation(
             match key_registration_entry {
                 KeyRegistration::Create(..) |
                 KeyRegistration::CreateOnly(..)=> {
-                    invalid!("KeyRegistration enum must be 'Update' or 'Delete'; not 'Create' or 'CreateOnly'".to_string())
+                    invalid!(format!(
+                        "KeyRegistration enum must be 'Update' or 'Delete'; not 'Create' or 'CreateOnly'"
+                    ))
                 },
                 KeyRegistration::Update( key_rev, key_gen ) => {
                     validate_key_revocation( &key_rev, &update )?;
@@ -93,7 +98,38 @@ pub fn validation(
                 },
             }
         },
-        EntryTypes::KeyAnchor(_key_anchor_entry) => {
+        EntryTypes::KeyAnchor(key_anchor_entry) => {
+            // Check previous action is a key registration that matches this key anchor
+            let key_reg : KeyRegistration = summon_app_entry( &update.prev_action.into() )?;
+
+            let (key_rev, key_gen) = match key_reg {
+                KeyRegistration::Update(key_rev, key_gen) => (key_rev, key_gen),
+                _ => invalid!(format!(
+                    "KeyAnchor update must be preceeded by a KeyRegistration::Update"
+                )),
+            };
+
+            // Check new key
+            if KeyAnchor::try_from( &key_gen.new_key )? != key_anchor_entry {
+                invalid!(format!(
+                    "KeyAnchor does not match KeyRegistration new key: {:#?} != {}",
+                    key_anchor_entry, key_gen.new_key,
+                ))
+            }
+
+            // Check revoked key - updated anchor must match the revoked registrations anchor
+            let prior_key_anchor_entry : KeyAnchor = summon_app_entry( &original_action_hash.into() )?;
+            let prior_key_reg : KeyRegistration = summon_app_entry(
+                &key_rev.prior_key_registration.into()
+            )?;
+
+            if prior_key_reg.key_anchor()? != prior_key_anchor_entry {
+                invalid!(format!(
+                    "Original KeyAnchor does not match prior KeyRegistration key anchor: {:#?} != {:#?}",
+                    prior_key_anchor_entry, prior_key_reg.key_anchor()?,
+                ))
+            }
+
             valid!()
         },
         EntryTypes::KeyMeta(_key_meta_entry) => {
