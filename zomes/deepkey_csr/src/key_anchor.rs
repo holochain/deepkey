@@ -30,7 +30,7 @@ pub fn create_key_anchor(key_anchor: KeyAnchor) -> ExternResult<ActionHash> {
 #[hdk_entry_helper]
 pub enum KeyState {
     NotFound,
-    Invalidated(SignedActionHashed),
+    Invalid(Option<SignedActionHashed>),
     Valid(SignedActionHashed),
 }
 
@@ -53,7 +53,7 @@ pub fn key_state((key_bytes, timestamp): (ByteArray<32>, Timestamp)) -> ExternRe
                 );
                 if let Some(delete_record) = entry_details.deletes.first() {
                     if delete_record.action().timestamp() < timestamp {
-                        return Ok(KeyState::Invalidated( delete_record.to_owned() ));
+                        return Ok(KeyState::Invalid( Some(delete_record.to_owned()) ));
                     }
                     else {
                         debug!(
@@ -65,7 +65,7 @@ pub fn key_state((key_bytes, timestamp): (ByteArray<32>, Timestamp)) -> ExternRe
 
                 if let Some(update_record) = entry_details.updates.first() {
                     if update_record.action().timestamp() < timestamp {
-                        return Ok(KeyState::Invalidated( update_record.to_owned() ));
+                        return Ok(KeyState::Invalid( Some(update_record.to_owned()) ));
                     }
                     else {
                         debug!(
@@ -83,7 +83,7 @@ pub fn key_state((key_bytes, timestamp): (ByteArray<32>, Timestamp)) -> ExternRe
                                     "Create occurred before the given timestamp: [created] {} < {}",
                                     record.action().timestamp(), timestamp
                                 );
-                                KeyState::NotFound
+                                KeyState::Invalid( None )
                             },
                             false => KeyState::Valid( record.to_owned() ),
                         }

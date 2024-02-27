@@ -224,7 +224,7 @@ function basic_tests () {
 	    const key_state		= await alice_deepkey.key_state( alice_key1a );
 	    log.normal("Key (1a) state: %s", json.debug(key_state) );
 
-	    expect( key_state		).to.have.key( "Invalidated" );
+	    expect( key_state		).to.have.key( "Invalid" );
 	}
 	{
 	    const key_state		= await alice_deepkey.key_state( alice_key1b );
@@ -277,13 +277,15 @@ function basic_tests () {
 	    const key_state		= await alice_deepkey.key_state( alice_key1a );
 	    log.normal("Key (1a) state: %s", json.debug(key_state) );
 
-	    expect( key_state		).to.have.key( "Invalidated" );
+	    expect( key_state		).to.have.key( "Invalid" );
+	    expect( key_state.Invalid	).to.not.be.null;
 	}
 	{
 	    const key_state		= await alice_deepkey.key_state( alice_key1b );
 	    log.normal("Key (1b) state: %s", json.debug(key_state) );
 
-	    expect( key_state		).to.have.key( "Invalidated" );
+	    expect( key_state		).to.have.key( "Invalid" );
+	    expect( key_state.Invalid	).to.not.be.null;
 	}
     });
 
@@ -292,7 +294,8 @@ function basic_tests () {
 	const key_state			= await alice_deepkey.key_state([ alice_key1a, timestamp ]);
 	log.normal("Key (1a) state @ %s: %s", timestamp, json.debug(key_state) );
 
-	expect( key_state		).to.have.key( "NotFound" );
+	expect( key_state		).to.have.key( "Invalid" );
+	expect( key_state.Invalid	).to.be.null;
     });
 
     it("should register another key", async function () {

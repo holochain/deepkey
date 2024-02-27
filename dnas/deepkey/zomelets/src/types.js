@@ -240,8 +240,8 @@ export function KeyState ( entry ) {
 	null;
     if ( "Valid" in entry )
 	entry.Valid		= intoStruct( entry.Valid, SignedActionStruct );
-    if ( "Invalidated" in entry )
-	entry.Invalidated	= intoStruct( entry.Invalidated, SignedActionStruct );
+    if ( "Invalid" in entry )
+	entry.Invalid		= intoStruct( entry.Invalid, OptionType( SignedActionStruct ) );
 
     return entry;
 }
