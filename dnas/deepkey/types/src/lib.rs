@@ -7,9 +7,6 @@ pub mod key_meta;
 pub mod key_registration;
 pub mod keyset_root;
 
-pub use hdi_extensions;
-pub use hdi_extensions::hdi;
-
 pub use authorized_spec_change::*;
 pub use authority_spec::*;
 pub use change_rule::*;

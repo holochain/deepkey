@@ -102,3 +102,17 @@ docs-watch:
 		echo -e "\x1b[37m$$event $$dir$$file\x1b[0m";\
 		make docs;			\
 	done
+
+
+#
+# Publishing Types Packages
+#
+.cargo/credentials:
+	cp ~/$@ $@
+preview-%-types-crate:		 .cargo/credentials
+	cd dnas/$*; make preview-types-crate
+publish-%-types-crate:		 .cargo/credentials
+	cd dnas/$*; make publish-types-crate
+
+preview-deepkey-types-crate:
+publish-deepkey-types-crate:

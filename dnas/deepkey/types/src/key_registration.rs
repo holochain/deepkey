@@ -1,7 +1,4 @@
 use hdi::prelude::*;
-use hdi_extensions::{
-    guest_error,
-};
 
 use crate::{
     KeyAnchor,
@@ -93,9 +90,9 @@ impl KeyRegistration {
             KeyRegistration::Create(key_gen) => key_gen.new_key.to_owned(),
             KeyRegistration::CreateOnly(key_gen) => key_gen.new_key.to_owned(),
             KeyRegistration::Update(_, key_gen) => key_gen.new_key.to_owned(),
-            KeyRegistration::Delete(_) => Err(guest_error!(
+            KeyRegistration::Delete(_) => Err(wasm_error!(WasmErrorInner::Guest(
                 "Cannot derive KeyAnchor from a KeyRegistration::Delete".to_string()
-            ))?,
+            )))?,
         }.try_into()
     }
 

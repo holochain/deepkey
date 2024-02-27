@@ -830,8 +830,8 @@ name = "hc_deepkey_types"
 version = "0.1.0"
 dependencies = [
  "hdi",
+ "holo_hash",
  "serde",
- "whi_hdi_extensions",
 ]
 
 [[package]]
