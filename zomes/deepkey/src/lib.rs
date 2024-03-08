@@ -22,7 +22,7 @@ use hdi_extensions::{
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
-#[hdk_entry_defs]
+#[hdk_entry_types]
 #[unit_enum(EntryTypesUnit)]
 pub enum EntryTypes {
     KeysetRoot(KeysetRoot),
@@ -32,9 +32,9 @@ pub enum EntryTypes {
     KeyRegistration(KeyRegistration),
     KeyAnchor(KeyAnchor),
 
-    #[entry_def(visibility = "private")]
+    #[entry_type(visibility = "private")]
     KeyMeta(KeyMeta),
-    #[entry_def(visibility = "private")]
+    #[entry_type(visibility = "private")]
     AppBinding(AppBinding),
 }
 

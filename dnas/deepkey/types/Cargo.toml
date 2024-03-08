@@ -13,6 +13,6 @@ name = "deepkey_types"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-hdi = { version = "0.4.0-beta-dev.20" }
-holo_hash = { version = "0.3.0-beta-dev.16", features = ["hashing", "encoding"] }
+hdi = { version = "0.4.0-beta-dev.29" }
+holo_hash = { version = "0.3.0-beta-dev.23", features = ["hashing", "encoding"] }
 serde = "1"
