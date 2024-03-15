@@ -28,6 +28,3 @@ path = "zomes/deepkey"
 
 [workspace.dependencies.deepkey_csr]
 path = "zomes/deepkey_csr"
-
-# [patch.crates-io]
-# holochain_types = { path = "/home/michael/Holo/chain/crates/holochain_types" }
