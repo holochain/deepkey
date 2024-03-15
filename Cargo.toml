@@ -6,7 +6,10 @@ opt-level = "z"
 
 [workspace]
 resolver = "2"
-members = ["zomes/*"]
+members = [ 
+    "crates/holochain_deepkey_dna",
+    "zomes/*",
+]
 
 [workspace.dependencies]
 serde = "1"
@@ -25,3 +28,6 @@ path = "zomes/deepkey"
 
 [workspace.dependencies.deepkey_csr]
 path = "zomes/deepkey_csr"
+
+# [patch.crates-io]
+# holochain_types = { path = "/home/michael/Holo/chain/crates/holochain_types" }

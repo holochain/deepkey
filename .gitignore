@@ -2,5 +2,5 @@
 /target
 /node_modules
 /dnas/*/zomelets/node_modules
-/dnas/*.dna
-/zomes/*.wasm
+*.dna
+*.wasm
