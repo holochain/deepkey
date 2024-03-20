@@ -30,6 +30,7 @@ $(DEEPKEY_DNA):		$(DEEPKEY_WASM) $(DEEPKEY_CSR_WASM)
 dnas/%.dna:		dnas/%/dna.yaml
 	@echo "Packaging '$*': $@"
 	@hc dna pack -o $@ dnas/$*
+	cp dnas/$*.dna crates/holochain_deepkey_dna/src
 
 zomes:
 	mkdir $@

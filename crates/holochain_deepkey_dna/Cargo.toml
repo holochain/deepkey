@@ -1,0 +1,17 @@
+[package]
+name = "holochain_deepkey_dna"
+version = "0.0.1"
+edition = "2021"
+authors = ["Michael dougherty <michael.dougherty@holo.host>"]
+license = "CAL-1.0"
+repository = "https://github.com/holochain/deepkey"
+description = "A compilation of the Deepkey DNA for use in Holochain"
+
+include = [
+    "*",
+    "src/deepkey.dna",
+]
+
+[lib]
+name = "holochain_deepkey_dna"
+path = "src/lib.rs"
