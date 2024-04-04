@@ -1,13 +1,11 @@
 mod validation;
 
 pub mod utils;
-pub mod device_name;
 pub mod error;
 pub mod joining_proof;
 pub mod source_of_authority;
 
 pub use deepkey_types::*;
-pub use device_name::*;
 pub use error::*;
 pub use joining_proof::*;
 pub use source_of_authority::*;

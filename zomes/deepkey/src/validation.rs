@@ -4,15 +4,6 @@ mod delete_entry;
 mod create_link;
 mod delete_link;
 
-// use crate::key_anchor::*;
-// use crate::key_registration::*;
-// use crate::device_invite_acceptance::*;
-// use crate::device_invite::*;
-// use crate::change_rule::*;
-// use crate::keyset_root::*;
-// use crate::device_name::*;
-// use crate::key_meta::*;
-// use crate::app_binding::*;
 use crate::{
     EntryTypes,
     LinkTypes,

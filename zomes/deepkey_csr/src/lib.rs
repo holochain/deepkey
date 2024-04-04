@@ -1,6 +1,5 @@
 pub mod change_rule;
 pub mod device;
-pub mod device_name;
 pub mod key_anchor;
 pub mod key_registration;
 pub mod keyset_root;
