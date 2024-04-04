@@ -7,6 +7,7 @@ use hdk_extensions::{
     must_get,
     hdi_extensions::{
         guest_error,
+        trace_origin_root,
         ScopedTypeConnector,
     },
 };
@@ -115,5 +116,20 @@ pub fn get_key_anchor_for_registration(addr: ActionHash) -> ExternResult<(Action
     Ok((
         record.action_address().to_owned(),
         record.try_into()?
+    ))
+}
+
+
+#[hdk_extern]
+pub fn get_first_key_anchor_for_key(key_bytes: ByteArray<32>) -> ExternResult<(ActionHash, KeyAnchor)> {
+    let key_anchor = KeyAnchor::new( key_bytes.into_array() );
+    let key_anchor_hash = hash_entry( &key_anchor )?;
+
+    let ka_action_addr = must_get( &key_anchor_hash )?.action_address().to_owned();
+    let first_ka_action_addr = trace_origin_root( &ka_action_addr )?.0;
+
+    Ok((
+        first_ka_action_addr.clone(),
+        must_get( &first_ka_action_addr )?.try_into()?,
     ))
 }

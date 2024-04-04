@@ -45,6 +45,30 @@ const functions				= {
 	    AppBinding( app_binding ),
 	]);
     },
+    async query_app_bindings_by_installed_app_id ( input ) {
+	const result			= await this.call( input );
+
+	return result.map( ([addr, app_binding]) => [
+	    new ActionHash( addr ),
+	    AppBinding( app_binding ),
+	]);
+    },
+    async query_app_binding_by_index ( input ) {
+	const result			= await this.call( input );
+
+	return [
+	    new ActionHash( result[0] ),
+	    AppBinding( result[1] ),
+	];
+    },
+    async query_app_binding_by_key ( input ) {
+	const result			= await this.call( input );
+
+	return [
+	    new ActionHash( result[0] ),
+	    AppBinding( result[1] ),
+	];
+    },
     async query_apps_with_keys () {
 	const result			= await this.call();
 
