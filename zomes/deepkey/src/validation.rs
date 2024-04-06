@@ -14,7 +14,6 @@ use hdi_extensions::{
     // Macros
     valid, invalid,
 };
-use hdk::prelude::debug;
 
 
 #[hdk_extern]
@@ -42,12 +41,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             // OpRecord::Dna { dna_hash, action: dna },
             // OpRecord::OpenChain { previous_dna_hash, action: open_chain },
             // OpRecord::CloseChain { new_dna_hash, action: close_chain },
-            OpRecord::AgentValidationPkg { membrane_proof, action: agent_validation_pkg } => {
-                debug!("AgentValidationPkg => {:#?}", agent_validation_pkg );
-                debug!("AgentValidationPkg => Membrane proof: {:#?}", membrane_proof );
-                invalid!("No agent validation".to_string())
-                // valid!()
-            },
+            // OpRecord::AgentValidationPkg { membrane_proof, action: agent_validation_pkg },
             // OpRecord::InitZomesComplete { action: init_zomes_complete },
             _ => valid!(),
         },
