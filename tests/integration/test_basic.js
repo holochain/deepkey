@@ -128,7 +128,7 @@ function basic_tests () {
     it("should register new key", async function () {
 	this.timeout( 5_000 );
 
-	const derivation_details	= await alice1_deepkey.next_derivation_details( alice1_app1_id );
+	const derivation_details	= await alice1_deepkey.next_derivation_details();
 	const {
 	    app_index,
 	    key_index,

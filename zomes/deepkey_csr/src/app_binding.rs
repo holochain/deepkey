@@ -1,5 +1,7 @@
 use crate::utils;
 use deepkey::*;
+use serde_bytes::ByteArray;
+
 use hdk::prelude::*;
 use hdk_extensions::{
     must_get,
@@ -42,13 +44,34 @@ pub fn query_app_binding_by_index(index: u32) -> ExternResult<(ActionHash, AppBi
 }
 
 #[hdk_extern]
-pub fn query_app_binding_by_id(installed_app_id: String) -> ExternResult<(ActionHash, AppBinding)> {
+pub fn query_app_binding_by_action(addr: ActionHash) -> ExternResult<AppBinding> {
+    Ok(
+        query_app_bindings(())?
+            .into_iter()
+            .find( |(app_binding_addr, _)| *app_binding_addr == addr  )
+            .ok_or(guest_error!(format!("No AppBinding with action hash: {}", addr )))?.1
+    )
+}
+
+#[hdk_extern]
+pub fn query_app_bindings_by_installed_app_id(installed_app_id: String) -> ExternResult<Vec<(ActionHash, AppBinding)>> {
+    Ok(
+        query_app_bindings(())?
+            .into_iter()
+            .filter( |(_, app_binding)| app_binding.installed_app_id == installed_app_id  )
+            .collect()
+    )
+}
+
+#[hdk_extern]
+pub fn query_app_binding_by_key(key_bytes: ByteArray<32>) -> ExternResult<(ActionHash, AppBinding)> {
+    let (ka_action_addr, _) = crate::key_anchor::get_first_key_anchor_for_key( key_bytes )?;
     let (addr, app_binding) = query_app_bindings(())?
         .into_iter()
-        .find( |(_, app_binding)| app_binding.installed_app_id == installed_app_id  )
-        .ok_or(guest_error!(format!("No AppBinding with installed ID: {}", installed_app_id )))?;
+        .find( |(_, app_binding)| app_binding.key_anchor_addr == ka_action_addr  )
+        .ok_or(guest_error!(format!("No AppBinding for key anchor: {}", ka_action_addr )))?;
 
-    debug!("Found AppBinding ({}) for installed app ID: {}", addr, installed_app_id );
+    debug!("Found AppBinding ({}) for KeyAnchor: {}", addr, ka_action_addr );
     Ok((addr, app_binding))
 }
 

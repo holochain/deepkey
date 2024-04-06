@@ -137,7 +137,7 @@ function basic_tests () {
     it("should register new key (alice)", async function () {
 	this.timeout( 5_000 );
 
-	const derivation_details	= await alice_deepkey.next_derivation_details( alice_app1_id );
+	const derivation_details	= await alice_deepkey.next_derivation_details();
 	const {
 	    app_index,
 	    key_index,
@@ -162,7 +162,7 @@ function basic_tests () {
 	log.normal("Key registration (create) addr: %s", addr );
 
 	alice_key1a			= await new_key.getBytes();
-	alice_key1a_reg		= key_reg;
+	alice_key1a_reg			= key_reg;
 	alice_key1a_reg_addr		= addr;
 
 	{
@@ -183,7 +183,7 @@ function basic_tests () {
     it("should update key (alice)", async function () {
 	this.timeout( 5_000 );
 
-	const derivation_details	= await alice_deepkey.next_derivation_details( alice_app1_id );
+	const derivation_details	= await alice_deepkey.next_derivation_details( alice_key1a );
 	const {
 	    app_index,
 	    key_index,
@@ -197,7 +197,6 @@ function basic_tests () {
 	});
 
 	const [ addr, key_reg, key_meta ]	= await alice_deepkey.update_key({
-	    "installed_app_id":		alice_app1_id,
 	    "key_revocation": {
 		"prior_key_registration": alice_key1a_reg_addr,
 		"revocation_authorization": [
@@ -259,7 +258,6 @@ function basic_tests () {
 	this.timeout( 5_000 );
 
 	const [ addr, key_reg ]	= await alice_deepkey.revoke_key({
-	    "installed_app_id":		alice_app1_id,
 	    "key_revocation": {
 		"prior_key_registration": alice_key1b_reg_addr,
 		"revocation_authorization": [
@@ -301,7 +299,7 @@ function basic_tests () {
     it("should register another key", async function () {
 	this.timeout( 10_000 );
 
-	const derivation_details		= await alice_deepkey.next_derivation_details( alice_app2_id );
+	const derivation_details		= await alice_deepkey.next_derivation_details();
 	const {
 	    app_index,
 	    key_index,
@@ -327,6 +325,34 @@ function basic_tests () {
 	alice_key2a_reg_addr		= addr;
     });
 
+    it("should register new key with the same app ID (alice)", async function () {
+	this.timeout( 5_000 );
+
+	const derivation_details	= await alice_deepkey.next_derivation_details();
+	const {
+	    app_index,
+	    key_index,
+	}				= derivation_details;
+	const path			= `app/${app_index}/key/${key_index}`;
+	const new_key			= await alice_key_store.createKey( path );
+
+	const [ addr, key_reg, key_meta ]	= await alice_deepkey.create_key({
+	    "app_binding": {
+		"app_name":		"Alice - App #1",
+		"installed_app_id":	alice_app1_id,
+		"dna_hashes":		[ dna1_hash ],
+	    },
+	    "key_generation": {
+		"new_key":			await new_key.getAgent(),
+		"new_key_signing_of_author":	await new_key.sign( alice_client.agent_id ),
+	    },
+	    "derivation_details":	derivation_details,
+	});
+	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
+	log.normal("Key Meta: %s", json.debug(key_meta) );
+	log.normal("Key registration (create) addr: %s", addr );
+    });
+
     linearSuite("Errors", function () {
 
 	it("should fail to register invalid key", async function () {
@@ -342,7 +368,7 @@ function basic_tests () {
 			"new_key":			new AgentPubKey( crypto.randomBytes( 32 ) ),
 			"new_key_signing_of_author":	crypto.randomBytes( 64 ),
 		    },
-		    "derivation_details": await alice_deepkey.next_derivation_details( installed_app_id ),
+		    "derivation_details": await alice_deepkey.next_derivation_details(),
 		});
 	    }, "Signature does not match new key" );
 	});

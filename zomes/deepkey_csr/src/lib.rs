@@ -24,9 +24,6 @@ use keyset_root::create_keyset_root;
 
 #[hdk_extern]
 pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
-    // TODO: This cannot actually be done here because we must pass in the revocation keys.  Unless
-    // we separate the KSR creation and authority spec creation.  Which means the ephemeral key
-    // would not be able to sign the authority spec.
     create_keyset_root(())?;
 
     // grant unrestricted access to receive_device_invitation so other agents can send us device invitations

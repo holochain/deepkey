@@ -15,10 +15,12 @@ use hdk_extensions::{
 
 
 #[hdk_extern]
-pub fn next_derivation_details(installed_app_id: String) -> ExternResult<DerivationDetailsInput> {
+pub fn next_derivation_details(input: Option<ByteArray<32>>) -> ExternResult<DerivationDetailsInput> {
     Ok(
-        match crate::app_binding::query_app_binding_by_id( installed_app_id ) {
-            Ok((_, app_binding)) => {
+        match input {
+            Some(key_bytes) => {
+                let (_, app_binding) = crate::app_binding::query_app_binding_by_key( key_bytes )?;
+
                 let next_key_index = crate::key_meta::query_next_key_index_for_app_index(
                     app_binding.app_index
                 )?;
@@ -28,9 +30,11 @@ pub fn next_derivation_details(installed_app_id: String) -> ExternResult<Derivat
                     key_index: next_key_index,
                 }
             },
-            Err(_) => DerivationDetailsInput {
-                app_index: crate::app_binding::query_next_app_index(())?,
-                key_index: 0,
+            None => {
+                DerivationDetailsInput {
+                    app_index: crate::app_binding::query_next_app_index(())?,
+                    key_index: 0,
+                }
             },
         }
     )
@@ -122,7 +126,6 @@ pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateKeyInput {
-    pub installed_app_id: String,
     pub key_revocation: KeyRevocation,
     pub key_generation: KeyGeneration,
     pub derivation_details: DerivationDetailsInput,
@@ -138,7 +141,12 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
     let given_key_index = input.derivation_details.key_index;
 
     let next_key_index = crate::key_meta::query_next_key_index_for_app_index( given_app_index )?;
-    let (app_binding_addr, app_binding) = crate::app_binding::query_app_binding_by_id( input.installed_app_id.clone() )?;
+    let prior_key_meta = crate::key_meta::query_key_meta_for_registration(
+        prior_key_reg_addr.clone()
+    )?;
+    let app_binding = crate::app_binding::query_app_binding_by_action(
+        prior_key_meta.app_binding_addr.clone()
+    )?;
 
     // Check that derivation details has the correct 'app_index'
     if given_app_index != app_binding.app_index {
@@ -153,18 +161,6 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
         Err(guest_error!(format!(
             "The derivation key index does not match the chain state: [given] {} != {} [next]",
             given_key_index, next_key_index
-        )))?
-    }
-
-    let prior_key_meta = crate::key_meta::query_key_meta_for_registration(
-        prior_key_reg_addr.clone()
-    )?;
-
-    // Check that prior key meta has the same app binding
-    if prior_key_meta.app_binding_addr != app_binding_addr {
-        Err(guest_error!(format!(
-            "Prior app binding ({}) does not match the app binding ({}) found for ID: {}",
-            prior_key_meta.app_binding_addr, app_binding_addr, input.installed_app_id,
         )))?
     }
 
@@ -183,7 +179,7 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
 
     // Create Meta
     let key_meta = KeyMeta {
-        app_binding_addr: app_binding_addr.clone(),
+        app_binding_addr: prior_key_meta.app_binding_addr.clone(),
         key_index: given_key_index,
         key_registration_addr: key_reg_addr.clone(),
         key_anchor_addr: key_anchor_addr.clone(),
@@ -200,7 +196,6 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RevokeKeyInput {
-    pub installed_app_id: String,
     pub key_revocation: KeyRevocation,
 }
 
@@ -208,19 +203,6 @@ pub struct RevokeKeyInput {
 pub fn revoke_key(input: RevokeKeyInput) -> ExternResult<(ActionHash, KeyRegistration)> {
     let key_rev = input.key_revocation;
     let prior_key_reg_addr = key_rev.prior_key_registration.clone();
-    let prior_key_meta = crate::key_meta::query_key_meta_for_registration(
-        prior_key_reg_addr.clone()
-    )?;
-
-    let (app_binding_addr, _) = crate::app_binding::query_app_binding_by_id( input.installed_app_id.clone() )?;
-
-    // Check that prior key meta has the same app binding
-    if prior_key_meta.app_binding_addr != app_binding_addr {
-        Err(guest_error!(format!(
-            "Prior app binding ({}) does not match the app binding ({}) found for ID: {}",
-            prior_key_meta.app_binding_addr, app_binding_addr, input.installed_app_id,
-        )))?
-    }
 
     let key_revocation = KeyRevocation {
         prior_key_registration: prior_key_reg_addr.clone(),
@@ -228,7 +210,6 @@ pub fn revoke_key(input: RevokeKeyInput) -> ExternResult<(ActionHash, KeyRegistr
     };
     let registration_delete = KeyRegistration::Delete(key_revocation);
 
-    // TODO: Fill out the validation for KeyRevocation so it actually validates the revocation_authorization signatures.
     let key_reg_addr = update_entry(
         prior_key_reg_addr.clone(),
         registration_delete.to_input(),
