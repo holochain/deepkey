@@ -214,7 +214,7 @@ function basic_tests () {
 	log.normal("Key registration (update) addr: %s", addr );
 
 	alice_key1b			= await new_key.getBytes();
-	alice_key1b_reg		= key_reg;
+	alice_key1b_reg			= key_reg;
 	alice_key1b_reg_addr		= addr;
 
 	expect( key_meta.key_index	).to.equal( 1 );
@@ -268,7 +268,7 @@ function basic_tests () {
 	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
 	log.normal("Key registration (update) addr: %s", addr );
 
-	alice_key1c_reg		= key_reg;
+	alice_key1c_reg			= key_reg;
 	alice_key1c_reg_addr		= addr;
 
 	{
@@ -351,6 +351,39 @@ function basic_tests () {
 	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
 	log.normal("Key Meta: %s", json.debug(key_meta) );
 	log.normal("Key registration (create) addr: %s", addr );
+    });
+
+    it("should get derivation details for key 1b (alice)", async function () {
+	{
+	    const derivation_details	= await alice_deepkey.get_key_derivation_details( alice_client.agent_id.getHash() );
+
+	    log.normal("Key (0a) derivation details: %s", json.debug(derivation_details) );
+
+	    expect( derivation_details	).to.deep.equal({
+		app_index: 0,
+		key_index: 0,
+	    });
+	}
+	{
+	    const derivation_details	= await alice_deepkey.get_key_derivation_details( alice_key1b );
+
+	    log.normal("Key (1b) derivation details: %s", json.debug(derivation_details) );
+
+	    expect( derivation_details	).to.deep.equal({
+		app_index: 1,
+		key_index: 1,
+	    });
+	}
+	{
+	    const derivation_details	= await alice_deepkey.get_key_derivation_details( alice_key2a );
+
+	    log.normal("Key (2a) derivation details: %s", json.debug(derivation_details) );
+
+	    expect( derivation_details	).to.deep.equal({
+		app_index: 2,
+		key_index: 0,
+	    });
+	}
     });
 
     linearSuite("Errors", function () {

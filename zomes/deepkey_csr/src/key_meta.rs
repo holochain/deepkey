@@ -1,5 +1,7 @@
 use crate::utils;
 use deepkey::*;
+use serde_bytes::ByteArray;
+
 use hdk::prelude::*;
 use hdk_extensions::{
     hdi_extensions::{
@@ -52,11 +54,21 @@ pub fn query_key_metas(_: ()) -> ExternResult<Vec<KeyMeta>> {
 
 
 #[hdk_extern]
-pub fn query_key_meta_for_key(anchor_addr: ActionHash) -> ExternResult<KeyMeta> {
+pub fn query_key_meta_for_key_addr(anchor_addr: ActionHash) -> ExternResult<KeyMeta> {
     query_key_metas(())?
         .into_iter()
         .find( |key_meta| key_meta.key_anchor_addr == anchor_addr  )
         .ok_or(guest_error!(format!("No KeyMeta for anchor addr: {}", anchor_addr )))
+}
+
+
+#[hdk_extern]
+pub fn query_key_meta_for_key(
+    key_bytes: ByteArray<32>
+) -> ExternResult<KeyMeta> {
+    let key_anchor_addr = crate::key_anchor::get_action_addr_for_key_anchor( key_bytes )?;
+
+    Ok( query_key_meta_for_key_addr( key_anchor_addr )? )
 }
 
 

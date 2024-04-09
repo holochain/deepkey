@@ -1,4 +1,6 @@
-use crate::utils;
+use crate::{
+    utils,
+};
 use serde_bytes::ByteArray;
 use deepkey::*;
 use hdk::prelude::{
@@ -15,7 +17,9 @@ use hdk_extensions::{
 
 
 #[hdk_extern]
-pub fn next_derivation_details(input: Option<ByteArray<32>>) -> ExternResult<DerivationDetailsInput> {
+pub fn next_derivation_details(
+    input: Option<ByteArray<32>>
+) -> ExternResult<DerivationDetailsInput> {
     Ok(
         match input {
             Some(key_bytes) => {
@@ -36,6 +40,22 @@ pub fn next_derivation_details(input: Option<ByteArray<32>>) -> ExternResult<Der
                     key_index: 0,
                 }
             },
+        }
+    )
+}
+
+
+#[hdk_extern]
+pub fn get_key_derivation_details(
+    key_bytes: ByteArray<32>
+) -> ExternResult<DerivationDetailsInput> {
+    let key_meta = crate::key_meta::query_key_meta_for_key( key_bytes.clone() )?;
+    let (_, app_binding) = crate::app_binding::query_app_binding_by_key( key_bytes.clone() )?;
+
+    Ok(
+        DerivationDetailsInput {
+            app_index: app_binding.app_index,
+            key_index: key_meta.key_index,
         }
     )
 }

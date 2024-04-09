@@ -1,3 +1,4 @@
+use crate::utils;
 use deepkey::*;
 use serde_bytes::ByteArray;
 
@@ -121,11 +122,31 @@ pub fn get_key_anchor_for_registration(addr: ActionHash) -> ExternResult<(Action
 
 
 #[hdk_extern]
-pub fn get_first_key_anchor_for_key(key_bytes: ByteArray<32>) -> ExternResult<(ActionHash, KeyAnchor)> {
-    let key_anchor = KeyAnchor::new( key_bytes.into_array() );
+pub fn get_action_addr_for_key_anchor(
+    key_bytes: ByteArray<32>
+) -> ExternResult<ActionHash> {
+    let key = key_bytes.into_array();
+    let key_anchor = KeyAnchor::new( key.clone() );
     let key_anchor_hash = hash_entry( &key_anchor )?;
 
-    let ka_action_addr = must_get( &key_anchor_hash )?.action_address().to_owned();
+    let key_anchor_addr = utils::query_entry_type( EntryTypesUnit::KeyAnchor )?
+        .into_iter()
+        .filter_map( |record| Some(
+            (
+                record.action_address().to_owned(),
+                record.action().entry_hash()?.to_owned(),
+            )
+        ))
+        .find( |(_, hash)| hash == &key_anchor_hash )
+        .ok_or(guest_error!(format!("No KeyMeta for anchor hash: {}", key_anchor_hash )))?.0;
+
+    Ok( key_anchor_addr )
+}
+
+
+#[hdk_extern]
+pub fn get_first_key_anchor_for_key(key_bytes: ByteArray<32>) -> ExternResult<(ActionHash, KeyAnchor)> {
+    let ka_action_addr = get_action_addr_for_key_anchor( key_bytes )?;
     let first_ka_action_addr = trace_origin_root( &ka_action_addr )?.0;
 
     Ok((
