@@ -15,3 +15,8 @@ pub use keyset_root::*;
 pub use key_anchor::*;
 pub use key_meta::*;
 pub use key_registration::*;
+
+use std::collections::BTreeMap;
+
+
+pub type MetaData = BTreeMap<String, rmpv::Value>;

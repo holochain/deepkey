@@ -36,7 +36,7 @@ export class KeyStore {
 	    throw new TypeError(`Path must be a string; not type '${typeof path}'`);
 
 	const secret			= hmac( sha256, this.#device_seed, path );
-	const key			= new Key( secret )
+	const key			= new Key( secret, Buffer.from(path, "utf8") )
 	const agent			= await key.getAgent();
 
 	log.normal("[%s] Created key from derivation path '%s': (agent) %s", this.name, path, agent );
@@ -54,14 +54,20 @@ export class KeyStore {
 export class Key {
     #secret				= null;
     #bytes				= null;
+    #derivation_bytes			= null;
 
-    constructor ( secret ) {
+    constructor ( secret, derivation_bytes ) {
 	if ( !(secret instanceof Uint8Array) )
 	    throw new TypeError(`Secret must be a Uint8Array; not type '${secret?.constructor?.name || typeof secret}'`);
 	if ( secret.length !== 32 )
 	    throw new Error(`Secret must 32 bytes; not length ${secret.length}`);
 
 	this.#secret			= secret;
+	this.#derivation_bytes		= derivation_bytes;
+    }
+
+    get derivation_bytes () {
+	return this.#derivation_bytes;
     }
 
     async getBytes () {

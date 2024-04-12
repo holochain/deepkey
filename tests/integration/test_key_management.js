@@ -155,7 +155,10 @@ function basic_tests () {
 		"new_key":			await new_key.getAgent(),
 		"new_key_signing_of_author":	await new_key.sign( alice_client.agent_id ),
 	    },
-	    "derivation_details":	derivation_details,
+	    "derivation_details":	{
+		...derivation_details,
+		"derivation_bytes":	new_key.derivation_bytes,
+	    },
 	});
 	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
 	log.normal("Key Meta: %s", json.debug(key_meta) );
@@ -207,7 +210,10 @@ function basic_tests () {
 		"new_key":			await new_key.getAgent(),
 		"new_key_signing_of_author":	await new_key.sign( alice_client.agent_id ),
 	    },
-	    "derivation_details":	derivation_details,
+	    "derivation_details":	{
+		...derivation_details,
+		"derivation_bytes":	new_key.derivation_bytes,
+	    },
 	});
 	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
 	log.normal("Key Meta: %s", json.debug(key_meta) );
@@ -317,7 +323,10 @@ function basic_tests () {
 		"new_key":			await new_key.getAgent(),
 		"new_key_signing_of_author":	await new_key.sign( alice_client.agent_id ),
 	    },
-	    "derivation_details":		derivation_details,
+	    "derivation_details":	{
+		...derivation_details,
+		"derivation_bytes":	new_key.derivation_bytes,
+	    },
 	});
 
 	alice_key2a			= await new_key.getBytes();
@@ -346,7 +355,10 @@ function basic_tests () {
 		"new_key":			await new_key.getAgent(),
 		"new_key_signing_of_author":	await new_key.sign( alice_client.agent_id ),
 	    },
-	    "derivation_details":	derivation_details,
+	    "derivation_details":	{
+		...derivation_details,
+		"derivation_bytes":	new_key.derivation_bytes,
+	    },
 	});
 	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
 	log.normal("Key Meta: %s", json.debug(key_meta) );
@@ -390,7 +402,7 @@ function basic_tests () {
 
 	it("should fail to register invalid key", async function () {
 	    await expect_reject(async () => {
-		const installed_app_id	= "?";
+		const installed_app_id		= "?";
 		await alice_deepkey.create_key({
 		    "app_binding": {
 			"app_name":		"?",
@@ -401,7 +413,6 @@ function basic_tests () {
 			"new_key":			new AgentPubKey( crypto.randomBytes( 32 ) ),
 			"new_key_signing_of_author":	crypto.randomBytes( 64 ),
 		    },
-		    "derivation_details": await alice_deepkey.next_derivation_details(),
 		});
 	    }, "Signature does not match new key" );
 	});

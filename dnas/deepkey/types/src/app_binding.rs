@@ -1,3 +1,6 @@
+use crate::{
+    MetaData,
+};
 use hdi::prelude::{
     *,
     holo_hash::DnaHash
@@ -14,4 +17,6 @@ pub struct AppBinding {
     pub installed_app_id: String,
     pub dna_hashes: Vec<DnaHash>,
     pub key_anchor_addr: ActionHash,
+    #[serde(default)]
+    pub metadata: MetaData,
 }

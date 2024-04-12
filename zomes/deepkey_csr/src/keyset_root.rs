@@ -58,11 +58,13 @@ pub fn create_keyset_root(_: ()) -> ExternResult<ActionHash> {
             app_name: "deepkey".to_string(),
             installed_app_id: "deepkey".to_string(),
             dna_hashes: vec![ dna_hash ],
+            metadata: Default::default(),
         },
-        derivation_details: DerivationDetailsInput {
+        derivation_details: Some(DerivationDetailsInput {
             app_index: 0,
             key_index: 0,
-        },
+            derivation_bytes: vec![],
+        }),
     })?;
 
     Ok( create_hash )

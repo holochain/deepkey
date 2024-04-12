@@ -146,7 +146,10 @@ function basic_tests () {
 		"new_key":			await new_key.getAgent(),
 		"new_key_signing_of_author":	await new_key.sign( alice1_client.agent_id ),
 	    },
-	    "derivation_details":	derivation_details,
+	    "derivation_details":	{
+		...derivation_details,
+		"derivation_bytes":	new_key.derivation_bytes,
+	    },
 	});
 	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
 	log.normal("Key Meta: %s", json.debug(key_meta) );
