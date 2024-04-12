@@ -8,6 +8,7 @@ opt-level = "z"
 resolver = "2"
 members = [ 
     "crates/holochain_deepkey_dna",
+    "dnas/deepkey/types",
     "zomes/*",
 ]
 

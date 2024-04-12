@@ -15,3 +15,11 @@ include = [
 [lib]
 name = "holochain_deepkey_dna"
 path = "src/lib.rs"
+
+[dependencies]
+hc_deepkey_sdk = { version = "0.1.0", path = "../../dnas/deepkey/sdk" }
+
+[features]
+fuzzing = [
+    "hc_deepkey_sdk/fuzzing",
+]
