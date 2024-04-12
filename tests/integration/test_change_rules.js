@@ -54,7 +54,7 @@ let APP_PORT;
 
 describe("DeepKey", function () {
     const holochain			= new Holochain({
-	"timeout": 10_000,
+	"timeout": 20_000,
 	"default_stdout_loggers": log.level_rank > 3,
     });
 

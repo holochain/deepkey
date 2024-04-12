@@ -15,8 +15,8 @@ members = [
 serde = "1"
 rmp-serde = "1"
 serde_bytes = "0.11"
-hc_deepkey_types = { path = "dnas/deepkey/types" }
-# hc_deepkey_types = "0.1"
+# hc_deepkey_types = { path = "dnas/deepkey/types" }
+hc_deepkey_types = "0.3"
 hc_deepkey_sdk = { path = "dnas/deepkey/sdk" }
 # hc_deepkey_sdk = "0.1"
 hdi = { version = "0.4.0-beta-dev.29" }

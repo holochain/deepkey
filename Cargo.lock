@@ -825,7 +825,7 @@ checksum = "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604"
 
 [[package]]
 name = "hc_deepkey_sdk"
-version = "0.2.0"
+version = "0.1.0"
 dependencies = [
  "hc_deepkey_types",
  "hdk",
@@ -835,7 +835,9 @@ dependencies = [
 
 [[package]]
 name = "hc_deepkey_types"
-version = "0.2.0"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f21fab01cb5a37e0196550423a6c0fe42c3660c33a1d20bfba079429c313a9ee"
 dependencies = [
  "hdi",
  "holo_hash",
