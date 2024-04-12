@@ -44,6 +44,8 @@ pub struct DerivationDetailsInput {
     pub app_index: u32,
     pub key_index: u32,
     #[serde(with = "serde_bytes")]
+    pub derivation_seed: Vec<u8>,
+    #[serde(with = "serde_bytes")]
     pub derivation_bytes: Vec<u8>,
 }
 

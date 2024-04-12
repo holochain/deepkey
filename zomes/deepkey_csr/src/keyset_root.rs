@@ -63,6 +63,7 @@ pub fn create_keyset_root(_: ()) -> ExternResult<ActionHash> {
         derivation_details: Some(DerivationDetailsInput {
             app_index: 0,
             key_index: 0,
+            derivation_seed: vec![],
             derivation_bytes: vec![],
         }),
     })?;

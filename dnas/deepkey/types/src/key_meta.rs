@@ -18,6 +18,7 @@ pub struct KeyMeta {
     pub key_index: u32,
     pub key_registration_addr: ActionHash,
     pub key_anchor_addr: ActionHash,
+    pub derivation_seed: Option<Vec<u8>>,
     pub derivation_bytes: Option<Vec<u8>>,
 
     // pub key_type: KeyType,

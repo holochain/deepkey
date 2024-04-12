@@ -148,6 +148,7 @@ function basic_tests () {
 	    },
 	    "derivation_details":	{
 		...derivation_details,
+		"derivation_seed":	alice1_key_store.seed,
 		"derivation_bytes":	new_key.derivation_bytes,
 	    },
 	});

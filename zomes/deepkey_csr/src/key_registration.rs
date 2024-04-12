@@ -123,7 +123,10 @@ pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
         key_index: 0,
         key_registration_addr: key_reg_addr.clone(),
         key_anchor_addr: key_anchor_addr.clone(),
-        derivation_bytes: input.derivation_details.map(|details| details.derivation_bytes )
+        derivation_seed: input.derivation_details.as_ref()
+            .map( |details| details.derivation_seed.to_owned() ),
+        derivation_bytes: input.derivation_details.as_ref()
+            .map( |details| details.derivation_bytes.to_owned() ),
     };
     create_entry( key_meta.to_input() )?;
 
@@ -190,7 +193,10 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
         key_index: next_key_index,
         key_registration_addr: key_reg_addr.clone(),
         key_anchor_addr: key_anchor_addr.clone(),
-        derivation_bytes: input.derivation_details.map(|details| details.derivation_bytes )
+        derivation_seed: input.derivation_details.as_ref()
+            .map( |details| details.derivation_seed.to_owned() ),
+        derivation_bytes: input.derivation_details.as_ref()
+            .map( |details| details.derivation_bytes.to_owned() ),
     };
     create_entry( key_meta.to_input() )?;
 
