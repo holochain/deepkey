@@ -17,6 +17,8 @@ rmp-serde = "1"
 serde_bytes = "0.11"
 hc_deepkey_types = { path = "dnas/deepkey/types" }
 # hc_deepkey_types = "0.1"
+hc_deepkey_sdk = { path = "dnas/deepkey/sdk" }
+# hc_deepkey_sdk = "0.1"
 hdi = { version = "0.4.0-beta-dev.29" }
 hdk = { version = "0.3.0-beta-dev.33" }
 holo_hash = { version = "0.3.0-beta-dev.23", features = ["hashing"] }

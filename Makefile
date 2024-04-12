@@ -19,7 +19,8 @@ COMMON_SOURCE_FILES	= Makefile Cargo.toml \
 INT_SOURCE_FILES	= $(COMMON_SOURCE_FILES) \
 				$(INT_DIR)/Cargo.toml $(INT_DIR)/src/*.rs $(INT_DIR)/src/validation/*.rs
 CSR_SOURCE_FILES	= $(INT_SOURCE_FILES) \
-				$(CSR_DIR)/Cargo.toml $(CSR_DIR)/src/*.rs
+				$(CSR_DIR)/Cargo.toml $(CSR_DIR)/src/*.rs \
+				dnas/deepkey/sdk/Cargo.toml dnas/deepkey/sdk/src/*.rs
 
 
 #
@@ -117,3 +118,12 @@ publish-%-types-crate:		 test .cargo/credentials
 
 preview-deepkey-types-crate:
 publish-deepkey-types-crate:
+
+
+preview-%-sdk-crate:		 test .cargo/credentials
+	cd dnas/$*; make preview-sdk-crate
+publish-%-sdk-crate:		 test .cargo/credentials
+	cd dnas/$*; make publish-sdk-crate
+
+preview-deepkey-sdk-crate:
+publish-deepkey-sdk-crate:

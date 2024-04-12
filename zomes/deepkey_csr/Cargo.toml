@@ -10,6 +10,7 @@ name = "deepkey_csr"
 
 [dependencies]
 deepkey = { workspace = true }
+hc_deepkey_sdk = { workspace = true }
 hdk = { workspace = true }
 rmp-serde = { workspace = true }
 serde = { workspace = true }

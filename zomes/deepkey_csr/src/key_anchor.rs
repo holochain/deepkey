@@ -1,5 +1,8 @@
 use crate::utils;
 use deepkey::*;
+use deepkey_sdk::{
+    KeyState,
+};
 use serde_bytes::ByteArray;
 
 use hdk::prelude::*;
@@ -26,14 +29,6 @@ pub fn create_key_anchor(key_anchor: KeyAnchor) -> ExternResult<ActionHash> {
     )?;
 
     Ok( create_addr )
-}
-
-
-#[hdk_entry_helper]
-pub enum KeyState {
-    NotFound,
-    Invalid(Option<SignedActionHashed>),
-    Valid(SignedActionHashed),
 }
 
 

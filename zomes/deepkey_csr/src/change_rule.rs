@@ -1,5 +1,4 @@
 use crate::utils;
-use serde_bytes;
 use deepkey::*;
 use hdk::prelude::*;
 use hdk_extensions::{
@@ -9,6 +8,10 @@ use hdk_extensions::{
         guest_error,
         ScopedTypeConnector,
     },
+};
+pub use deepkey_sdk::{
+    AuthoritySpecInput,
+    UpdateChangeRuleInput,
 };
 
 
@@ -57,24 +60,6 @@ pub fn get_current_change_rule_for_ksr(ksr_addr: ActionHash) -> ExternResult<Cha
 }
 
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct AuthoritySpecInput {
-    pub sigs_required: u8,
-    pub authorized_signers: Vec<serde_bytes::ByteArray<32>>,
-}
-
-impl From<AuthoritySpecInput> for AuthoritySpec {
-    fn from(input: AuthoritySpecInput) -> Self {
-        Self {
-            sigs_required: input.sigs_required,
-            authorized_signers: input.authorized_signers.iter()
-                .map(|key| key.into_array() )
-                .collect(),
-        }
-    }
-}
-
-
 #[hdk_extern]
 pub fn construct_authority_spec(input: AuthoritySpecInput) -> ExternResult<(AuthoritySpec, Vec<u8>)> {
     let authority_spec = AuthoritySpec::from( input );
@@ -86,12 +71,6 @@ pub fn construct_authority_spec(input: AuthoritySpecInput) -> ExternResult<(Auth
     ))
 }
 
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct UpdateChangeRuleInput {
-    pub authority_spec: AuthoritySpecInput,
-    pub authorizations: Option<Vec<Authorization>>,
-}
 
 #[hdk_extern]
 pub fn update_change_rule(input: UpdateChangeRuleInput) -> ExternResult<ChangeRule> {

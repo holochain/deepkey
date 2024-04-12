@@ -3,10 +3,7 @@ use crate::{
 };
 use serde_bytes::ByteArray;
 use deepkey::*;
-use hdk::prelude::{
-    *,
-    holo_hash::DnaHash,
-};
+use hdk::prelude::*;
 use hdk_extensions::{
     must_get,
     hdi_extensions::{
@@ -14,13 +11,16 @@ use hdk_extensions::{
         ScopedTypeConnector,
     },
 };
+pub use deepkey_sdk::{
+    AppBindingInput,
+    CreateKeyInput,
+    UpdateKeyInput,
+    RevokeKeyInput,
+    KeyRevocationInput,
+    DerivationDetails,
+    DerivationDetailsInput,
+};
 
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DerivationDetails {
-    pub app_index: u32,
-    pub key_index: u32,
-}
 
 #[hdk_extern]
 pub fn next_derivation_details(
@@ -66,30 +66,6 @@ pub fn get_key_derivation_details(
     )
 }
 
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AppBindingInput {
-    pub app_name: String,
-    pub installed_app_id: String,
-    pub dna_hashes: Vec<DnaHash>,
-    #[serde(default)]
-    pub metadata: deepkey::MetaData,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DerivationDetailsInput {
-    pub app_index: u32,
-    pub key_index: u32,
-    #[serde(with = "serde_bytes")]
-    pub derivation_bytes: Vec<u8>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreateKeyInput {
-    pub key_generation: KeyGeneration,
-    pub app_binding: AppBindingInput,
-    pub derivation_details: Option<DerivationDetailsInput>,
-}
 
 #[hdk_extern]
 pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistration, KeyMeta)> {
@@ -159,13 +135,6 @@ pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
 }
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UpdateKeyInput {
-    pub key_revocation: KeyRevocation,
-    pub key_generation: KeyGeneration,
-    pub derivation_details: Option<DerivationDetailsInput>,
-}
-
 #[hdk_extern]
 pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistration, KeyMeta)> {
     let key_rev = input.key_revocation;
@@ -233,11 +202,6 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
 }
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RevokeKeyInput {
-    pub key_revocation: KeyRevocation,
-}
-
 #[hdk_extern]
 pub fn revoke_key(input: RevokeKeyInput) -> ExternResult<(ActionHash, KeyRegistration)> {
     let key_rev = input.key_revocation;
@@ -266,25 +230,6 @@ pub fn revoke_key(input: RevokeKeyInput) -> ExternResult<(ActionHash, KeyRegistr
     ))
 }
 
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct KeyRevocationInput {
-    pub prior_key_registration: ActionHash,
-    pub revocation_authorization: Vec<(u8, ByteArray<64>)>,
-}
-
-impl TryFrom<KeyRevocationInput> for KeyRevocation {
-    type Error = WasmError;
-
-    fn try_from(input: KeyRevocationInput) -> ExternResult<Self> {
-        Ok(Self {
-            prior_key_registration: input.prior_key_registration,
-            revocation_authorization: input.revocation_authorization.into_iter()
-                .map( |(index, signature)| (index, Signature::from( signature.into_array() )) )
-                .collect(),
-        })
-    }
-}
 
 #[hdk_extern]
 pub fn delete_key_registration(
