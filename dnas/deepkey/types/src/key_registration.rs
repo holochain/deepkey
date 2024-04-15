@@ -7,6 +7,7 @@ use crate::{
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
 pub struct KeyGeneration {
     pub new_key: AgentPubKey,
 

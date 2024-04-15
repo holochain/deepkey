@@ -1,6 +1,6 @@
 [package]
 name = "holochain_deepkey_dna"
-version = "0.0.1"
+version = "0.0.4"
 edition = "2021"
 authors = ["Michael dougherty <michael.dougherty@holo.host>"]
 license = "CAL-1.0"
