@@ -12,6 +12,7 @@ use hdi::prelude::*;
 
 #[hdk_entry_helper]
 #[derive(Clone)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
 pub struct KeyMeta {
     // TODO: make sure we can ensure there is only 1 key anchor creation action
     pub app_binding_addr: ActionHash,

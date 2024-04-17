@@ -5,6 +5,7 @@ use hdk::prelude::{holo_hash::DnaHash, *};
 use serde_bytes::ByteArray;
 
 #[hdk_entry_helper]
+#[derive(Clone)]
 pub enum KeyState {
     NotFound,
     Invalid(Option<SignedActionHashed>),
@@ -21,6 +22,12 @@ pub struct KeyRevocationInput {
 pub struct DerivationDetails {
     pub app_index: u32,
     pub key_index: u32,
+}
+
+impl DerivationDetails {
+    pub fn to_derivation_path(&self) -> Vec<u32> {
+        vec![self.app_index, self.key_index]
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

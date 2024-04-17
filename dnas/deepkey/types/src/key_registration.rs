@@ -42,6 +42,7 @@ impl From<(&AgentPubKey, &Signature)> for KeyGeneration {
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
 pub struct KeyRevocation {
     pub prior_key_registration: ActionHash,
     pub revocation_authorization: Vec<Authorization>,
@@ -71,6 +72,7 @@ impl From<(&ActionHash, &Vec<Authorization>)> for KeyRevocation {
 
 #[hdk_entry_helper]
 #[derive(Clone)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
 pub enum KeyRegistration {
     // Creates a key under management of current KSR on this chain
     Create(KeyGeneration),

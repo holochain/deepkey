@@ -18,15 +18,11 @@ serde = "1"
 rmp-serde = "1"
 serde_bytes = "0.11"
 hc_deepkey_types = { path = "dnas/deepkey/types" }
-# hc_deepkey_types = "0.3"
 hc_deepkey_sdk = { path = "dnas/deepkey/sdk" }
-# hc_deepkey_sdk = "0.1"
 holo_hash = { version = "0.3.0-beta-dev.23", features = ["hashing"] }
-hdi = { version = "0.4.0-beta-dev.29" }
-hdk = { version = "0.3.0-beta-dev.33" }
-# hdi = { path = "../chain/crates/hdi" }
-# hdk = { path = "../chain/crates/hdk" }
-# holo_hash = { path = "../chain/crates/holo_hash", features = ["hashing"] }
+holochain_integrity_types = { version = "0.3.0-beta-dev.32" }
+hdi = { version = "0.4.0-beta-dev.34" }
+hdk = { version = "0.3.0-beta-dev.38" }
 whi_hdi_extensions = { git = "https://github.com/mjbrisebois/rust-hdi-extensions.git", rev = "c7ec5e1547a9dd3a87bf90e9677521daa643e5ee" }
 whi_hdk_extensions = { git = "https://github.com/mjbrisebois/rust-hdk-extensions.git", rev = "004318b254d69be956a76ba546c0482bd2cf50ad" }
 
@@ -36,7 +32,3 @@ path = "zomes/deepkey"
 [workspace.dependencies.deepkey_csr]
 path = "zomes/deepkey_csr"
 
-[patch.crates-io]
-hdi = { path = "../chain/crates/hdi" }
-hdk = { path = "../chain/crates/hdk" }
-holo_hash = { path = "../chain/crates/holo_hash", features = ["hashing"] }
