@@ -13,7 +13,19 @@ name = "deepkey_types"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-hdi = { version = "0.4.0-beta-dev.29" }
-holo_hash = { version = "0.3.0-beta-dev.23", features = ["hashing", "encoding"] }
+hdi = { workspace = true }
+holo_hash = { workspace = true }
+holochain_integrity_types = { workspace = true }
 rmpv = { version = "1", features = ["with-serde"] }
 serde = "1"
+
+arbitrary = { version = "1.0", features = ["derive"], optional = true }
+
+
+[features]
+fuzzing = [
+    "arbitrary",
+    # "hdi/fuzzing",
+    "holochain_integrity_types/fuzzing",
+    "holo_hash/fuzzing",
+]
