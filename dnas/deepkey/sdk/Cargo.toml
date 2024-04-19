@@ -14,9 +14,10 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 hc_deepkey_types = { workspace = true }
-hdk = { workspace = true }
+# hc_deepkey_types = "0.3"
+hdk = "0.3.0-beta-dev.38"
 serde = "1"
-serde_bytes = { workspace = true }
+serde_bytes = "0.11"
 
 arbitrary = { version = "1.0", features = ["derive"], optional = true }
 

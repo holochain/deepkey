@@ -13,9 +13,9 @@ name = "deepkey_types"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-hdi = { workspace = true }
-holo_hash = { workspace = true }
-holochain_integrity_types = { workspace = true }
+hdi = "0.4.0-beta-dev.34"
+holo_hash = { version = "0.3.0-beta-dev.23", features = ["hashing"] }
+holochain_integrity_types = "0.3.0-beta-dev.32"
 rmpv = { version = "1", features = ["with-serde"] }
 serde = "1"
 

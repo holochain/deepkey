@@ -67,6 +67,13 @@ GG_REPLACE_LOCATIONS = ':(exclude)*.lock' zomes/ dnas/ tests/
 #
 DEBUG_LEVEL	       ?= warn
 TEST_ENV_VARS		= LOG_LEVEL=$(DEBUG_LEVEL)
+TEST_DEPS		= tests/node_modules dnas/deepkey/zomelets/node_modules
+
+%/package-lock.json:	%/package.json
+	touch $@
+%/node_modules:		%/package-lock.json
+	cd $*; npm install
+	touch $@
 
 test:			$(DEEPKEY_DNA)
 	make -s test-integration
@@ -76,11 +83,11 @@ test-integration:	$(DEEPKEY_DNA)
 	make -s test-change-rules
 	make -s test-key-management
 
-test-basic:		$(DEEPKEY_DNA)
+test-basic:		$(DEEPKEY_DNA) $(TEST_DEPS)
 	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_basic.js
-test-change-rules:	$(DEEPKEY_DNA)
+test-change-rules:	$(DEEPKEY_DNA) $(TEST_DEPS)
 	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_change_rules.js
-test-key-management:	$(DEEPKEY_DNA)
+test-key-management:	$(DEEPKEY_DNA) $(TEST_DEPS)
 	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_key_management.js
 
 
