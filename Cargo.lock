@@ -540,8 +540,7 @@ dependencies = [
 name = "deepkey"
 version = "0.0.0"
 dependencies = [
- "getrandom",
- "hc_deepkey_types",
+ "hc_deepkey_types 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hdi",
  "hdk",
  "holo_hash",
@@ -877,10 +876,10 @@ checksum = "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604"
 
 [[package]]
 name = "hc_deepkey_sdk"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "arbitrary",
- "hc_deepkey_types",
+ "hc_deepkey_types 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hdk",
  "serde",
  "serde_bytes",
@@ -888,7 +887,21 @@ dependencies = [
 
 [[package]]
 name = "hc_deepkey_types"
-version = "0.3.0"
+version = "0.4.0"
+dependencies = [
+ "arbitrary",
+ "hdi",
+ "holo_hash",
+ "holochain_integrity_types",
+ "rmpv",
+ "serde",
+]
+
+[[package]]
+name = "hc_deepkey_types"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f396168cf12125a6c18fe076f2a3082b0a5bbaf67b2936bc14f69fc7350d579"
 dependencies = [
  "arbitrary",
  "hdi",

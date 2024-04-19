@@ -18,6 +18,3 @@ serde = { workspace = true }
 serde_bytes = { workspace = true }
 thiserror = "1.0.38"
 whi_hdi_extensions = { workspace = true }
-
-# temporary fix for compile error in
-getrandom = { version = "=0.2.7", features = ["custom"] }
