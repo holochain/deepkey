@@ -2675,8 +2675,9 @@ dependencies = [
 
 [[package]]
 name = "whi_hdi_extensions"
-version = "0.4.2"
-source = "git+https://github.com/mjbrisebois/rust-hdi-extensions.git?rev=c7ec5e1547a9dd3a87bf90e9677521daa643e5ee#c7ec5e1547a9dd3a87bf90e9677521daa643e5ee"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05e8a2b5cbb4b196f3e89dedd17b39a7d0fad72baf43754c58a42cf104fceb27"
 dependencies = [
  "hdi",
  "holo_hash",
@@ -2685,8 +2686,9 @@ dependencies = [
 
 [[package]]
 name = "whi_hdk_extensions"
-version = "0.4.1"
-source = "git+https://github.com/mjbrisebois/rust-hdk-extensions.git?rev=004318b254d69be956a76ba546c0482bd2cf50ad#004318b254d69be956a76ba546c0482bd2cf50ad"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e29f32456d3876598ab3700494658c81a438ef6623ffbdd6b99b8b9ad11f9ebb"
 dependencies = [
  "hdk",
  "serde",

@@ -19,12 +19,12 @@ rmp-serde = "1"
 serde_bytes = "0.11"
 hc_deepkey_types = { path = "dnas/deepkey/types" }
 hc_deepkey_sdk = { path = "dnas/deepkey/sdk" }
-holo_hash = { version = "0.3.0-beta-dev.23", features = ["hashing"] }
+holo_hash = { version = "0.3.0-beta-dev.26", features = ["hashing", "encoding"] }
 holochain_integrity_types = { version = "0.3.0-beta-dev.32" }
 hdi = { version = "0.4.0-beta-dev.34" }
 hdk = { version = "0.3.0-beta-dev.38" }
-whi_hdi_extensions = { git = "https://github.com/mjbrisebois/rust-hdi-extensions.git", rev = "c7ec5e1547a9dd3a87bf90e9677521daa643e5ee" }
-whi_hdk_extensions = { git = "https://github.com/mjbrisebois/rust-hdk-extensions.git", rev = "004318b254d69be956a76ba546c0482bd2cf50ad" }
+whi_hdi_extensions = "0.7"
+whi_hdk_extensions = "0.7"
 
 [workspace.dependencies.deepkey]
 path = "zomes/deepkey"
