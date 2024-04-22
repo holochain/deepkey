@@ -20,3 +20,5 @@ use std::collections::BTreeMap;
 
 
 pub type MetaData = BTreeMap<String, rmpv::Value>;
+
+pub use hdi;
