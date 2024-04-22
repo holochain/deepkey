@@ -1,6 +1,8 @@
 pub use deepkey_types;
 pub use deepkey_types::*;
 
+pub use hdk;
+
 use hdk::prelude::{holo_hash::DnaHash, *};
 use serde_bytes::ByteArray;
 
