@@ -13,12 +13,12 @@ name = "deepkey_sdk"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-hc_deepkey_types = { version = "0.5", path = "../types" }
-hdk = "0.3.0-beta-dev.38"
-serde = "1"
-serde_bytes = "0.11"
+hc_deepkey_types = { workspace = true }
+hdk = { workspace = true }
+serde = { workspace = true }
+serde_bytes = { workspace = true }
 
-arbitrary = { version = "1.0", features = ["derive"], optional = true }
+arbitrary = { workspace = true, optional = true }
 
 [features]
 fuzzing = [
