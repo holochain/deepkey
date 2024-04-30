@@ -17,10 +17,10 @@ members = [
 serde = "1"
 rmp-serde = "1"
 serde_bytes = "0.11"
-hc_deepkey_types = { version = "0.5", path = "dnas/deepkey/types" }
-hc_deepkey_sdk = { version = "0.3", path = "dnas/deepkey/sdk" }
+hc_deepkey_types = { version = "0.6.0-dev.0", path = "dnas/deepkey/types" }
+hc_deepkey_sdk = { version = "0.4.0-dev.0", path = "dnas/deepkey/sdk" }
 holo_hash = { version = "0.3.0-beta-dev.28", features = ["hashing", "encoding"] }
-holochain_integrity_types = { version = "0.3.0-beta-dev.32" }
+holochain_integrity_types = { version = "0.3.0-beta-dev.33" }
 hdi = { version = "0.4.0-beta-dev.36" }
 hdk = { version = "0.3.0-beta-dev.41" }
 whi_hdi_extensions = "0.8.0-dev.0"
