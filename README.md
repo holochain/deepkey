@@ -1,3 +1,5 @@
+[![](https://img.shields.io/crates/v/hc_deepkey_types?style=flat-square&label=types)](https://crates.io/crates/hc_deepkey_types)
+[![](https://img.shields.io/crates/v/hc_deepkey_sdk?style=flat-square&label=sdk)](https://crates.io/crates/hc_deepkey_sdk)
 
 # Deepkey
 

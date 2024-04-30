@@ -14,7 +14,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 hc_deepkey_types = { version = "0.5", path = "../types" }
-hdk = "0.3.0-beta-dev.38"
+hdk = "0.3.0-beta-dev.41"
 serde = "1"
 serde_bytes = "0.11"
 
