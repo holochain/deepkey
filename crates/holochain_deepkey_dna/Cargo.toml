@@ -17,7 +17,7 @@ name = "holochain_deepkey_dna"
 path = "src/lib.rs"
 
 [dependencies]
-hc_deepkey_sdk = { version = "0.4.0-dev.0", path = "../../dnas/deepkey/sdk" }
+hc_deepkey_sdk = { version = "0.4.0", path = "../../dnas/deepkey/sdk" }
 
 [features]
 fuzzing = [
