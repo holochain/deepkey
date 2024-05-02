@@ -23,8 +23,8 @@ holo_hash = { version = "0.3.0-beta-dev.28", features = ["hashing", "encoding"] 
 holochain_integrity_types = { version = "0.3.0-beta-dev.33" }
 hdi = { version = "0.4.0-beta-dev.36" }
 hdk = { version = "0.3.0-beta-dev.41" }
-whi_hdi_extensions = "0.8.0-dev.0"
-whi_hdk_extensions = "0.8.0-dev.0"
+whi_hdi_extensions = "0.8.0"
+whi_hdk_extensions = "0.8.0"
 
 [workspace.dependencies.deepkey]
 path = "zomes/deepkey"

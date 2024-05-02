@@ -91,19 +91,19 @@ TEST_DEPS		= tests/node_modules dnas/deepkey/zomelets/node_modules
 	cd $*; npm install
 	touch $@
 
-test:			$(DEEPKEY_DNA)
+test:
 	make -s test-integration
 
-test-integration:	$(DEEPKEY_DNA)
-	make -s test-basic
-	make -s test-change-rules
-	make -s test-key-management
+test-integration:
+	make -s test-integration-basic
+	make -s test-integration-change-rules
+	make -s test-integration-key-management
 
-test-basic:		$(DEEPKEY_DNA) $(TEST_DEPS)
+test-integration-basic:			$(DEEPKEY_DNA) $(TEST_DEPS)
 	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_basic.js
-test-change-rules:	$(DEEPKEY_DNA) $(TEST_DEPS)
+test-integration-change-rules:		$(DEEPKEY_DNA) $(TEST_DEPS)
 	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_change_rules.js
-test-key-management:	$(DEEPKEY_DNA) $(TEST_DEPS)
+test-integration-key-management:	$(DEEPKEY_DNA) $(TEST_DEPS)
 	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_key_management.js
 
 

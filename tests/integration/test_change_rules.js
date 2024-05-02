@@ -50,7 +50,8 @@ const rev2_pubkey			= await ed.getPublicKeyAsync( revocation_key2 );
 const rev3_pubkey			= await ed.getPublicKeyAsync( revocation_key3 );
 const rev4_pubkey			= await ed.getPublicKeyAsync( revocation_key4 );
 
-let APP_PORT;
+let app_port;
+let installations;
 
 describe("DeepKey", function () {
     const holochain			= new Holochain({
@@ -61,7 +62,7 @@ describe("DeepKey", function () {
     before(async function () {
 	this.timeout( 60_000 );
 
-	await holochain.install([
+	installations			= await holochain.install([
 	    "alice1",
 	], {
 	    "app_name": "test",
@@ -75,7 +76,7 @@ describe("DeepKey", function () {
 	    },
 	});
 
-	APP_PORT			= await holochain.ensureAppPort();
+	app_port			= await holochain.ensureAppPort();
     });
 
     linearSuite("Change Rules", basic_tests );
@@ -96,10 +97,12 @@ function basic_tests () {
     before(async function () {
 	this.timeout( 30_000 );
 
-	client				= new AppInterfaceClient( APP_PORT, {
+	client				= new AppInterfaceClient( app_port, {
 	    "logging": process.env.LOG_LEVEL || "normal",
 	});
-	alice1_client			= await client.app( "test-alice1" );
+
+	const alice1_token		= installations.alice1.test.auth.token;
+	alice1_client			= await client.app( alice1_token );
 
 	{
 	    ({

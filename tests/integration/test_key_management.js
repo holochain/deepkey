@@ -50,7 +50,8 @@ const alice_app1_id			= "alice-app1";
 const alice_app2_id			= "alice-app2";
 const bobby_app1_id			= "bobby-app1";
 
-let APP_PORT;
+let app_port;
+let installations;
 
 
 describe("DeepKey", function () {
@@ -62,7 +63,7 @@ describe("DeepKey", function () {
     before(async function () {
 	this.timeout( 60_000 );
 
-	await holochain.install([
+	installations			= await holochain.install([
 	    "alice",
 	    "bobby",
 	], {
@@ -77,7 +78,7 @@ describe("DeepKey", function () {
 	    },
 	});
 
-	APP_PORT			= await holochain.ensureAppPort();
+	app_port			= await holochain.ensureAppPort();
     });
 
     linearSuite("Key Management", basic_tests );
@@ -105,11 +106,15 @@ function basic_tests () {
     before(async function () {
 	this.timeout( 30_000 );
 
-	client				= new AppInterfaceClient( APP_PORT, {
+	client				= new AppInterfaceClient( app_port, {
 	    "logging": process.env.LOG_LEVEL || "normal",
 	});
-	alice_client			= await client.app( "test-alice" );
-	bobby_client			= await client.app( "test-bobby" );
+
+	const alice_token		= installations.alice.test.auth.token;
+	alice_client			= await client.app( alice_token );
+
+	const bobby_token		= installations.bobby.test.auth.token;
+	bobby_client			= await client.app( bobby_token );
 
 	{
 	    ({
