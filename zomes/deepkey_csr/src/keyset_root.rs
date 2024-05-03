@@ -66,6 +66,7 @@ pub fn create_keyset_root(_: ()) -> ExternResult<ActionHash> {
             derivation_seed: vec![],
             derivation_bytes: vec![],
         }),
+        create_only: false,
     })?;
 
     Ok( create_hash )

@@ -70,6 +70,8 @@ pub struct CreateKeyInput {
     pub key_generation: KeyGeneration,
     pub app_binding: AppBindingInput,
     pub derivation_details: Option<DerivationDetailsInput>,
+    #[serde(default)]
+    pub create_only: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

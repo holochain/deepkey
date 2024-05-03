@@ -90,7 +90,14 @@ export class Key {
 }
 
 
+export function random_key () {
+    const secret			= ed.utils.randomPrivateKey();
+    return new Key( secret );
+}
+
+
 export default {
     KeyStore,
     Key,
+    random_key,
 };

@@ -31,6 +31,7 @@ import {
 }					from '../utils.js';
 import {
     KeyStore,
+    random_key,
 }					from '../key_store.js';
 
 
@@ -48,6 +49,7 @@ const bobby_key_store			= new KeyStore( BOBBY_DEVICE_SEED, "bobby" );
 
 const alice_app1_id			= "alice-app1";
 const alice_app2_id			= "alice-app2";
+const alice_app3_id			= "alice-app3";
 const bobby_app1_id			= "bobby-app1";
 
 let app_port;
@@ -102,6 +104,7 @@ function basic_tests () {
     let alice_key1b_reg, alice_key1b_reg_addr, alice_key1b;
     let alice_key1c_reg, alice_key1c_reg_addr;
     let alice_key2a_reg, alice_key2a_reg_addr, alice_key2a;
+    let alice_key3a_reg, alice_key3a_reg_addr, alice_key3a, alice_key3;
 
     before(async function () {
 	this.timeout( 30_000 );
@@ -407,15 +410,48 @@ function basic_tests () {
 	}
     });
 
+    it("should register unmanaged key (alice)", async function () {
+	this.timeout( 5_000 );
+
+	const new_key			= await random_key();
+
+	const [ addr, key_reg, key_meta ]	= await alice_deepkey.create_key({
+	    "app_binding": {
+		"app_name":		"Alice - App #3",
+		"installed_app_id":	alice_app3_id,
+		"dna_hashes":		[ dna1_hash ],
+	    },
+	    "key_generation": {
+		"new_key":			await new_key.getAgent(),
+		"new_key_signing_of_author":	await new_key.sign( alice_client.agent_id ),
+	    },
+	    "create_only": true,
+	});
+	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
+	log.normal("Key Meta: %s", json.debug(key_meta) );
+	log.normal("Key registration (create) addr: %s", addr );
+
+	alice_key3			= new_key;
+	alice_key3a			= await new_key.getBytes();
+	alice_key3a_reg			= key_reg;
+	alice_key3a_reg_addr		= addr;
+
+	{
+	    const key_state		= await alice_deepkey.key_state( alice_key3a );
+	    log.normal("Key (3a) state: %s", json.debug(key_state) );
+
+	    expect( key_state		).to.have.key( "Valid" );
+	}
+    });
+
     linearSuite("Errors", function () {
 
 	it("should fail to register invalid key", async function () {
 	    await expect_reject(async () => {
-		const installed_app_id		= "?";
 		await alice_deepkey.create_key({
 		    "app_binding": {
 			"app_name":		"?",
-			installed_app_id,
+			"installed_app_id":	"?",
 			"dna_hashes":		[ dna1_hash ],
 		    },
 		    "key_generation": {
@@ -426,12 +462,26 @@ function basic_tests () {
 	    }, "Signature does not match new key" );
 	});
 
+	it("should fail to manage CreateOnly key", async function () {
+	    this.timeout( 10_000 );
+
+	    await expect_reject(async () => {
+		await alice_deepkey.revoke_key({
+		    "key_revocation": {
+			"prior_key_registration": alice_key3a_reg_addr,
+			"revocation_authorization": [
+			    [ 0, await alice_key3.sign( alice_key3a_reg_addr ) ],
+			],
+		    },
+		});
+	    }, "cannot be updated" );
+	});
+
 	it("should fail to revoke key", async function () {
 	    this.timeout( 10_000 );
 
 	    await expect_reject(async () => {
 		await alice_deepkey.revoke_key({
-		    "installed_app_id":		alice_app2_id,
 		    "key_revocation": {
 			"prior_key_registration": alice_key2a_reg_addr,
 			"revocation_authorization": [

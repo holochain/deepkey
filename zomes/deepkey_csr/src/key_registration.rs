@@ -95,12 +95,14 @@ pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
     let key_anchor = KeyAnchor::try_from( &key_gen.new_key )?;
 
     // Create Registration
-    let key_reg = KeyRegistration::Create(
-        (
-            &key_gen.new_key,
-            &key_gen.new_key_signing_of_author
-        ).into()
-    );
+    let key_gen = KeyGeneration::from((
+        &key_gen.new_key,
+        &key_gen.new_key_signing_of_author
+    ));
+    let key_reg = match input.create_only {
+        true => KeyRegistration::CreateOnly(key_gen),
+        false => KeyRegistration::Create(key_gen),
+    };
     let key_reg_addr = create_entry( key_reg.to_input() )?;
 
     // Create Anchor

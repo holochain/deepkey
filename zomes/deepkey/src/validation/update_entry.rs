@@ -78,6 +78,16 @@ pub fn validation(
             valid!()
         },
         EntryTypes::KeyRegistration(key_registration_entry) => {
+            let prior_key_reg_entry : KeyRegistration = summon_app_entry(
+                &original_action_hash.into()
+            )?;
+
+            if let KeyRegistration::CreateOnly(_) = prior_key_reg_entry {
+                invalid!(format!(
+                    "Key registered using 'CreateOnly' cannot be updated"
+                ))
+            }
+
             match key_registration_entry {
                 KeyRegistration::Create(..) |
                 KeyRegistration::CreateOnly(..)=> {
