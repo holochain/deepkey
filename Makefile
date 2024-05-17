@@ -105,6 +105,8 @@ test-integration-change-rules:		$(DEEPKEY_DNA) $(TEST_DEPS)
 	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_change_rules.js
 test-integration-key-management:	$(DEEPKEY_DNA) $(TEST_DEPS)
 	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_key_management.js
+test-integration-claim-unmanaged-key:	$(DEEPKEY_DNA) $(TEST_DEPS)
+	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_claim_unmanaged_key.js
 
 
 #
