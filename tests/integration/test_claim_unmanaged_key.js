@@ -236,7 +236,7 @@ function basic_tests () {
 	log.normal("Key Meta: %s", json.debug(key_meta) );
 	log.normal("Key registration (update) addr: %s", addr );
 
-	alice1_key1a_reg			= key_reg;
+	alice1_key1a_reg		= key_reg;
 	alice1_key1a_reg_addr		= addr;
     });
 

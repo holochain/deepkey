@@ -77,7 +77,7 @@ pub fn key_state((key_bytes, timestamp): (ByteArray<32>, Timestamp)) -> ExternRe
                         match record.action().timestamp() > timestamp {
                             true => {
                                 debug!(
-                                    "Create occurred before the given timestamp: [created] {} < {}",
+                                    "Create occurred after the given timestamp: [created] {} > {}",
                                     record.action().timestamp(), timestamp
                                 );
                                 KeyState::Invalid( None )
