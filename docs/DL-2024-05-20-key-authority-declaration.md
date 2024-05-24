@@ -48,7 +48,7 @@ Points to the KSR authority.
 
 - Check that the `KeyAnchor` in deepkey has a create made by an agent that is a member of the
   `key_authority` (KSR)
-  - Eg. for each create, check that their KSR, or their latest invite acceptance matches the KSR
+  - Eg. for each create, check that their KSR, or the latest invite acceptance on their chain, matches the KSR
     authority.
 
 #### Validation process when updating an app agent
@@ -56,7 +56,7 @@ Points to the KSR authority.
 - Lookup the previous agent record to get the `key_authority`
 - Check that the `KeyAnchor` in deepkey has a create made by an agent that is a member of the
   `key_authority` (KSR)
-  - Eg. for each create, check that their KSR, or their latest invite acceptance matches the KSR
+  - Eg. for each create, check that their KSR, or the latest invite acceptance on their chain, matches the KSR
     authority.
 - Check that the valid create is an update to the previous key.
 
