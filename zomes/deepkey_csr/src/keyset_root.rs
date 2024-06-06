@@ -1,4 +1,11 @@
-use crate::utils;
+use crate::{
+    utils,
+    key_registration::{
+        CreateKeyInput,
+        AppBindingInput,
+        DerivationDetailsInput,
+    },
+};
 use crate::hdi_extensions::{
     guest_error,
     ScopedTypeConnector,
@@ -14,8 +21,9 @@ use hdk::prelude::*;
 
 #[hdk_extern]
 pub fn create_keyset_root(_: ()) -> ExternResult<ActionHash> {
+    // TODO: extract derivation details from membrane proof so that we have accurate
+    // 'derivation_seed' and 'derivation_bytes'
     // let membrane_proof = utils::my_membrane_proof()?;
-    // debug!("Membrane proof: {:?}", membrane_proof );
 
     let fda: AgentPubKey = agent_info()?.agent_latest_pubkey;
     let fda_bytes = fda.clone().into_inner();
@@ -40,15 +48,9 @@ pub fn create_keyset_root(_: ()) -> ExternResult<ActionHash> {
             )))?,
     ])?;
 
-    // Register the FDA as a key under this KSR
-    use crate::key_registration::{
-        CreateKeyInput,
-        AppBindingInput,
-        DerivationDetailsInput,
-    };
-
     let dna_hash = dna_info()?.hash;
 
+    // Register the FDA as a key under this KSR
     crate::key_registration::create_key(CreateKeyInput {
         key_generation: KeyGeneration {
             new_key: fda.clone(),
