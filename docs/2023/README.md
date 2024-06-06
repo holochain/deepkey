@@ -1,6 +1,3 @@
-[![](https://img.shields.io/crates/v/hc_deepkey_types?style=flat-square&label=types)](https://crates.io/crates/hc_deepkey_types)
-[![](https://img.shields.io/crates/v/hc_deepkey_sdk?style=flat-square&label=sdk)](https://crates.io/crates/hc_deepkey_sdk)
-
 # Deepkey
 
 Deepkey is a happ to provide a decentralized public key infrastructure (DPKI) for keys associated with Holochain conductors and applications. Similar to centralised services like Keybase, we want users to be able to manage their "keyset" by adding and removing devices and public/private keypairs.

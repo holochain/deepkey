@@ -10,6 +10,8 @@ to manage their "keyset" by adding and removing public/private keypairs.
 [![](https://img.shields.io/github/issues-closed-raw/holochain/deepkey?style=flat-square)](https://github.com/holochain/deepkey/issues?q=is%3Aissue+is%3Aclosed)
 [![](https://img.shields.io/github/issues-pr-raw/holochain/deepkey?style=flat-square)](https://github.com/holochain/deepkey/pulls)
 
+See [Pre-2024 Architectual Documentation](docs/2023/README.md) for original design principles.
+
 
 ## Overview
 The keys for happs installed on a device are also tracked under the keyset for the device.
