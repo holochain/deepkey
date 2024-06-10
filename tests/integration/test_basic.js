@@ -3,14 +3,10 @@ const log				= new Logger("test-basic", process.env.LOG_LEVEL );
 
 // import why				from 'why-is-node-running';
 
-// import * as fs				from 'node:fs/promises';
 import path				from 'path';
 import crypto				from 'crypto';
 
 import { expect }			from 'chai';
-
-import * as ed				from '@noble/ed25519';
-import { hmac }				from '@noble/hashes/hmac';
 
 import json				from '@whi/json';
 import {
@@ -18,8 +14,7 @@ import {
     DnaHash, AgentPubKey,
     ActionHash, EntryHash,
 }					from '@spartan-hc/holo-hash';
-import HolochainBackdrop		from '@spartan-hc/holochain-backdrop';
-const { Holochain }			= HolochainBackdrop;
+import { Holochain }			from '@spartan-hc/holochain-backdrop';
 
 import {
     DeepKeyCell,
@@ -47,9 +42,6 @@ const ALICE1_DEVICE_SEED		= Buffer.from("jJQhp80zPT+XBMOZmtfwdBqY9ay9k2w520iwaet
 
 const alice1_app1_id			= "alice1-app1";
 const alice1_key_store			= new KeyStore( ALICE1_DEVICE_SEED, "alice1" );
-
-const revocation_key1			= ed.utils.randomPrivateKey();
-const revocation_key2			= ed.utils.randomPrivateKey();
 
 let app_port;
 let installations;

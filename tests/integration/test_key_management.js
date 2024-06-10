@@ -3,7 +3,6 @@ const log				= new Logger("test-basic", process.env.LOG_LEVEL );
 
 // import why				from 'why-is-node-running';
 
-// import * as fs				from 'node:fs/promises';
 import path				from 'path';
 import crypto				from 'crypto';
 
@@ -15,8 +14,7 @@ import {
     DnaHash, AgentPubKey,
     ActionHash, EntryHash,
 }					from '@spartan-hc/holo-hash';
-import HolochainBackdrop		from '@spartan-hc/holochain-backdrop';
-const { Holochain }			= HolochainBackdrop;
+import { Holochain }			from '@spartan-hc/holochain-backdrop';
 
 import {
     DeepKeyCell,
