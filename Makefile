@@ -136,18 +136,18 @@ docs-watch:
 #
 .cargo/credentials:
 	cp ~/$@ $@
-preview-%-types-crate:		 test .cargo/credentials
+preview-%-types-crate:		 .cargo/credentials
 	cd dnas/$*; make preview-types-crate
-publish-%-types-crate:		 test .cargo/credentials
+publish-%-types-crate:		 .cargo/credentials
 	cd dnas/$*; make publish-types-crate
 
 preview-deepkey-types-crate:
 publish-deepkey-types-crate:
 
 
-preview-%-sdk-crate:		 test .cargo/credentials
+preview-%-sdk-crate:		 .cargo/credentials
 	cd dnas/$*; make preview-sdk-crate
-publish-%-sdk-crate:		 test .cargo/credentials
+publish-%-sdk-crate:		 .cargo/credentials
 	cd dnas/$*; make publish-sdk-crate
 
 preview-deepkey-sdk-crate:
