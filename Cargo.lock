@@ -3132,7 +3132,7 @@ dependencies = [
 
 [[package]]
 name = "whi_hdi_extensions"
-version = "0.9.0"
+version = "0.10.0-dev.0"
 dependencies = [
  "hdi",
  "holo_hash",
@@ -3141,7 +3141,7 @@ dependencies = [
 
 [[package]]
 name = "whi_hdk_extensions"
-version = "0.9.0"
+version = "0.10.0-dev.0"
 dependencies = [
  "hdk",
  "serde",
