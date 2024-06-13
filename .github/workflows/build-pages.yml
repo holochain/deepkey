@@ -4,7 +4,7 @@ name: Deploy cargo doc to Pages
 on:
   push:
     branches:
-      - update-docs
+      - main
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -28,8 +28,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-      - name: Configure cache
-        uses: Swatinem/rust-cache@v2
       - name: Setup pages
         id: pages
         uses: actions/configure-pages@v4 #v5 available
