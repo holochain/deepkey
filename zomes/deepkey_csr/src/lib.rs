@@ -60,17 +60,6 @@ use keyset_root::create_keyset_root;
 pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
     create_keyset_root()?;
 
-    // grant unrestricted access to receive_device_invitation so other agents can send us device invitations
-    let mut fns = BTreeSet::new();
-    fns.insert((zome_info()?.name, "receive_device_invitation".into()));
-    let functions = GrantedFunctions::Listed(fns);
-    create_cap_grant(CapGrantEntry {
-        tag: "".into(),
-        // empty access converts to unrestricted
-        access: ().into(),
-        functions,
-    })?;
-
     Ok(InitCallbackResult::Pass)
 }
 
