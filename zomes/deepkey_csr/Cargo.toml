@@ -16,3 +16,7 @@ rmp-serde = { workspace = true }
 serde = { workspace = true }
 serde_bytes = { workspace = true }
 whi_hdk_extensions = { workspace = true }
+
+[dev-dependencies]
+ed25519-dalek = { version = "2.1", features = [ "rand_core" ] }
+rand = "0.8"

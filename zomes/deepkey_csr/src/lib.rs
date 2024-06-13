@@ -1,3 +1,34 @@
+//! # Welcome!
+//!
+//! - Source code - [github.com/holochain/deepkey](https://github.com/holochain/deepkey)
+//!
+//!
+//! ## Usage
+//!
+//! > **DISCLAIMER:** The real use-case will always be through a client connecting to Holochain's
+//! Conductor API.  These examples are to help devs contributing to deepkey understand the rust
+//! code, though they may also be useful for understanding the sequence of events.
+//!
+//! For more information about usage, see the
+//! [`README.md`](https://github.com/holochain/deepkey/blob/main/README.md) file in the source code
+//! repository.
+//!
+//! ### Minimal usage
+//!
+//! 1. [Register a new key](key_registration::create_key)
+//!
+//! ### Minimal usage with updated change rule
+//!
+//! 1. [Update change rule to use revocation keys](change_rule::update_change_rule)
+//! 2. [Register a new key](key_registration::create_key)
+//!
+//! ### Full-lifecycle usage
+//!
+//! 1. [Update change rule to use revocation keys](change_rule::update_change_rule)
+//! 2. [Register a new key](key_registration::create_key)
+//! 3. [Update a key](key_registration::update_key)
+//! 4. [Revoke a key](key_registration::revoke_key)
+
 pub mod change_rule;
 pub mod device;
 pub mod key_anchor;
@@ -8,8 +39,11 @@ pub mod app_binding;
 pub mod key_meta;
 pub mod utils;
 
+// Re-exports
 pub use hdk_extensions;
 pub use hdk_extensions::hdi_extensions;
+pub use deepkey;
+pub use deepkey::deepkey_types;
 
 use deepkey::*;
 use hdi_extensions::{
@@ -24,7 +58,7 @@ use keyset_root::create_keyset_root;
 
 #[hdk_extern]
 pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
-    create_keyset_root(())?;
+    create_keyset_root()?;
 
     // grant unrestricted access to receive_device_invitation so other agents can send us device invitations
     let mut fns = BTreeSet::new();

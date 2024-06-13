@@ -67,6 +67,55 @@ pub fn get_key_derivation_details(
 }
 
 
+/// Register a new app/key pair and create associated private entries
+///
+/// #### Example usage
+/// ```rust, no_run
+/// # use hdk::prelude::*;
+/// # use deepkey::*;
+/// # use deepkey_sdk::*;
+/// # fn main() -> ExternResult<()> {
+/// // Generates a new key in Lair
+/// let new_key = AgentPubKey::from_raw_32( create_x25519_keypair()?.as_ref().to_vec() );
+/// // Sign this cell's agent with using the new key
+/// let new_key_signing_of_author = sign_raw(
+///     new_key.clone(),
+///     agent_info()?.agent_initial_pubkey.into_inner()
+/// )?;
+///
+/// let key_generation = KeyGeneration {
+///     new_key,
+///     new_key_signing_of_author,
+/// };
+///
+/// // Mock app info
+/// let app_binding = AppBindingInput {
+///     app_name: "Example App".to_string(),
+///     installed_app_id: "example-app".to_string(),
+///     dna_hashes: vec![
+///         DnaHash::try_from("uhC0khcxkMswniVr_dwGJAo2spTGC-hafG0lCEvzS_PJughwa4_6d").unwrap(),
+///     ],
+///     metadata: Default::default(),
+/// };
+///
+/// // Here is an example of submitting the derivation details; however, in this case it should
+/// // be set to `None` because we did not derive this key.
+/// let derivation_details = Some(DerivationDetailsInput {
+///     app_index: 1, // 0 is already used by the deepkey app
+///     key_index: 0,
+///     derivation_seed: vec![],
+///     derivation_bytes: vec![],
+/// });
+///
+/// let result = deepkey_csr::key_registration::create_key(CreateKeyInput {
+///     key_generation,
+///     app_binding,
+///     derivation_details,
+///     create_only: false,
+/// });
+/// # Ok(())
+/// # }
+/// ```
 #[hdk_extern]
 pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistration, KeyMeta)> {
     let key_gen = input.key_generation;
@@ -114,7 +163,6 @@ pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
         app_name: input.app_binding.app_name,
         installed_app_id: input.app_binding.installed_app_id,
         dna_hashes: input.app_binding.dna_hashes,
-        key_anchor_addr: key_anchor_addr.clone(),
         metadata: input.app_binding.metadata,
     };
     let app_binding_addr = create_entry( app_binding.to_input() )?;
@@ -140,6 +188,62 @@ pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
 }
 
 
+/// Register a key update for an existing app/key pair and create associated private entries
+///
+/// #### Example usage
+/// ```rust, no_run
+/// # use hdk::prelude::*;
+/// # use deepkey::*;
+/// # use deepkey_sdk::*;
+/// # fn main() -> ExternResult<()> {
+/// let prior_key_registration = ActionHash::try_from("uhCkkzhwfnkYh7CWji2KpS2wO6YaKOKPQ4-kr4XGRBRRx9hitvOw9").unwrap();
+///
+/// // Assuming the default change rules are still in place
+/// let revocation_authorization = vec![
+///     (
+///         0, // The index of the FDA authority
+///         sign_raw( // Sign prior registration using FDA
+///             agent_info()?.agent_initial_pubkey,
+///             prior_key_registration.clone().into_inner()
+///         )?
+///     ),
+/// ];
+///
+/// let key_revocation = KeyRevocation {
+///     prior_key_registration,
+///     revocation_authorization,
+/// };
+///
+/// // Generates a new key in Lair
+/// let new_key = AgentPubKey::from_raw_32( create_x25519_keypair()?.as_ref().to_vec() );
+/// // Sign this cell's agent with using the new key
+/// let new_key_signing_of_author = sign_raw(
+///     new_key.clone(),
+///     agent_info()?.agent_initial_pubkey.into_inner()
+/// )?;
+///
+/// let key_generation = KeyGeneration {
+///     new_key,
+///     new_key_signing_of_author,
+/// };
+///
+/// // Here is an example of submitting the derivation details; however, in this case it should
+/// // be set to `None` because we did not derive this key.
+/// let derivation_details = Some(DerivationDetailsInput {
+///     app_index: 1,
+///     key_index: 1, // Next key index
+///     derivation_seed: vec![],
+///     derivation_bytes: vec![],
+/// });
+///
+/// let result = deepkey_csr::key_registration::update_key(UpdateKeyInput {
+///     key_revocation,
+///     key_generation,
+///     derivation_details,
+/// });
+/// # Ok(())
+/// # }
+/// ```
 #[hdk_extern]
 pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistration, KeyMeta)> {
     let key_rev = input.key_revocation;
@@ -210,6 +314,38 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
 }
 
 
+/// Register a key delete for an existing app/key pair
+///
+/// #### Example usage
+/// ```rust, no_run
+/// # use hdk::prelude::*;
+/// # use deepkey::*;
+/// # use deepkey_sdk::*;
+/// # fn main() -> ExternResult<()> {
+/// let prior_key_registration = ActionHash::try_from("uhCkkzhwfnkYh7CWji2KpS2wO6YaKOKPQ4-kr4XGRBRRx9hitvOw9").unwrap();
+///
+/// // Assuming the default change rules are still in place
+/// let revocation_authorization = vec![
+///     (
+///         0, // The index of the FDA authority
+///         sign_raw( // Sign prior registration using FDA
+///             agent_info()?.agent_initial_pubkey,
+///             prior_key_registration.clone().into_inner()
+///         )?
+///     ),
+/// ];
+///
+/// let key_revocation = KeyRevocation {
+///     prior_key_registration,
+///     revocation_authorization,
+/// };
+///
+/// let result = deepkey_csr::key_registration::revoke_key(RevokeKeyInput {
+///     key_revocation,
+/// });
+/// # Ok(())
+/// # }
+/// ```
 #[hdk_extern]
 pub fn revoke_key(input: RevokeKeyInput) -> ExternResult<(ActionHash, KeyRegistration)> {
     let key_rev = input.key_revocation;

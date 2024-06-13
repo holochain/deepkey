@@ -1,6 +1,4 @@
 use crate::hdi_extensions;
-use std::sync::Arc;
-use rmp_serde;
 
 use hdi_extensions::{
     guest_error,
@@ -14,7 +12,6 @@ use hdk_extensions::{
 pub use crate::source_of_authority::*;
 pub use deepkey::{
     utils::*,
-    MembraneProof,
 };
 
 
@@ -30,6 +27,15 @@ where
                 .entry_type( EntryType::try_from(unit)? )
         )?
     )
+}
+
+
+pub fn query_entry_type_first<T,E>(unit: T) -> ExternResult<Option<Record>>
+where
+    EntryType: TryFrom<T, Error = E>,
+    WasmError: From<E>,
+{
+    Ok( query_entry_type( unit )?.pop() )
 }
 
 
@@ -62,23 +68,6 @@ pub fn my_agent_validation_pkg() -> ExternResult<AgentValidationPkg> {
     } else {
         Err(guest_error!("Chain index 1 is not an AgentValidationPkg action".to_string()))?
     }
-}
-
-
-pub fn my_membrane_proof() -> ExternResult<Option<MembraneProof>> {
-    Ok(match my_agent_validation_pkg()?.membrane_proof {
-        Some(arc) => {
-            match Arc::<SerializedBytes>::into_inner( arc ) {
-                Some(serialized) => {
-                    let proof : MembraneProof = rmp_serde::decode::from_slice( serialized.bytes().as_slice() )
-                        .map_err(|e| guest_error!(format!("Failed membrane deserialization: {}", e )))?;
-                    Some(proof)
-                },
-                _ => None,
-            }
-        },
-        _ => None,
-    })
 }
 
 

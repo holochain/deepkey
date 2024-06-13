@@ -12,8 +12,7 @@ use deepkey::*;
 use hdk::prelude::*;
 
 
-#[hdk_extern]
-pub fn create_keyset_root(_: ()) -> ExternResult<ActionHash> {
+pub fn create_keyset_root() -> ExternResult<ActionHash> {
     // let membrane_proof = utils::my_membrane_proof()?;
     // debug!("Membrane proof: {:?}", membrane_proof );
 
@@ -90,7 +89,6 @@ pub fn init_change_rule(
     );
 
     let change_rule = ChangeRule::new(
-        ksr_addr.clone(),
         ksr_addr.clone(),
         spec_change,
     );

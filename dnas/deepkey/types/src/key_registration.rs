@@ -70,6 +70,14 @@ impl From<(&ActionHash, &Vec<Authorization>)> for KeyRevocation {
 }
 
 
+/// Registration information used to validate operations on a `KeyAnchor`
+///
+/// This enum supports 4 variants:
+///
+/// - `Create` - *for a new key under the management of a KSR*
+/// - `CreateOnly` - *for a new key that cannot be updated*
+/// - `Update` - *for replacing a managed key*
+/// - `Delete` - *for permanently ending the management of this registration*
 #[hdk_entry_helper]
 #[derive(Clone)]
 #[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]

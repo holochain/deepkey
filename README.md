@@ -13,8 +13,18 @@ to manage their "keyset" by adding and removing public/private keypairs.
 See [Pre-2024 Architectual Documentation](docs/2023/README.md) for original design principles.
 
 
+
 ## Overview
-The keys for happs installed on a device are also tracked under the keyset for the device.
+The keys for happs installed on a device are also tracked under the keyset for the device.  A keyset
+is the set of keys governed by a ruleset, presumably under the control of one person.
+
+When you install a new app in Holochain, by default a new keypair is generated to control the source
+chain of that app. The public key of that keypair serves as the address of your agent in that app's
+DHT. The private key signs all of your network communications and all actions on your chain. Deepkey
+registers, manages, and reports on the validity of each `AgentPubKey` installed on your conductor.
+
+
+#### Why do we need Deepkey?
 
 Because humans are notoriously bad at managing cryptographic keys, we believe a project like
 Holochain must provide key management tools to help people deal with real-world messiness such as
@@ -28,6 +38,13 @@ designed to work hand in hand with holochain's secure keystore,
 
 The most common call to Deepkey is `key_state((Key, Timestamp))` to query the validity of a key at a
 particular time.
+
+##### Another reason is for source chain recovery
+
+In addition to shared/public keysets and registrations, Deepkey supports private data for
+remembering how the keys were derived.  With each key generation, the relevant "derivation details"
+can be saved as private entries.  This private data can be used later to rebuild your keypairs and
+recover app source chains.
 
 
 ### Features
@@ -45,6 +62,7 @@ Future features
 
 - Associate multiple devices under unified keyset management.
 - Do social management of keys through m of n signatures.
+
 
 
 ## How it works?
@@ -86,6 +104,9 @@ index `0/0`).
 > *There can only be one KSR on a Deepkey source chain.*
 
 #### What is a KSR?
+A keyset is the set of keys governed by a ruleset, presumably under the control of one person.
+
+When you install a new app in Holochain, by default a new keypair is generated to control the source chain of that app. The public key of that keypair serves as the address of your agent in that app's DHT. The private key signs all of your network communications and all actions on your chain. Deepkey registers, manages, and reports on the validity of each `AgentPubKey` installed on your conductor.
 
 A `KeysetRoot` (KSR) is self-declared onto the network using a single-purpose throwaway keypair.
 
@@ -137,6 +158,12 @@ required by the current change rules.
 
 ### Checking key validity
 
+Using this `KeyAnchor` entry, the status (valid, revoked, replaced, etc.) of a key can be looked up
+in a single `get_details` call, without needing to first lookup the corresponding `KeyRegistration`.
+
+This also means that any external consumer of Deepkey (other DNA's, Holochain apps, etc.) can query
+the key status with the core 32 bytes of the key. They do NOT need to know its registration details.
+
 A key state can be checked using the key bytes and a timestamp.  There are 3 states a key can be in
 
 - Valid
@@ -148,12 +175,15 @@ A key state can be checked using the key bytes and a timestamp.  There are 3 sta
   - there are no create or delete actions
 
 
-
 ### Updating the change rules
 
-A `ChangeRule` defines the rules within a keyset.  It can be configured to support signing with M of
-N keys (ie. an `AuthoritySpec`) which is used to validate changes to keys and the change rules
-themselves.
+A `ChangeRule` defines the rules that apply to keys under the management of a keyset.  It is
+designed to support signing with M of N keys (ie. an `AuthoritySpec`) which is used to validate
+changes to keys and the change rules themselves.
+
+> NOTE: that the spec change signature validation does NOT require that all the signers exist as
+> agents in Deepkey. This means hardware wallets, FIDO-compliant keys, smart cards, etc. could be
+> used to provide signatures into your multisig.
 
 Initially, the change rule is has an `AuthoritySpec` set to 1 of 1 with the only authority being the
 FDA.
@@ -164,3 +194,18 @@ the original.
 
 > *There can only be one `ChangeRule` create action on a Deepkey source chain.  Any following
 > `ChangeRule` commits must be udpates to the original.*
+
+
+
+## Integrity Model
+
+
+Documentation about the integrity validation.
+
+See [INTEGRITY_MODEL.md](INTEGRITY_MODEL.md)
+
+
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md)

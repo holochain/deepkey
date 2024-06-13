@@ -1,6 +1,7 @@
 use hdi::prelude::*;
 
 
+// This is expected to have some compatibility with Lair Key API
 // #[derive(Debug, Clone, Serialize, Deserialize)]
 // pub enum KeyType {
 //     AppUI,

@@ -5,12 +5,14 @@ pub mod error;
 pub mod joining_proof;
 pub mod source_of_authority;
 
+// Re-exports
+pub use deepkey_types;
+
 pub use deepkey_types::*;
 pub use error::*;
 pub use joining_proof::*;
 pub use source_of_authority::*;
 
-use serde_bytes;
 use hdi::prelude::*;
 use hdi_extensions::{
     scoped_type_connector,
@@ -70,11 +72,4 @@ pub enum LinkTypes {
     DeviceToKeyAnchor,
     DeviceName,
     AppBindingToKeyMeta,
-}
-
-
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct MembraneProof {
-    pub joining_proof: serde_bytes::ByteBuf,
 }

@@ -4,6 +4,7 @@ use crate::{
     KeyAnchor,
     KeyRegistration,
     KeyRevocation,
+    ChangeRule,
 
     utils,
 
@@ -33,6 +34,35 @@ pub fn validation(
             invalid!(format!("Keyset Roots cannot be updated"))
         },
         EntryTypes::ChangeRule(change_rule_entry) => {
+            let base_change_rule_record = must_get_valid_record( original_action_hash.clone() )?;
+            let base_change_rule_entry : ChangeRule = base_change_rule_record.try_into()?;
+
+            // Keyset Root cannot be updated
+            if base_change_rule_entry.keyset_root != change_rule_entry.keyset_root {
+                invalid!(format!(
+                    "The 'keyset_root' of this change rule cannot be changed; original entry 'keyset_root' is: {}",
+                    base_change_rule_entry.keyset_root,
+                ))
+            }
+
+            // Original action hash must be the ChangeRule create record
+            //
+            // NOTE: we cannot rely on 'original_action_hash' because we don't yet know how to
+            // ensure it is the same chain.  Waiting to find out how 'author' equivalency will be
+            // checked with agent updates.
+            let create_change_rule_action = utils::base_change_rule(
+                &update.author,
+                &update.prev_action,
+            )?;
+
+            if create_change_rule_action.action_address() != &original_action_hash {
+                invalid!(format!(
+                    "The 'original_action_hash' is expected to be the ChangeRule create ({}); not '{}'",
+                    create_change_rule_action.action_address(),
+                    original_action_hash,
+                ))
+            }
+
             let new_authority_spec = change_rule_entry.spec_change.new_spec;
             // Cannot require more signatures than there are authorities
             if new_authority_spec.sigs_required == 0 {
@@ -49,7 +79,10 @@ pub fn validation(
             }
 
             // Get previous change rule
-            let prev_change_rule = match utils::prev_change_rule( &update.author, &update.prev_action )? {
+            let prev_change_rule = match utils::prev_change_rule(
+                &update.author,
+                &update.prev_action,
+            )? {
                 Some(change_rule) => change_rule,
                 None => invalid!(format!(
                     "No change rule found before action seq ({}) [{}]",
