@@ -23,8 +23,10 @@ holo_hash = { version = "0.4.0-dev.6", features = ["hashing", "encoding"] }
 holochain_integrity_types = { version = "0.4.0-dev.6" }
 hdi = { version = "0.5.0-dev.6" }
 hdk = { version = "0.4.0-dev.7" }
-whi_hdi_extensions = { version = "0.10.0-dev.0", path = "../../projects-holo/whi_hdi_extensions" }
-whi_hdk_extensions = { version = "0.10.0-dev.0", path = "../../projects-holo/whi_hdk_extensions" }
+whi_hdi_extensions = { version = "0.10.0-dev.0" }
+# whi_hdi_extensions = { path = "../whi_hdi_extensions" }
+whi_hdk_extensions = { version = "0.10.0-dev.0" }
+# whi_hdk_extensions = { path = "../whi_hdk_extensions" }
 
 [workspace.dependencies.deepkey]
 path = "zomes/deepkey"
