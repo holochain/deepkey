@@ -84,12 +84,17 @@ npm-use-backdrop-%:
 #
 DEBUG_LEVEL	       ?= warn
 TEST_ENV_VARS		= LOG_LEVEL=$(DEBUG_LEVEL)
-TEST_DEPS		= tests/node_modules dnas/deepkey/zomelets/node_modules
+TEST_DEPS		= node_modules dnas/deepkey/zomelets/node_modules
 
 %/package-lock.json:	%/package.json
 	touch $@
+package-lock.json:	package.json
+	touch $@
 %/node_modules:		%/package-lock.json
 	cd $*; npm install
+	touch $@
+node_modules:		package-lock.json
+	npm install
 	touch $@
 
 test:
