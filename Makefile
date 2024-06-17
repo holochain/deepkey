@@ -1,3 +1,4 @@
+.PHONY:			FORCE
 
 INT_DIR			= zomes/deepkey
 CSR_DIR			= zomes/deepkey_csr
@@ -92,7 +93,11 @@ TEST_DEPS		= tests/node_modules dnas/deepkey/zomelets/node_modules
 	touch $@
 
 test:
+	make -s test-unit
 	make -s test-integration
+
+test-unit:
+	RUST_BACKTRACE=1 CARGO_TARGET_DIR=target cargo test -- --nocapture --show-output
 
 test-integration:
 	make -s test-integration-basic
@@ -112,19 +117,31 @@ test-integration-claim-unmanaged-key:	$(DEEPKEY_DNA) $(TEST_DEPS)
 #
 # Documentation
 #
+DEEPKEY_DOCS		= target/doc/deepkey/index.html
+DEEPKEY_CSR_DOCS	= target/doc/deepkey_csr/index.html
+DEEPKEY_TYPES_DOCS	= target/doc/deepkey_types/index.html
+DEEPKEY_SDK_DOCS	= target/doc/deepkey_sdk/index.html
+
 target/doc/%/index.html:	zomes/%/src/**
 	cargo test --doc -p $*
-	cargo doc -p $*
+	cargo doc --no-deps -p $*
 	@echo -e "\x1b[37mOpen docs in file://$(shell pwd)/$@\x1b[0m";
 
+$(DEEPKEY_TYPES_DOCS):		dnas/deepkey/types/src/**
+	cargo doc --no-deps -p hc_deepkey_types
+$(DEEPKEY_SDK_DOCS):		dnas/deepkey/sdk/src/**
+	cargo doc --no-deps -p hc_deepkey_sdk
 
-DEEPKEY_CSR_DOCS	= target/doc/deepkey_csr/index.html
+docs:				FORCE
+	make $(DEEPKEY_CSR_DOCS) $(DEEPKEY_DOCS)
+	make $(DEEPKEY_TYPES_DOCS) $(DEEPKEY_SDK_DOCS)
 
-docs:			$(DEEPKEY_CSR_DOCS)
 docs-watch:
 	@inotifywait -r -m -e modify		\
 		--includei '.*\.rs'		\
 			zomes/			\
+			dnas/deepkey/types	\
+			dnas/deepkey/sdk	\
 	| while read -r dir event file; do	\
 		echo -e "\x1b[37m$$event $$dir$$file\x1b[0m";\
 		make docs;			\

@@ -137,7 +137,6 @@ export function AuthorizedSpecChange ( data ) {
 
 export const ChangeRuleStruct		= {
     "keyset_root":		ActionHash,
-    "keyset_leaf":		ActionHash,
     "spec_change":		AuthorizedSpecChangeStruct,
 };
 
@@ -167,6 +166,8 @@ export const KeyMetaStruct		= {
     "key_index":			Number,
     "key_registration_addr":		ActionHash,
     "key_anchor_addr":			ActionHash,
+    "derivation_seed":			OptionType( Bytes ),
+    "derivation_bytes":			OptionType( Bytes ),
 };
 
 export function KeyMeta ( data ) {
@@ -188,7 +189,7 @@ export const AppBindingStruct		= {
     "app_name":			String,
     "installed_app_id":		String,
     "dna_hashes":		VecType( DnaHash ),
-    "key_anchor_addr":		ActionHash,
+    "metadata":			Object,
 };
 
 export function AppBinding ( data ) {

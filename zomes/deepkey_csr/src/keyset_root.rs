@@ -19,12 +19,7 @@ use deepkey::*;
 use hdk::prelude::*;
 
 
-#[hdk_extern]
-pub fn create_keyset_root(_: ()) -> ExternResult<ActionHash> {
-    // TODO: extract derivation details from membrane proof so that we have accurate
-    // 'derivation_seed' and 'derivation_bytes'
-    // let membrane_proof = utils::my_membrane_proof()?;
-
+pub fn create_keyset_root() -> ExternResult<ActionHash> {
     let fda: AgentPubKey = agent_info()?.agent_latest_pubkey;
     let fda_bytes = fda.clone().into_inner();
 
@@ -92,7 +87,6 @@ pub fn init_change_rule(
     );
 
     let change_rule = ChangeRule::new(
-        ksr_addr.clone(),
         ksr_addr.clone(),
         spec_change,
     );
