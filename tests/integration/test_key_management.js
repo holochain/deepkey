@@ -547,6 +547,47 @@ function basic_tests () {
 	}
     });
 
+    it("should check keys have the same lineage", async function () {
+	// Query
+	{
+	    const same_lineage		= await alice_deepkey.query_same_lineage([
+		alice_key1a,
+		alice_key1c,
+	    ]);
+	    log.normal("Keys have the same lineage: %s", same_lineage );
+
+	    expect( same_lineage	).to.be.true;
+	}
+	{
+	    const same_lineage		= await alice_deepkey.query_same_lineage([
+		alice_key1a,
+		alice_key2a,
+	    ]);
+	    log.normal("Keys have the same lineage: %s", same_lineage );
+
+	    expect( same_lineage	).to.be.false;
+	}
+	// Get
+	{
+	    const same_lineage		= await alice_deepkey.same_lineage([
+		alice_key1a,
+		alice_key1c,
+	    ]);
+	    log.normal("Keys have the same lineage: %s", same_lineage );
+
+	    expect( same_lineage	).to.be.true;
+	}
+	{
+	    const same_lineage		= await alice_deepkey.same_lineage([
+		alice_key1a,
+		alice_key2a,
+	    ]);
+	    log.normal("Keys have the same lineage: %s", same_lineage );
+
+	    expect( same_lineage	).to.be.false;
+	}
+    });
+
     linearSuite("Errors", function () {
 
 	it("should fail to register invalid key", async function () {

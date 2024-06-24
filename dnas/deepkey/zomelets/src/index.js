@@ -84,6 +84,11 @@ const functions				= {
 
 	return result.map( key => new Uint8Array(key) );
     },
+    async query_same_lineage ( input ) {
+	const result			= await this.call( input );
+
+	return result;
+    },
     async sign ( bytes ) {
 	const result			= await this.call( bytes );
 
@@ -108,6 +113,11 @@ const functions				= {
 	const result			= await this.call( input );
 
 	return result.map( key => new Uint8Array(key) );
+    },
+    async same_lineage ( input ) {
+	const result			= await this.call( input );
+
+	return result;
     },
     async key_state ( input, options ) {
 	if ( !Array.isArray( input ) )

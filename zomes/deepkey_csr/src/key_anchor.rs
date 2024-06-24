@@ -181,9 +181,6 @@ pub fn query_key_lineage(
 pub fn get_key_lineage(
     key_bytes: ByteArray<32>,
 ) -> ExternResult<Vec<KeyBytes>> {
-    // Trace backwards
-    // Follow evolutions forwards
-
     let key_anchor = KeyAnchor::new( key_bytes.into_array() );
     let key_anchor_hash = hash_entry( &key_anchor )?;
     let key_anchor_details = get_details( key_anchor_hash.clone(), GetOptions::default() )?;
@@ -204,6 +201,8 @@ pub fn get_key_lineage(
     };
 
     let mut lineage = vec![];
+
+    // Trace backwards
     let history = trace_origin( &creation_addr )?;
 
     debug!(
@@ -221,6 +220,7 @@ pub fn get_key_lineage(
 
     lineage.reverse();
 
+    // Follow evolutions forwards
     while let Some(addr) = next_addr {
         let details = must_get_record_details( &addr )?;
         let key_anchor : KeyAnchor = details.record.try_into()?;
@@ -233,4 +233,24 @@ pub fn get_key_lineage(
     }
 
     Ok( lineage )
+}
+
+
+#[hdk_extern]
+pub fn query_same_lineage(
+    (key1_bytes, key2_bytes): (ByteArray<32>, ByteArray<32>),
+) -> ExternResult<bool> {
+    let keys = query_key_lineage( key1_bytes )?;
+
+    Ok( keys.contains( &key2_bytes.into_array() ) )
+}
+
+
+#[hdk_extern]
+pub fn same_lineage(
+    (key1_bytes, key2_bytes): (ByteArray<32>, ByteArray<32>),
+) -> ExternResult<bool> {
+    let keys = get_key_lineage( key1_bytes )?;
+
+    Ok( keys.contains( &key2_bytes.into_array() ) )
 }
