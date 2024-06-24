@@ -79,6 +79,11 @@ const functions				= {
 	    ];
 	});
     },
+    async query_key_lineage ( input ) {
+	const result			= await this.call( input );
+
+	return result.map( key => new Uint8Array(key) );
+    },
     async sign ( bytes ) {
 	const result			= await this.call( bytes );
 

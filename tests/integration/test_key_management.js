@@ -442,6 +442,25 @@ function basic_tests () {
 	}
     });
 
+    it("should get key lineage", async function () {
+	{
+	    const lineage		= await alice_deepkey.query_key_lineage( alice_key1a );
+	    log.normal("Key lineage: %s", json.debug(lineage) );
+
+	    expect( lineage		).to.have.length( 2 );
+	    expect( lineage[0]		).to.deep.equal( alice_key1a );
+	    expect( lineage[1]		).to.deep.equal( alice_key1b );
+	}
+	{
+	    const lineage		= await alice_deepkey.query_key_lineage( alice_key1b );
+	    log.normal("Key lineage: %s", json.debug(lineage) );
+
+	    expect( lineage		).to.have.length( 2 );
+	    expect( lineage[0]		).to.deep.equal( alice_key1a );
+	    expect( lineage[1]		).to.deep.equal( alice_key1b );
+	}
+    });
+
     linearSuite("Errors", function () {
 
 	it("should fail to register invalid key", async function () {

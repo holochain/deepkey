@@ -66,7 +66,7 @@ pub fn query_key_meta_for_key_addr(anchor_addr: ActionHash) -> ExternResult<KeyM
 pub fn query_key_meta_for_key(
     key_bytes: ByteArray<32>
 ) -> ExternResult<KeyMeta> {
-    let key_anchor_addr = crate::key_anchor::get_action_addr_for_key_anchor( key_bytes )?;
+    let key_anchor_addr = crate::key_anchor::query_action_addr_for_key_anchor( key_bytes )?;
 
     Ok( query_key_meta_for_key_addr( key_anchor_addr )? )
 }
