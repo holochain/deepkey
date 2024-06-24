@@ -128,6 +128,8 @@ Validation criteria
 - The record must deserialize into the correct struct
 - Must be a `Update` or `Delete` variant
 - The `original_action_hash` must be the `prior_key_registration` of the revocation
+- There must not be any other `KeyRegistration` on the same source chain referencing the same
+  `prior_key_registration`
 - [Key revocation requirements](#key-revocation)
 - If variant is an `Update`
   - [Key generation requirements](#key-generation)

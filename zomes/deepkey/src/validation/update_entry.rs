@@ -1,5 +1,6 @@
 use crate::{
     EntryTypes,
+    EntryTypesUnit,
 
     KeyAnchor,
     KeyRegistration,
@@ -200,6 +201,46 @@ pub fn validate_key_revocation(key_rev: &KeyRevocation, update: &Update) -> Exte
             "Author '{}' cannot revoke key registered by another author ({})",
             update.author, key_registration_action.hashed.author(),
         )))?
+    }
+
+    // Prevent duplicate updates to the same 'prior_key_registration'
+    let activities = must_get_agent_activity(
+        update.author.to_owned(),
+        ChainFilter::new( update.prev_action.to_owned() )
+            .until( key_rev.prior_key_registration.to_owned() )
+            .include_cached_entries()
+    )?;
+
+    let entry_type = EntryType::try_from( EntryTypesUnit::KeyRegistration )?;
+    let filtered_activities : Vec<RegisterAgentActivity> = activities.into_iter().filter(
+        |activity| match activity.action.action().entry_type() {
+            Some(et) => et == &entry_type,
+            None => false,
+        }
+    ).collect();
+
+    for activity in filtered_activities {
+        let prior_key_reg : KeyRegistration = match activity.cached_entry {
+            Some(entry) => entry,
+            None => must_get_entry(
+                activity.action.action().entry_hash().unwrap().to_owned()
+            )?.content,
+        }.try_into()?;
+
+        let prior_key_rev = match prior_key_reg {
+            KeyRegistration::Create(..) |
+            KeyRegistration::CreateOnly(..)=> continue,
+            KeyRegistration::Update( prior_key_rev, _ ) => prior_key_rev,
+            KeyRegistration::Delete( prior_key_rev ) => prior_key_rev,
+        };
+
+        if prior_key_rev.prior_key_registration == key_rev.prior_key_registration {
+            Err(guest_error!(format!(
+                "There is already a KeyRegistration ({}) that revokes '{}'",
+                activity.action.action_address(),
+                key_rev.prior_key_registration,
+            )))?
+        }
     }
 
     // Get the current change rule

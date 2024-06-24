@@ -611,6 +611,21 @@ function basic_tests () {
 	    }, "cannot revoke key registered by another author" );
 	});
 
+	it("should fail to duplicate a revoke", async function () {
+	    this.timeout( 10_000 );
+
+	    await expect_reject(async () => {
+		await alice_deepkey.revoke_key({
+		    "key_revocation": {
+			"prior_key_registration": alice_key1c_reg_addr,
+			"revocation_authorization": [
+			    [ 0, await alice_deepkey.sign( alice_key1c_reg_addr ) ],
+			],
+		    },
+		});
+	    }, "already a KeyRegistration" );
+	});
+
     });
 
     after(async function () {
