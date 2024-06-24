@@ -13,6 +13,7 @@ use hdk_extensions::{
     must_get_record_details,
     hdi_extensions::{
         guest_error,
+        trace_origin,
         trace_origin_root,
         ScopedTypeConnector,
     },
@@ -170,6 +171,65 @@ pub fn query_key_lineage(
             .try_into()?;
 
         lineage.push( key_anchor.bytes );
+    }
+
+    Ok( lineage )
+}
+
+
+#[hdk_extern]
+pub fn get_key_lineage(
+    key_bytes: ByteArray<32>,
+) -> ExternResult<Vec<KeyBytes>> {
+    // Trace backwards
+    // Follow evolutions forwards
+
+    let key_anchor = KeyAnchor::new( key_bytes.into_array() );
+    let key_anchor_hash = hash_entry( &key_anchor )?;
+    let key_anchor_details = get_details( key_anchor_hash.clone(), GetOptions::default() )?;
+
+    let (creation_addr, mut next_addr) = match key_anchor_details {
+        None => Err(guest_error!(format!("Record not found")))?,
+        Some(Details::Record(_)) => Err(guest_error!(format!("Should be unreachable")))?,
+        Some(Details::Entry( entry_details )) => {
+            (
+                entry_details.actions.first()
+                    .ok_or(guest_error!(format!("Should be unreachable")))?
+                    .action_address()
+                    .to_owned(),
+                entry_details.updates.first()
+                    .map( |action| action.action_address().to_owned() ),
+            )
+        },
+    };
+
+    let mut lineage = vec![];
+    let history = trace_origin( &creation_addr )?;
+
+    debug!(
+        "Found history ({}): {:?}",
+        history.len(),
+        history.clone().iter().map( |(addr, _)| addr ).collect::<Vec<&ActionHash>>(),
+    );
+    for (addr, _action) in history {
+        let key_anchor : KeyAnchor = must_get_record_details( &addr )?
+            .record
+            .try_into()?;
+
+        lineage.push( key_anchor.bytes );
+    }
+
+    lineage.reverse();
+
+    while let Some(addr) = next_addr {
+        let details = must_get_record_details( &addr )?;
+        let key_anchor : KeyAnchor = details.record.try_into()?;
+
+        debug!("Found update ({}): {:?}", addr, key_anchor.bytes );
+        lineage.push( key_anchor.bytes );
+
+        next_addr = details.updates.first()
+            .map( |action| action.action_address().to_owned() );
     }
 
     Ok( lineage )
