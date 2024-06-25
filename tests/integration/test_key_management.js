@@ -100,7 +100,8 @@ function basic_tests () {
 
     let alice_key1a_reg, alice_key1a_reg_addr, alice_key1a;
     let alice_key1b_reg, alice_key1b_reg_addr, alice_key1b;
-    let alice_key1c_reg, alice_key1c_reg_addr;
+    let alice_key1c_reg, alice_key1c_reg_addr, alice_key1c;
+    let alice_key1d_reg, alice_key1d_reg_addr;
     let alice_key2a_reg, alice_key2a_reg_addr, alice_key2a;
     let alice_key3a_reg, alice_key3a_reg_addr, alice_key3a, alice_key3;
 
@@ -268,22 +269,59 @@ function basic_tests () {
 	expect( app_bindings		).to.have.length( 2 );
     });
 
-    it("should revoke key (alice)", async function () {
+    it("should update key (alice)", async function () {
 	this.timeout( 5_000 );
 
-	const [ addr, key_reg ]	= await alice_deepkey.revoke_key({
+	const derivation_details	= await alice_deepkey.next_derivation_details( alice_key1b );
+	const {
+	    app_index,
+	    key_index,
+	}				= derivation_details;
+	const path			= `app/${app_index}/key/${key_index}`;
+	const new_key			= await alice_key_store.createKey( path );
+
+	const [ addr, key_reg, key_meta ]	= await alice_deepkey.update_key({
 	    "key_revocation": {
 		"prior_key_registration": alice_key1b_reg_addr,
 		"revocation_authorization": [
 		    [ 0, await alice_deepkey.sign( alice_key1b_reg_addr ) ],
 		],
 	    },
+	    "key_generation": {
+		"new_key":			await new_key.getAgent(),
+		"new_key_signing_of_author":	await new_key.sign( alice_client.agent_id ),
+	    },
+	    "derivation_details":	{
+		...derivation_details,
+		"derivation_seed":	alice_key_store.seed,
+		"derivation_bytes":	new_key.derivation_bytes,
+	    },
+	});
+	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
+	log.normal("Key Meta: %s", json.debug(key_meta) );
+	log.normal("Key registration (update) addr: %s", addr );
+
+	alice_key1c			= await new_key.getBytes();
+	alice_key1c_reg			= key_reg;
+	alice_key1c_reg_addr		= addr;
+    });
+
+    it("should revoke key (alice)", async function () {
+	this.timeout( 5_000 );
+
+	const [ addr, key_reg ]	= await alice_deepkey.revoke_key({
+	    "key_revocation": {
+		"prior_key_registration": alice_key1c_reg_addr,
+		"revocation_authorization": [
+		    [ 0, await alice_deepkey.sign( alice_key1c_reg_addr ) ],
+		],
+	    },
 	});
 	log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
 	log.normal("Key registration (update) addr: %s", addr );
 
-	alice_key1c_reg			= key_reg;
-	alice_key1c_reg_addr		= addr;
+	alice_key1d_reg			= key_reg;
+	alice_key1d_reg_addr		= addr;
 
 	{
 	    const key_state		= await alice_deepkey.key_state( alice_key1a );
@@ -295,6 +333,13 @@ function basic_tests () {
 	{
 	    const key_state		= await alice_deepkey.key_state( alice_key1b );
 	    log.normal("Key (1b) state: %s", json.debug(key_state) );
+
+	    expect( key_state		).to.have.key( "Invalid" );
+	    expect( key_state.Invalid	).to.not.be.null;
+	}
+	{
+	    const key_state		= await alice_deepkey.key_state( alice_key1c );
+	    log.normal("Key (1c) state: %s", json.debug(key_state) );
 
 	    expect( key_state		).to.have.key( "Invalid" );
 	    expect( key_state.Invalid	).to.not.be.null;
@@ -442,6 +487,107 @@ function basic_tests () {
 	}
     });
 
+    it("should query key lineage", async function () {
+	{
+	    const lineage		= await alice_deepkey.query_key_lineage( alice_key1a );
+	    log.normal("Key lineage: %s", json.debug(lineage) );
+
+	    expect( lineage		).to.have.length( 3 );
+	    expect( lineage[0]		).to.deep.equal( alice_key1a );
+	    expect( lineage[1]		).to.deep.equal( alice_key1b );
+	    expect( lineage[2]		).to.deep.equal( alice_key1c );
+	}
+	{
+	    const lineage		= await alice_deepkey.query_key_lineage( alice_key1b );
+	    log.normal("Key lineage: %s", json.debug(lineage) );
+
+	    expect( lineage		).to.have.length( 3 );
+	    expect( lineage[0]		).to.deep.equal( alice_key1a );
+	    expect( lineage[1]		).to.deep.equal( alice_key1b );
+	    expect( lineage[2]		).to.deep.equal( alice_key1c );
+	}
+	{
+	    const lineage		= await alice_deepkey.query_key_lineage( alice_key1c );
+	    log.normal("Key lineage: %s", json.debug(lineage) );
+
+	    expect( lineage		).to.have.length( 3 );
+	    expect( lineage[0]		).to.deep.equal( alice_key1a );
+	    expect( lineage[1]		).to.deep.equal( alice_key1b );
+	    expect( lineage[2]		).to.deep.equal( alice_key1c );
+	}
+    });
+
+    it("should get key lineage", async function () {
+	{
+	    const lineage		= await alice_deepkey.get_key_lineage( alice_key1a );
+	    log.normal("Key lineage: %s", json.debug(lineage) );
+
+	    expect( lineage		).to.have.length( 3 );
+	    expect( lineage[0]		).to.deep.equal( alice_key1a );
+	    expect( lineage[1]		).to.deep.equal( alice_key1b );
+	    expect( lineage[2]		).to.deep.equal( alice_key1c );
+	}
+	{
+	    const lineage		= await alice_deepkey.get_key_lineage( alice_key1b );
+	    log.normal("Key lineage: %s", json.debug(lineage) );
+
+	    expect( lineage		).to.have.length( 3 );
+	    expect( lineage[0]		).to.deep.equal( alice_key1a );
+	    expect( lineage[1]		).to.deep.equal( alice_key1b );
+	    expect( lineage[2]		).to.deep.equal( alice_key1c );
+	}
+	{
+	    const lineage		= await alice_deepkey.get_key_lineage( alice_key1c );
+	    log.normal("Key lineage: %s", json.debug(lineage) );
+
+	    expect( lineage		).to.have.length( 3 );
+	    expect( lineage[0]		).to.deep.equal( alice_key1a );
+	    expect( lineage[1]		).to.deep.equal( alice_key1b );
+	    expect( lineage[2]		).to.deep.equal( alice_key1c );
+	}
+    });
+
+    it("should check keys have the same lineage", async function () {
+	// Query
+	{
+	    const same_lineage		= await alice_deepkey.query_same_lineage([
+		alice_key1a,
+		alice_key1c,
+	    ]);
+	    log.normal("Keys have the same lineage: %s", same_lineage );
+
+	    expect( same_lineage	).to.be.true;
+	}
+	{
+	    const same_lineage		= await alice_deepkey.query_same_lineage([
+		alice_key1a,
+		alice_key2a,
+	    ]);
+	    log.normal("Keys have the same lineage: %s", same_lineage );
+
+	    expect( same_lineage	).to.be.false;
+	}
+	// Get
+	{
+	    const same_lineage		= await alice_deepkey.same_lineage([
+		alice_key1a,
+		alice_key1c,
+	    ]);
+	    log.normal("Keys have the same lineage: %s", same_lineage );
+
+	    expect( same_lineage	).to.be.true;
+	}
+	{
+	    const same_lineage		= await alice_deepkey.same_lineage([
+		alice_key1a,
+		alice_key2a,
+	    ]);
+	    log.normal("Keys have the same lineage: %s", same_lineage );
+
+	    expect( same_lineage	).to.be.false;
+	}
+    });
+
     linearSuite("Errors", function () {
 
 	it("should fail to register invalid key", async function () {
@@ -504,6 +650,21 @@ function basic_tests () {
 		    },
 		]);
 	    }, "cannot revoke key registered by another author" );
+	});
+
+	it("should fail to duplicate a revoke", async function () {
+	    this.timeout( 10_000 );
+
+	    await expect_reject(async () => {
+		await alice_deepkey.revoke_key({
+		    "key_revocation": {
+			"prior_key_registration": alice_key1c_reg_addr,
+			"revocation_authorization": [
+			    [ 0, await alice_deepkey.sign( alice_key1c_reg_addr ) ],
+			],
+		    },
+		});
+	    }, "already a KeyRegistration" );
 	});
 
     });

@@ -39,7 +39,7 @@ where
     debug!("Getting agent activity for {} (chain top: {})", author, chain_top );
     let activities = must_get_agent_activity(
         author.to_owned(),
-        ChainFilter::new(chain_top.to_owned())
+        ChainFilter::new( chain_top.to_owned() )
             .include_cached_entries()
     )?;
 

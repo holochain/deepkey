@@ -2,6 +2,7 @@ use crate::utils;
 use deepkey::*;
 use deepkey_sdk::{
     KeyState,
+    KeyBytes,
 };
 use serde_bytes::ByteArray;
 
@@ -9,8 +10,10 @@ use hdk::prelude::*;
 use hdk_extensions::{
     agent_id,
     must_get,
+    must_get_record_details,
     hdi_extensions::{
         guest_error,
+        trace_origin,
         trace_origin_root,
         ScopedTypeConnector,
     },
@@ -117,7 +120,7 @@ pub fn get_key_anchor_for_registration(addr: ActionHash) -> ExternResult<(Action
 
 
 #[hdk_extern]
-pub fn get_action_addr_for_key_anchor(
+pub fn query_action_addr_for_key_anchor(
     key_bytes: ByteArray<32>
 ) -> ExternResult<ActionHash> {
     let key = key_bytes.into_array();
@@ -141,11 +144,113 @@ pub fn get_action_addr_for_key_anchor(
 
 #[hdk_extern]
 pub fn get_first_key_anchor_for_key(key_bytes: ByteArray<32>) -> ExternResult<(ActionHash, KeyAnchor)> {
-    let ka_action_addr = get_action_addr_for_key_anchor( key_bytes )?;
+    let ka_action_addr = query_action_addr_for_key_anchor( key_bytes )?;
     let first_ka_action_addr = trace_origin_root( &ka_action_addr )?.0;
 
     Ok((
         first_ka_action_addr.clone(),
         must_get( &first_ka_action_addr )?.try_into()?,
     ))
+}
+
+
+#[hdk_extern]
+pub fn query_key_lineage(
+    key_bytes: ByteArray<32>,
+) -> ExternResult<Vec<KeyBytes>> {
+    let ka_action_addr = query_action_addr_for_key_anchor( key_bytes )?;
+    let key_meta = crate::key_meta::query_key_meta_for_key_addr( ka_action_addr )?;
+    let key_metas = crate::key_meta::query_key_metas_for_app_binding( key_meta.app_binding_addr )?;
+
+    let mut lineage = vec![];
+
+    debug!("Lineage has {} keys", key_metas.len() );
+    for key_meta in key_metas {
+        let key_anchor : KeyAnchor = must_get_record_details( &key_meta.key_anchor_addr )?
+            .record
+            .try_into()?;
+
+        lineage.push( key_anchor.bytes );
+    }
+
+    Ok( lineage )
+}
+
+
+#[hdk_extern]
+pub fn get_key_lineage(
+    key_bytes: ByteArray<32>,
+) -> ExternResult<Vec<KeyBytes>> {
+    let key_anchor = KeyAnchor::new( key_bytes.into_array() );
+    let key_anchor_hash = hash_entry( &key_anchor )?;
+    let key_anchor_details = get_details( key_anchor_hash.clone(), GetOptions::default() )?;
+
+    let (creation_addr, mut next_addr) = match key_anchor_details {
+        None => Err(guest_error!(format!("Record not found")))?,
+        Some(Details::Record(_)) => Err(guest_error!(format!("Should be unreachable")))?,
+        Some(Details::Entry( entry_details )) => {
+            (
+                entry_details.actions.first()
+                    .ok_or(guest_error!(format!("Should be unreachable")))?
+                    .action_address()
+                    .to_owned(),
+                entry_details.updates.first()
+                    .map( |action| action.action_address().to_owned() ),
+            )
+        },
+    };
+
+    let mut lineage = vec![];
+
+    // Trace backwards
+    let history = trace_origin( &creation_addr )?;
+
+    debug!(
+        "Found history ({}): {:?}",
+        history.len(),
+        history.clone().iter().map( |(addr, _)| addr ).collect::<Vec<&ActionHash>>(),
+    );
+    for (addr, _action) in history {
+        let key_anchor : KeyAnchor = must_get_record_details( &addr )?
+            .record
+            .try_into()?;
+
+        lineage.push( key_anchor.bytes );
+    }
+
+    lineage.reverse();
+
+    // Follow evolutions forwards
+    while let Some(addr) = next_addr {
+        let details = must_get_record_details( &addr )?;
+        let key_anchor : KeyAnchor = details.record.try_into()?;
+
+        debug!("Found update ({}): {:?}", addr, key_anchor.bytes );
+        lineage.push( key_anchor.bytes );
+
+        next_addr = details.updates.first()
+            .map( |action| action.action_address().to_owned() );
+    }
+
+    Ok( lineage )
+}
+
+
+#[hdk_extern]
+pub fn query_same_lineage(
+    (key1_bytes, key2_bytes): (ByteArray<32>, ByteArray<32>),
+) -> ExternResult<bool> {
+    let keys = query_key_lineage( key1_bytes )?;
+
+    Ok( keys.contains( &key2_bytes.into_array() ) )
+}
+
+
+#[hdk_extern]
+pub fn same_lineage(
+    (key1_bytes, key2_bytes): (ByteArray<32>, ByteArray<32>),
+) -> ExternResult<bool> {
+    let keys = get_key_lineage( key1_bytes )?;
+
+    Ok( keys.contains( &key2_bytes.into_array() ) )
 }
