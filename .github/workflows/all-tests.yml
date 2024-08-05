@@ -1,0 +1,41 @@
+name: All Tests
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Build Packages
+        run: |
+          nix develop --command make build
+
+      - name: Run Tests
+        run: |
+          output=$(DEBUG_LEVEL=trace nix develop --command bash -c 'make test | tee >(cat >&2); exit ${PIPESTATUS[0]}');
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then exit ${PIPESTATUS[0]}; fi
+          passing=$(echo "$output" | grep -oP '\d+ passing' | grep -oP '\d+' | awk '{sum+=$1} END {print sum}')
+          failing=$(echo "$output" | grep -oP '\d+ failing' | grep -oP '\d+' | awk '{sum+=$1} END {print sum}')
+          pending=$(echo "$output" | grep -oP '\d+ pending' | grep -oP '\d+' | awk '{sum+=$1} END {print sum}')
+          echo "## Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Passed   | Failed   | Pending  |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|----------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| $passing | $failing | $pending |" >> $GITHUB_STEP_SUMMARY
+          if [ "$failing" -ne 0 ]; then exit 1; fi
