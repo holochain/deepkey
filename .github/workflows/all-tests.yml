@@ -24,7 +24,7 @@ jobs:
 
       - name: Build Packages
         run: |
-          nix develop --command make build
+          nix develop --command make dnas/deepkey.dna
 
       - name: Run Tests
         run: |
