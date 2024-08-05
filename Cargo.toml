@@ -19,13 +19,13 @@ rmp-serde = "1"
 serde_bytes = "0.11"
 hc_deepkey_types = { version = "0.8.0-dev.1", path = "dnas/deepkey/types" }
 hc_deepkey_sdk = { version = "0.7.0-dev.1", path = "dnas/deepkey/sdk" }
-holo_hash = { version = "=0.4.0-dev.5", features = ["hashing", "encoding"] }
-holochain_integrity_types = { version = "=0.4.0-dev.5" }
-hdi = { version = "=0.5.0-dev.5" }
-hdk = { version = "=0.4.0-dev.6" }
-whi_hdi_extensions = { version = "0.9" }
+holo_hash = { version = "=0.4.0-dev.9", features = ["hashing", "encoding"] }
+holochain_integrity_types = { version = "=0.4.0-dev.10" }
+hdi = { version = "=0.5.0-dev.10" }
+hdk = { version = "=0.4.0-dev.11" }
+whi_hdi_extensions = { version = "0.10" }
 # whi_hdi_extensions = { path = "../whi_hdi_extensions" }
-whi_hdk_extensions = { version = "0.9" }
+whi_hdk_extensions = { version = "0.10" }
 # whi_hdk_extensions = { path = "../whi_hdk_extensions" }
 
 [workspace.dependencies.deepkey]
