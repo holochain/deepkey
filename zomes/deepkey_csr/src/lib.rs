@@ -205,3 +205,14 @@ pub fn sign(bytes: serde_bytes::ByteBuf) -> ExternResult<Signature> {
         bytes.into_vec(),
     )
 }
+
+
+#[hdk_extern]
+pub fn query_whole_chain() -> ExternResult<Vec<Record>> {
+    Ok(
+        query(
+            ChainQueryFilter::new()
+                // .include_entries(true)
+        )?
+    )
+}

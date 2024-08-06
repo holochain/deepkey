@@ -47,6 +47,25 @@ export const ActionBaseStruct           = {
     "action_seq":               Number,
     "prev_action":              OptionType( ActionHash ),
 }
+export const DnaActionStruct            = {
+    "type":                     String,
+    "author":                   AgentPubKey,
+    "timestamp":                Number,
+    "hash":                     DnaHash,
+};
+export const AgentValidationPkgActionStruct = {
+    ...ActionBaseStruct,
+    "membrane_proof":           Bytes,
+};
+export const NativeCreateActionStruct   = {
+    ...ActionBaseStruct,
+    "entry_type":               String,
+    "entry_hash":               EntryHash,
+    "weight":                   WeightStruct,
+};
+export const InitZomesCompleteActionStruct = {
+    ...ActionBaseStruct,
+};
 export const CreateActionStruct         = {
     ...ActionBaseStruct,
     "entry_type":               EntryTypeEnum,
@@ -80,8 +99,18 @@ export const CreateLinkActionStruct     = {
 
 export class ActionEnum {
     constructor ( data ) {
-        if ( data.type === "Create" )
-            return intoStruct( data, CreateActionStruct );
+        if ( data.type === "Dna" )
+            return intoStruct( data, DnaActionStruct );
+        if ( data.type === "AgentValidationPkg" )
+            return intoStruct( data, AgentValidationPkgActionStruct );
+        if ( data.type === "InitZomesComplete" )
+            return intoStruct( data, InitZomesCompleteActionStruct );
+        if ( data.type === "Create" ) {
+            if ( typeof data.entry_type === "string" )
+                return intoStruct( data, NativeCreateActionStruct );
+            else
+                return intoStruct( data, CreateActionStruct );
+        }
         if ( data.type === "Update" )
             return intoStruct( data, UpdateActionStruct );
         if ( data.type === "Delete" )

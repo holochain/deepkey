@@ -125,6 +125,9 @@ function basic_tests () {
         });
         // log.normal("Constructed Authority Spec: %s", json.debug(auth_spec_package.authority_spec) );
 
+        const chain                      = await alice1_deepkey.query_whole_chain();
+        log.normal("CHAIN: %s", json.debug(chain) );
+
         const new_change_rule           = await alice1_deepkey.update_change_rule({
             "authority_spec": auth_spec_package.authority_spec,
         });

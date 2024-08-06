@@ -94,6 +94,14 @@ const functions                         = {
 
         return new Signature( result );
     },
+    async query_whole_chain() {
+        const result                    = await this.call();
+
+        return result.map( record => {
+            record.signed_action        = SignedAction(record.signed_action);
+            return record;
+        });
+    },
 
     // Public reading
     async get_keyset_root ( input ) {
