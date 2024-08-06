@@ -7,6 +7,7 @@ import {
     Zomelet,
     CellZomelets,
 }                                       from '@spartan-hc/zomelets'; // approx. 7kb
+import msgpack                          from '@msgpack/msgpack';
 import {
     Signature,
     SignedAction,
@@ -99,6 +100,16 @@ const functions                         = {
 
         return result.map( record => {
             record.signed_action        = SignedAction(record.signed_action);
+
+            if ( record.entry?.Present?.entry ) {
+                if ( record.entry.Present.entry_type === "App" )
+                    record.entry.Present.content    = msgpack.decode( record.entry.Present.entry );
+                else if ( record.entry.Present.entry_type === "Agent" )
+                    record.entry.Present.content    = new AgentPubKey( record.entry.Present.entry );
+                else if ( record.entry.Present.entry_type === "CapGrant" )
+                    record.entry.Present.content    = null;
+            }
+
             return record;
         });
     },

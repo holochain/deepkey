@@ -212,7 +212,7 @@ pub fn query_whole_chain() -> ExternResult<Vec<Record>> {
     Ok(
         query(
             ChainQueryFilter::new()
-                // .include_entries(true)
+                .include_entries(true)
         )?
     )
 }
