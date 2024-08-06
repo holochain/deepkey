@@ -1056,7 +1056,7 @@ dependencies = [
 
 [[package]]
 name = "holochain_deepkey_dna"
-version = "0.0.5"
+version = "0.0.7-dev.1"
 dependencies = [
  "hc_deepkey_sdk",
 ]
