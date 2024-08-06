@@ -157,6 +157,7 @@ docs-watch:
 # Publishing Types Packages
 #
 .cargo/credentials:
+	mkdir -p .cargo
 	cp ~/$@ $@
 preview-%-types-crate:		 .cargo/credentials
 	cd dnas/$*; make preview-types-crate
