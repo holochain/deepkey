@@ -92,7 +92,7 @@ function basic_tests () {
     let ksr1_addr;
 
     before(async function () {
-        this.timeout( 30_000 );
+        this.timeout( 120_000 );
 
         client                          = new AppInterfaceClient( app_port, {
             "logging": process.env.LOG_LEVEL || "normal",
@@ -112,6 +112,8 @@ function basic_tests () {
         }
 
         ksr1_addr                       = await alice1_deepkey.query_keyset_authority_action_hash();
+
+        await new Promise( f => setTimeout(f, 60_000) );
     });
 
     it("should update change rule for (alice1) KSR", async function () {
@@ -124,9 +126,6 @@ function basic_tests () {
             ],
         });
         // log.normal("Constructed Authority Spec: %s", json.debug(auth_spec_package.authority_spec) );
-
-        const chain                      = await alice1_deepkey.query_whole_chain();
-        log.normal("CHAIN: %s", json.debug(chain) );
 
         const new_change_rule           = await alice1_deepkey.update_change_rule({
             "authority_spec": auth_spec_package.authority_spec,

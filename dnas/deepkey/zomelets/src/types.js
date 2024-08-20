@@ -55,7 +55,7 @@ export const DnaActionStruct            = {
 };
 export const AgentValidationPkgActionStruct = {
     ...ActionBaseStruct,
-    "membrane_proof":           Bytes,
+    "membrane_proof":           OptionType( Bytes ),
 };
 export const NativeCreateActionStruct   = {
     ...ActionBaseStruct,

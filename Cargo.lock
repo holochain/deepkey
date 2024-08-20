@@ -1050,7 +1050,7 @@ checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 
 [[package]]
 name = "hc_deepkey_sdk"
-version = "0.7.0-dev.1"
+version = "0.7.0-dev.2"
 dependencies = [
  "arbitrary",
  "hc_deepkey_types",
@@ -1061,7 +1061,7 @@ dependencies = [
 
 [[package]]
 name = "hc_deepkey_types"
-version = "0.8.0-dev.1"
+version = "0.8.0-dev.2"
 dependencies = [
  "arbitrary",
  "hdi",

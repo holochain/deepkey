@@ -1,4 +1,5 @@
 /.cargo
+/.rustup
 /target
 /node_modules
 /dnas/*/zomelets/node_modules
