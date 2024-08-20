@@ -12,7 +12,6 @@ use hdi_extensions::{
     guest_error,
 };
 use hdi::prelude::*;
-use hdk::prelude::debug;
 
 
 pub fn serialize<T>(target: &T) -> ExternResult<Vec<u8>>
