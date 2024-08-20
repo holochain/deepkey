@@ -17,10 +17,10 @@ hc_deepkey_sdk = { version = "0.7.0-dev.2" }
 holo_hash = { version = "=0.4.0-dev.9", features = ["hashing", "encoding"] }
 holochain_integrity_types = { version = "=0.4.0-dev.10" }
 hdi = { version = "=0.5.0-dev.10" }
-hdk = { version = "=0.4.0-dev.11" }
-whi_hdi_extensions = { version = "0.10" }
+hdk = { version = "=0.4.0-dev.12" }
+whi_hdi_extensions = { version = "0.11" }
 # whi_hdi_extensions = { path = "../whi_hdi_extensions" }
-whi_hdk_extensions = { version = "0.10" }
+whi_hdk_extensions = { version = "0.11" }
 # whi_hdk_extensions = { path = "../whi_hdk_extensions" }
 
 [workspace.dependencies.deepkey]
