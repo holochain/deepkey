@@ -597,7 +597,6 @@ version = "0.0.0"
 dependencies = [
  "hc_deepkey_types",
  "hdi",
- "hdk",
  "holo_hash",
  "rmp-serde",
  "serde",

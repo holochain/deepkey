@@ -54,6 +54,7 @@ describe("DeepKey", function () {
     const holochain                     = new Holochain({
         "timeout": 20_000,
         "default_stdout_loggers": log.level_rank > 3,
+        "default_stderr_loggers": log.level_rank > 3,
     });
 
     before(async function () {
