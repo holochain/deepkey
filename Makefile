@@ -63,9 +63,9 @@ GG_REPLACE_LOCATIONS = ':(exclude)*.lock' zomes/ dnas/ tests/
 # 	git grep -l 'dna_binding' -- $(GG_REPLACE_LOCATIONS) | xargs sed -i 's|dna_binding|app_binding|g'
 
 npm-reinstall-local:
-	cd tests; npm uninstall $(NPM_PACKAGE); npm i --save $(LOCAL_PATH)
+	cd tests; npm uninstall $(NPM_PACKAGE); npm i --save-dev $(LOCAL_PATH)
 npm-reinstall-public:
-	cd tests; npm uninstall $(NPM_PACKAGE); npm i --save $(NPM_PACKAGE)
+	cd tests; npm uninstall $(NPM_PACKAGE); npm i --save-dev $(NPM_PACKAGE)
 
 npm-use-app-interface-client-public:
 npm-use-app-interface-client-local:
@@ -84,6 +84,7 @@ npm-use-backdrop-%:
 #
 DEBUG_LEVEL	       ?= warn
 TEST_ENV_VARS		= LOG_LEVEL=$(DEBUG_LEVEL)
+MOCHA_OPTS		= -n enable-source-maps -t 5000
 TEST_DEPS		= node_modules dnas/deepkey/zomelets/node_modules
 
 %/package-lock.json:	%/package.json
@@ -110,13 +111,13 @@ test-integration:
 	make -s test-integration-key-management
 
 test-integration-basic:			$(DEEPKEY_DNA) $(TEST_DEPS)
-	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_basic.js
+	cd tests; $(TEST_ENV_VARS) npx mocha $(MOCHA_OPTS) ./integration/test_basic.js
 test-integration-change-rules:		$(DEEPKEY_DNA) $(TEST_DEPS)
-	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_change_rules.js
+	cd tests; $(TEST_ENV_VARS) npx mocha $(MOCHA_OPTS) ./integration/test_change_rules.js
 test-integration-key-management:	$(DEEPKEY_DNA) $(TEST_DEPS)
-	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_key_management.js
+	cd tests; $(TEST_ENV_VARS) npx mocha $(MOCHA_OPTS) ./integration/test_key_management.js
 test-integration-claim-unmanaged-key:	$(DEEPKEY_DNA) $(TEST_DEPS)
-	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_claim_unmanaged_key.js
+	cd tests; $(TEST_ENV_VARS) npx mocha $(MOCHA_OPTS) ./integration/test_claim_unmanaged_key.js
 
 
 #
@@ -157,6 +158,7 @@ docs-watch:
 # Publishing Types Packages
 #
 .cargo/credentials:
+	mkdir -p .cargo
 	cp ~/$@ $@
 preview-%-types-crate:		 .cargo/credentials
 	cd dnas/$*; make preview-types-crate

@@ -1,47 +1,47 @@
 
-import webpack			from 'webpack';
-import TerserPlugin		from 'terser-webpack-plugin';
+import webpack                  from 'webpack';
+import TerserPlugin             from 'terser-webpack-plugin';
 
 
-const MODE			= process.env.MODE || "development";
-const FILENAME			= process.env.FILENAME || "deepkey-zomelets";
-const FILEEXT			= MODE === "production" ? "min.js" : "js";
+const MODE                      = process.env.MODE || "development";
+const FILENAME                  = process.env.FILENAME || "deepkey-zomelets";
+const FILEEXT                   = MODE === "production" ? "min.js" : "js";
 
 
 export default {
-    "target":	"web",
-    "mode":	MODE,
+    "target":   "web",
+    "mode":     MODE,
     "entry": {
-	"main": {
-	    "import":	"./src/index.js",
-	    "filename":	`${FILENAME}.${FILEEXT}`,
-	    "library": {
-		"type":	"module",
-	    },
-	},
+        "main": {
+            "import":   "./src/index.js",
+            "filename": `${FILENAME}.${FILEEXT}`,
+            "library": {
+                "type": "module",
+            },
+        },
     },
     "resolve": {
-	"mainFields": [ "module", "browser", "main" ],
+        "mainFields": [ "module", "browser", "main" ],
     },
     "experiments": {
-	"outputModule":	true,
+        "outputModule": true,
     },
     "optimization": {
-	"minimizer": [
-	    new TerserPlugin({
-		"terserOptions": {
-		    "keep_classnames": true,
-		},
-	    }),
-	],
+        "minimizer": [
+            new TerserPlugin({
+                "terserOptions": {
+                    "keep_classnames": true,
+                },
+            }),
+        ],
     },
-    "devtool":	"source-map",
+    "devtool":  "source-map",
     "stats": {
-	"colors": true,
+        "colors": true,
     },
     "plugins": [
         new webpack.optimize.LimitChunkCountPlugin({
-	    "maxChunks": 1,
-	}),
+            "maxChunks": 1,
+        }),
     ],
 };
