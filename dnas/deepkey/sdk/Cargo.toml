@@ -1,6 +1,6 @@
 [package]
 name = "hc_deepkey_sdk"
-version = "0.7.0-dev.2"
+version = "0.7.0-dev.3"
 authors = ["Matthew Brisebois <matthew.brisebois@holo.host>"]
 edition = "2021"
 license = "CAL-1.0"
@@ -13,10 +13,12 @@ name = "deepkey_sdk"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-hc_deepkey_types = { version = "0.8.0-dev.2", path = "../types" }
-hdk = "=0.4.0-dev.11"
-serde = "1"
-serde_bytes = "0.11"
+hc_deepkey_types = { version = "0.8.0-dev.3", path = "../types" }
+# Any Holochain dependencies specified here should be "*" versions to allow the consumer
+# to pick the version they want to use.
+hdk = "*"
+serde = { workspace = true }
+serde_bytes = { workspace = true }
 
 arbitrary = { version = "1.0", features = ["derive"], optional = true }
 

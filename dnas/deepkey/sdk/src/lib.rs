@@ -3,7 +3,7 @@ pub use deepkey_types::*;
 
 pub use hdk;
 
-use hdk::prelude::{holo_hash::DnaHash, *};
+use hdk::prelude::*;
 use serde_bytes::ByteArray;
 
 #[hdk_entry_helper]

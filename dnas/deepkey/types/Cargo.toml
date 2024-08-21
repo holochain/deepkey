@@ -1,6 +1,6 @@
 [package]
 name = "hc_deepkey_types"
-version = "0.8.0-dev.2"
+version = "0.8.0-dev.3"
 authors = ["Matthew Brisebois <matthew.brisebois@holo.host>"]
 edition = "2021"
 license = "CAL-1.0"
@@ -13,14 +13,16 @@ name = "deepkey_types"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-hdi = "=0.5.0-dev.10"
-holo_hash = { version = "=0.4.0-dev.9", features = ["hashing", "encoding"] }
-holochain_integrity_types = "=0.4.0-dev.10"
-rmpv = { version = "1", features = ["with-serde"] }
-serde = "1"
+# Any Holochain dependencies specified here should be "*" versions to allow the consumer
+# to pick the version they want to use.
+hdi = "*"
+holo_hash = { version = "*", features = ["hashing", "encoding"] }
+holochain_integrity_types = "*"
+
+rmpv = { workspace = true }
+serde = { workspace = true }
 
 arbitrary = { version = "1.0", features = ["derive"], optional = true }
-
 
 [features]
 fuzzing = [

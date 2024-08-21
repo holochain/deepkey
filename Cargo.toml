@@ -16,6 +16,7 @@ members = [
 [workspace.dependencies]
 serde = "1"
 rmp-serde = "1"
+rmpv = { version = "1", features = ["with-serde"] }
 serde_bytes = "0.11"
 hc_deepkey_types = { version = "0.8.0-dev.2", path = "dnas/deepkey/types" }
 hc_deepkey_sdk = { version = "0.7.0-dev.2", path = "dnas/deepkey/sdk" }
