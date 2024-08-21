@@ -26,6 +26,8 @@ jobs:
         with:
           name: holochain-ci
 
+      - uses: Swatinem/rust-cache@v2
+
       - name: Build Packages
         run: |
           nix develop --command make dnas/deepkey.dna
