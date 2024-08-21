@@ -6,19 +6,14 @@ opt-level = "z"
 
 [workspace]
 resolver = "2"
-members = [ 
-    "crates/holochain_deepkey_dna",
-    "dnas/deepkey/sdk",
-    "dnas/deepkey/types",
-    "zomes/*",
-]
+members = ["crates/holochain_deepkey_dna", "zomes/*"]
 
 [workspace.dependencies]
 serde = "1"
 rmp-serde = "1"
 serde_bytes = "0.11"
-hc_deepkey_types = { version = "0.8.0-dev.2", path = "dnas/deepkey/types" }
-hc_deepkey_sdk = { version = "0.7.0-dev.2", path = "dnas/deepkey/sdk" }
+hc_deepkey_types = { version = "0.8.0-dev.2" }
+hc_deepkey_sdk = { version = "0.7.0-dev.2" }
 holo_hash = { version = "=0.4.0-dev.9", features = ["hashing", "encoding"] }
 holochain_integrity_types = { version = "=0.4.0-dev.10" }
 hdi = { version = "=0.5.0-dev.10" }
@@ -33,4 +28,3 @@ path = "zomes/deepkey"
 
 [workspace.dependencies.deepkey_csr]
 path = "zomes/deepkey_csr"
-
