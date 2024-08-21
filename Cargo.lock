@@ -856,6 +856,8 @@ checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 [[package]]
 name = "hc_deepkey_sdk"
 version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6194335c3238219fa7fe1d8d76f06153b69a96451ae90e8e4fcecff6373f282f"
 dependencies = [
  "arbitrary",
  "hc_deepkey_types",
@@ -867,6 +869,8 @@ dependencies = [
 [[package]]
 name = "hc_deepkey_types"
 version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bffd8d1cb0720a907a08f53dfcb531dbaa4d1fe0f268657076c3799f81e0e234"
 dependencies = [
  "arbitrary",
  "hdi",
