@@ -1,6 +1,7 @@
 /.cargo
+/.rustup
 /target
-/tests/node_modules
+/node_modules
 /dnas/*/zomelets/node_modules
 *.dna
 *.wasm

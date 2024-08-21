@@ -1,3 +1,4 @@
+.PHONY:			FORCE
 
 INT_DIR			= zomes/deepkey
 CSR_DIR			= zomes/deepkey_csr
@@ -62,9 +63,9 @@ GG_REPLACE_LOCATIONS = ':(exclude)*.lock' zomes/ dnas/ tests/
 # 	git grep -l 'dna_binding' -- $(GG_REPLACE_LOCATIONS) | xargs sed -i 's|dna_binding|app_binding|g'
 
 npm-reinstall-local:
-	cd tests; npm uninstall $(NPM_PACKAGE); npm i --save $(LOCAL_PATH)
+	cd tests; npm uninstall $(NPM_PACKAGE); npm i --save-dev $(LOCAL_PATH)
 npm-reinstall-public:
-	cd tests; npm uninstall $(NPM_PACKAGE); npm i --save $(NPM_PACKAGE)
+	cd tests; npm uninstall $(NPM_PACKAGE); npm i --save-dev $(NPM_PACKAGE)
 
 npm-use-app-interface-client-public:
 npm-use-app-interface-client-local:
@@ -83,16 +84,26 @@ npm-use-backdrop-%:
 #
 DEBUG_LEVEL	       ?= warn
 TEST_ENV_VARS		= LOG_LEVEL=$(DEBUG_LEVEL)
-TEST_DEPS		= tests/node_modules dnas/deepkey/zomelets/node_modules
+MOCHA_OPTS		= -n enable-source-maps -t 5000
+TEST_DEPS		= node_modules dnas/deepkey/zomelets/node_modules
 
 %/package-lock.json:	%/package.json
+	touch $@
+package-lock.json:	package.json
 	touch $@
 %/node_modules:		%/package-lock.json
 	cd $*; npm install
 	touch $@
+node_modules:		package-lock.json
+	npm install
+	touch $@
 
 test:
+	make -s test-unit
 	make -s test-integration
+
+test-unit:
+	RUST_BACKTRACE=1 CARGO_TARGET_DIR=target cargo test -- --nocapture --show-output
 
 test-integration:
 	make -s test-integration-basic
@@ -100,31 +111,43 @@ test-integration:
 	make -s test-integration-key-management
 
 test-integration-basic:			$(DEEPKEY_DNA) $(TEST_DEPS)
-	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_basic.js
+	cd tests; $(TEST_ENV_VARS) npx mocha $(MOCHA_OPTS) ./integration/test_basic.js
 test-integration-change-rules:		$(DEEPKEY_DNA) $(TEST_DEPS)
-	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_change_rules.js
+	cd tests; $(TEST_ENV_VARS) npx mocha $(MOCHA_OPTS) ./integration/test_change_rules.js
 test-integration-key-management:	$(DEEPKEY_DNA) $(TEST_DEPS)
-	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_key_management.js
+	cd tests; $(TEST_ENV_VARS) npx mocha $(MOCHA_OPTS) ./integration/test_key_management.js
 test-integration-claim-unmanaged-key:	$(DEEPKEY_DNA) $(TEST_DEPS)
-	cd tests; $(TEST_ENV_VARS) npx mocha ./integration/test_claim_unmanaged_key.js
+	cd tests; $(TEST_ENV_VARS) npx mocha $(MOCHA_OPTS) ./integration/test_claim_unmanaged_key.js
 
 
 #
 # Documentation
 #
+DEEPKEY_DOCS		= target/doc/deepkey/index.html
+DEEPKEY_CSR_DOCS	= target/doc/deepkey_csr/index.html
+DEEPKEY_TYPES_DOCS	= target/doc/deepkey_types/index.html
+DEEPKEY_SDK_DOCS	= target/doc/deepkey_sdk/index.html
+
 target/doc/%/index.html:	zomes/%/src/**
 	cargo test --doc -p $*
-	cargo doc -p $*
+	cargo doc --no-deps -p $*
 	@echo -e "\x1b[37mOpen docs in file://$(shell pwd)/$@\x1b[0m";
 
+$(DEEPKEY_TYPES_DOCS):		dnas/deepkey/types/src/**
+	cargo doc --no-deps -p hc_deepkey_types
+$(DEEPKEY_SDK_DOCS):		dnas/deepkey/sdk/src/**
+	cargo doc --no-deps -p hc_deepkey_sdk
 
-DEEPKEY_CSR_DOCS	= target/doc/deepkey_csr/index.html
+docs:				FORCE
+	make $(DEEPKEY_CSR_DOCS) $(DEEPKEY_DOCS)
+	make $(DEEPKEY_TYPES_DOCS) $(DEEPKEY_SDK_DOCS)
 
-docs:			$(DEEPKEY_CSR_DOCS)
 docs-watch:
 	@inotifywait -r -m -e modify		\
 		--includei '.*\.rs'		\
 			zomes/			\
+			dnas/deepkey/types	\
+			dnas/deepkey/sdk	\
 	| while read -r dir event file; do	\
 		echo -e "\x1b[37m$$event $$dir$$file\x1b[0m";\
 		make docs;			\
@@ -135,19 +158,20 @@ docs-watch:
 # Publishing Types Packages
 #
 .cargo/credentials:
+	mkdir -p .cargo
 	cp ~/$@ $@
-preview-%-types-crate:		 test .cargo/credentials
+preview-%-types-crate:		 .cargo/credentials
 	cd dnas/$*; make preview-types-crate
-publish-%-types-crate:		 test .cargo/credentials
+publish-%-types-crate:		 .cargo/credentials
 	cd dnas/$*; make publish-types-crate
 
 preview-deepkey-types-crate:
 publish-deepkey-types-crate:
 
 
-preview-%-sdk-crate:		 test .cargo/credentials
+preview-%-sdk-crate:		 .cargo/credentials
 	cd dnas/$*; make preview-sdk-crate
-publish-%-sdk-crate:		 test .cargo/credentials
+publish-%-sdk-crate:		 .cargo/credentials
 	cd dnas/$*; make publish-sdk-crate
 
 preview-deepkey-sdk-crate:

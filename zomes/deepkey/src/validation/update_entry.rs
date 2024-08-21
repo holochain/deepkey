@@ -1,9 +1,11 @@
 use crate::{
     EntryTypes,
+    EntryTypesUnit,
 
     KeyAnchor,
     KeyRegistration,
     KeyRevocation,
+    ChangeRule,
 
     utils,
 
@@ -33,6 +35,35 @@ pub fn validation(
             invalid!(format!("Keyset Roots cannot be updated"))
         },
         EntryTypes::ChangeRule(change_rule_entry) => {
+            let base_change_rule_record = must_get_valid_record( original_action_hash.clone() )?;
+            let base_change_rule_entry : ChangeRule = base_change_rule_record.try_into()?;
+
+            // Keyset Root cannot be updated
+            if base_change_rule_entry.keyset_root != change_rule_entry.keyset_root {
+                invalid!(format!(
+                    "The 'keyset_root' of this change rule cannot be changed; original entry 'keyset_root' is: {}",
+                    base_change_rule_entry.keyset_root,
+                ))
+            }
+
+            // Original action hash must be the ChangeRule create record
+            //
+            // NOTE: we cannot rely on 'original_action_hash' because we don't yet know how to
+            // ensure it is the same chain.  Waiting to find out how 'author' equivalency will be
+            // checked with agent updates.
+            let create_change_rule_action = utils::base_change_rule(
+                &update.author,
+                &update.prev_action,
+            )?;
+
+            if create_change_rule_action.action_address() != &original_action_hash {
+                invalid!(format!(
+                    "The 'original_action_hash' is expected to be the ChangeRule create ({}); not '{}'",
+                    create_change_rule_action.action_address(),
+                    original_action_hash,
+                ))
+            }
+
             let new_authority_spec = change_rule_entry.spec_change.new_spec;
             // Cannot require more signatures than there are authorities
             if new_authority_spec.sigs_required == 0 {
@@ -49,7 +80,10 @@ pub fn validation(
             }
 
             // Get previous change rule
-            let prev_change_rule = match utils::prev_change_rule( &update.author, &update.prev_action )? {
+            let prev_change_rule = match utils::prev_change_rule(
+                &update.author,
+                &update.prev_action,
+            )? {
                 Some(change_rule) => change_rule,
                 None => invalid!(format!(
                     "No change rule found before action seq ({}) [{}]",
@@ -167,6 +201,46 @@ pub fn validate_key_revocation(key_rev: &KeyRevocation, update: &Update) -> Exte
             "Author '{}' cannot revoke key registered by another author ({})",
             update.author, key_registration_action.hashed.author(),
         )))?
+    }
+
+    // Prevent duplicate updates to the same 'prior_key_registration'
+    let activities = must_get_agent_activity(
+        update.author.to_owned(),
+        ChainFilter::new( update.prev_action.to_owned() )
+            .until( key_rev.prior_key_registration.to_owned() )
+            .include_cached_entries()
+    )?;
+
+    let entry_type = EntryType::try_from( EntryTypesUnit::KeyRegistration )?;
+    let filtered_activities : Vec<RegisterAgentActivity> = activities.into_iter().filter(
+        |activity| match activity.action.action().entry_type() {
+            Some(et) => et == &entry_type,
+            None => false,
+        }
+    ).collect();
+
+    for activity in filtered_activities {
+        let prior_key_reg : KeyRegistration = match activity.cached_entry {
+            Some(entry) => entry,
+            None => must_get_entry(
+                activity.action.action().entry_hash().unwrap().to_owned()
+            )?.content,
+        }.try_into()?;
+
+        let prior_key_rev = match prior_key_reg {
+            KeyRegistration::Create(..) |
+            KeyRegistration::CreateOnly(..)=> continue,
+            KeyRegistration::Update( prior_key_rev, _ ) => prior_key_rev,
+            KeyRegistration::Delete( prior_key_rev ) => prior_key_rev,
+        };
+
+        if prior_key_rev.prior_key_registration == key_rev.prior_key_registration {
+            Err(guest_error!(format!(
+                "There is already a KeyRegistration ({}) that revokes '{}'",
+                activity.action.action_address(),
+                key_rev.prior_key_registration,
+            )))?
+        }
     }
 
     // Get the current change rule

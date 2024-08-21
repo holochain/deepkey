@@ -12,7 +12,6 @@ use hdi_extensions::{
     guest_error,
 };
 use hdi::prelude::*;
-use hdk::prelude::debug;
 
 
 pub fn serialize<T>(target: &T) -> ExternResult<Vec<u8>>
@@ -39,7 +38,7 @@ where
     debug!("Getting agent activity for {} (chain top: {})", author, chain_top );
     let activities = must_get_agent_activity(
         author.to_owned(),
-        ChainFilter::new(chain_top.to_owned())
+        ChainFilter::new( chain_top.to_owned() )
             .include_cached_entries()
     )?;
 
@@ -134,6 +133,32 @@ pub fn prev_change_rule (
 }
 
 
+pub fn base_change_rule (
+    author: &AgentPubKey,
+    chain_top: &ActionHash
+) -> ExternResult<SignedActionHashed> {
+    let change_rules = get_activities_for_entry_type(
+        EntryTypesUnit::ChangeRule,
+        author,
+        chain_top,
+    )?;
+
+    let filtered_activities : Vec<RegisterAgentActivity> = change_rules.into_iter().filter(
+        |activity| activity.action.action().action_type() == ActionType::Create
+    ).collect();
+
+    Ok(
+        filtered_activities.first()
+            .ok_or(guest_error!(format!(
+                "There is no ChangeRule create action on source chain ({}) with chain type: {}",
+                author, chain_top,
+            )))?
+            .to_owned()
+            .action
+    )
+}
+
+
 pub fn check_authorities(
     authorities: &Vec<KeyBytes>,
     authorizations: &Vec<Authorization>,
@@ -170,4 +195,14 @@ pub fn check_authorities(
     }
 
     Ok( sig_count )
+}
+
+
+pub fn keybytes_from_agentpubkey(
+    agent: &AgentPubKey,
+) -> ExternResult<KeyBytes> {
+    agent.get_raw_32().try_into()
+        .map_err( |e| wasm_error!(WasmErrorInner::Guest(format!(
+            "Failed AgentPubKey to [u8;32] conversion: {:?}", e
+        ))) )
 }

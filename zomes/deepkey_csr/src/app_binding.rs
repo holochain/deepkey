@@ -11,7 +11,6 @@ use hdk_extensions::{
 };
 
 
-// This returns AppBindings on the local chain.
 #[hdk_extern]
 pub fn query_app_binding_records(_: ()) -> ExternResult<Vec<Record>> {
     utils::query_entry_type( EntryTypesUnit::AppBinding )
@@ -65,19 +64,13 @@ pub fn query_app_bindings_by_installed_app_id(installed_app_id: String) -> Exter
 
 #[hdk_extern]
 pub fn query_app_binding_by_key(key_bytes: ByteArray<32>) -> ExternResult<(ActionHash, AppBinding)> {
-    let (ka_action_addr, _) = crate::key_anchor::get_first_key_anchor_for_key( key_bytes )?;
-    let (addr, app_binding) = query_app_bindings(())?
-        .into_iter()
-        .find( |(_, app_binding)| app_binding.key_anchor_addr == ka_action_addr  )
-        .ok_or(guest_error!(format!("No AppBinding for key anchor: {}", ka_action_addr )))?;
+    let key_meta = crate::key_meta::query_key_meta_for_key( key_bytes )?;
+    let app_binding = query_app_binding_by_action( key_meta.app_binding_addr.clone() )?;
 
-    debug!("Found AppBinding ({}) for KeyAnchor: {}", addr, ka_action_addr );
-    Ok((addr, app_binding))
+    debug!("Found AppBinding ({}) for KeyBytes: {:?}", key_meta.app_binding_addr, key_bytes );
+    Ok((key_meta.app_binding_addr, app_binding))
 }
 
-
-// This returns Private Entries and Metadata for the registered keys.
-// It is the more sensitive version of the public `query_keyset_keys` in keyset_root.rs
 
 type KeyInfo = (KeyMeta, KeyRegistration);
 type AppKeyInfo = (AppBinding, Vec<KeyInfo>);

@@ -2,7 +2,6 @@
 name = "deepkey"
 version = "0.0.0"
 edition = "2021"
-resolver = "2"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -10,8 +9,7 @@ name = "deepkey"
 
 [dependencies]
 hc_deepkey_types = { workspace = true }
-hdi = { workspace = true }
-hdk = { workspace = true }
+hdi = { workspace = true, features = ["trace"] }
 holo_hash = { workspace = true }
 rmp-serde = { workspace = true }
 serde = { workspace = true }

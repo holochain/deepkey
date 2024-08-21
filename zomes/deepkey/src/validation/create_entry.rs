@@ -1,6 +1,7 @@
 use crate::{
     EntryTypes,
 
+    KeysetRoot,
     KeyAnchor,
     KeyRegistration,
     KeyGeneration,
@@ -17,8 +18,8 @@ use hdi_extensions::{
     guest_error,
 };
 
-// const KEYSET_ROOT_ACTION_SEQ : u32 = 3;
-// const CHANGE_RULE_ACTION_SEQ : u32 = 4;
+const KEYSET_ROOT_ACTION_SEQ : u32 = 3;
+const CHANGE_RULE_ACTION_SEQ : u32 = 4;
 
 
 pub fn validation(
@@ -28,12 +29,12 @@ pub fn validation(
     match app_entry {
         EntryTypes::KeysetRoot(ksr_entry) => {
             // Check action seq
-            // if create.action_seq != KEYSET_ROOT_ACTION_SEQ {
-            //     invalid!(format!(
-            //         "KeysetRoot has invalid chain index ({}); must be chain index {}",
-            //         create.action_seq, KEYSET_ROOT_ACTION_SEQ,
-            //     ));
-            // }
+            if create.action_seq != KEYSET_ROOT_ACTION_SEQ {
+                invalid!(format!(
+                    "KeysetRoot has invalid chain index ({}); must be chain index {}",
+                    create.action_seq, KEYSET_ROOT_ACTION_SEQ,
+                ));
+            }
 
             // Check signature matches root pub key
             if verify_signature_raw(
@@ -56,32 +57,51 @@ pub fn validation(
         },
         EntryTypes::ChangeRule(change_rule_entry) => {
             // Check action seq
-            // if create.action_seq != CHANGE_RULE_ACTION_SEQ {
-            //     invalid!(format!(
-            //         "ChangeRule has invalid chain index ({}); must be chain index {}",
-            //         create.action_seq, CHANGE_RULE_ACTION_SEQ,
-            //     ));
-            // }
+            if create.action_seq != CHANGE_RULE_ACTION_SEQ {
+                invalid!(format!(
+                    "ChangeRule has invalid chain index ({}); must be chain index {}",
+                    create.action_seq, CHANGE_RULE_ACTION_SEQ,
+                ));
+            }
 
             // KeysetRoot originates in this chain (perhaps it should also be the previous action)
-            let (signed_action, _) = utils::get_keyset_root(
-                &create.author,
-                &create.prev_action,
-            )?;
-
-            if *signed_action.action_address() != change_rule_entry.keyset_root {
+            if create.prev_action != change_rule_entry.keyset_root {
                 invalid!(format!(
                     "Change rule keyset root ({}) does not belong to this chain's KSR '{}'",
                     change_rule_entry.keyset_root,
-                    signed_action.action_address(),
+                    create.prev_action,
                 ))
             }
 
-            // There can only be 1 'Create' ChangeRule per KSR
-            if let Some(_) = utils::prev_change_rule( &create.author, &create.prev_action )? {
+            // No signature checks are required because the author of the change rule will always
+            // match the KSR's FDA.  Therefore the internal Holochain validation ensures that the
+            // action could only be created by the current change rule authority (ie. the FDA).
+
+            // The new spec must be 1 of 1 with the FDA as the authority
+            let ksr_record = must_get_valid_record( create.prev_action )?;
+            let ksr : KeysetRoot = ksr_record.try_into()?;
+            let fda_key_bytes = utils::keybytes_from_agentpubkey( &ksr.first_deepkey_agent )?;
+            let new_spec = change_rule_entry.spec_change.new_spec;
+
+            if new_spec.sigs_required != 1 {
                 invalid!(format!(
-                    "There is already a change rule for KeysetRoot '{}'",
-                    change_rule_entry.keyset_root,
+                    "The initial change rule must require 1 signature; not '{}'",
+                    new_spec.sigs_required,
+                ))
+            }
+
+            if new_spec.authorized_signers.len() != 1 {
+                invalid!(format!(
+                    "The initial change rule must have 1 authority that is the FDA; not '{}'",
+                    new_spec.authorized_signers.len(),
+                ))
+            }
+
+            if new_spec.authorized_signers[0] != fda_key_bytes {
+                invalid!(format!(
+                    "The initial change rule must have 1 authority that is the FDA ({}); not '{}'",
+                    ksr.first_deepkey_agent,
+                    AgentPubKey::from_raw_32( new_spec.authorized_signers[0].to_vec() ),
                 ))
             }
 
