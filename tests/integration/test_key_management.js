@@ -52,6 +52,11 @@ const bobby_app1_id                     = "bobby-app1";
 
 let app_port;
 let installations;
+let app_count                           = 1;
+
+function next_app_index () {
+    return app_count++;
+}
 
 
 describe("DeepKey", function () {
@@ -144,11 +149,8 @@ function basic_tests () {
     it("should register new key (alice)", async function () {
         this.timeout( 5_000 );
 
-        const derivation_details        = await alice_deepkey.next_derivation_details();
-        const {
-            app_index,
-            key_index,
-        }                               = derivation_details;
+        const app_index                 = next_app_index();
+        const key_index                 = 0;
         const path                      = `app/${app_index}/key/${key_index}`;
         const new_key                   = await alice_key_store.createKey( path );
 
@@ -163,7 +165,8 @@ function basic_tests () {
                 "new_key_signing_of_author":    await new_key.sign( alice_client.agent_id ),
             },
             "derivation_details":       {
-                ...derivation_details,
+                app_index,
+                key_index,
                 "derivation_seed":      alice_key_store.seed,
                 "derivation_bytes":     new_key.derivation_bytes,
             },
@@ -358,11 +361,8 @@ function basic_tests () {
     it("should register another key", async function () {
         this.timeout( 10_000 );
 
-        const derivation_details                = await alice_deepkey.next_derivation_details();
-        const {
-            app_index,
-            key_index,
-        }                                       = derivation_details;
+        const app_index                 = next_app_index();
+        const key_index                 = 0;
         const path                              = `app/${app_index}/key/${key_index}`;
         const new_key                           = await alice_key_store.createKey( path );
 
@@ -377,7 +377,8 @@ function basic_tests () {
                 "new_key_signing_of_author":    await new_key.sign( alice_client.agent_id ),
             },
             "derivation_details":       {
-                ...derivation_details,
+                app_index,
+                key_index,
                 "derivation_seed":      alice_key_store.seed,
                 "derivation_bytes":     new_key.derivation_bytes,
             },
@@ -391,11 +392,10 @@ function basic_tests () {
     it("should register new key with the same app ID (alice)", async function () {
         this.timeout( 5_000 );
 
-        const derivation_details        = await alice_deepkey.next_derivation_details();
-        const {
-            app_index,
-            key_index,
-        }                               = derivation_details;
+        next_app_index(); // Skip a number
+
+        const app_index                 = next_app_index();
+        const key_index                 = 0;
         const path                      = `app/${app_index}/key/${key_index}`;
         const new_key                   = await alice_key_store.createKey( path );
 
@@ -410,7 +410,8 @@ function basic_tests () {
                 "new_key_signing_of_author":    await new_key.sign( alice_client.agent_id ),
             },
             "derivation_details":       {
-                ...derivation_details,
+                app_index,
+                key_index,
                 "derivation_seed":      alice_key_store.seed,
                 "derivation_bytes":     new_key.derivation_bytes,
             },
@@ -588,6 +589,50 @@ function basic_tests () {
         }
     });
 
+    it("should check existing derivation details", async function () {
+        this.timeout( 10_000 );
+
+        {
+            const app_index             = 1;
+            const key_index             = 0;
+            const path                  = `app/${app_index}/key/${key_index}`;
+            const new_key               = await alice_key_store.createKey( path );
+
+            const { key_meta }          = await alice_deepkey.check_existing_derivation_details({
+                app_index,
+                key_index,
+                "derivation_seed":      alice_key_store.seed,
+                "derivation_bytes":     new_key.derivation_bytes,
+            });
+
+            log.normal("Key meta: %s", json.debug(key_meta) );
+            expect( key_meta.derivation_bytes   ).to.deep.equal( new_key.derivation_bytes );
+        }
+
+        {
+            const app_index             = 1;
+            const key_index             = 0;
+            const path                  = `app/${app_index}/key/${key_index}`;
+            const new_key               = await alice_key_store.createKey( path );
+
+            const {
+                app_binding,
+                key_meta,
+            }                           = await alice_deepkey.check_existing_derivation_details({
+                app_index,
+                key_index,
+                "derivation_seed":      alice_key_store.seed,
+                "derivation_bytes":     [0,0,0],
+            });
+
+            log.normal("Key meta: %s", json.debug(key_meta) );
+
+            expect( app_binding.app_index       ).to.equal( app_index );
+            expect( key_meta.key_index          ).to.equal( key_index );
+            expect( key_meta.derivation_seed    ).to.deep.equal( alice_key_store.seed );
+        }
+    });
+
     linearSuite("Errors", function () {
 
         it("should fail to register invalid key", async function () {
@@ -665,6 +710,36 @@ function basic_tests () {
                     },
                 });
             }, "already a KeyRegistration" );
+        });
+
+        it("should fail to update key because app_index changed", async function () {
+            await expect_reject(async () => {
+                const app_index             = 0;
+                const {
+                    key_index,
+                }                           = await alice_deepkey.next_derivation_details( alice_key1c );
+                const path                  = `app/${app_index}/key/${key_index}`;
+                const new_key               = await alice_key_store.createKey( path );
+
+                await alice_deepkey.update_key({
+                    "key_revocation": {
+                        "prior_key_registration": alice_key1c_reg_addr,
+                        "revocation_authorization": [
+                            [ 0, await alice_deepkey.sign( alice_key1c_reg_addr ) ],
+                        ],
+                    },
+                    "key_generation": {
+                        "new_key":                      await new_key.getAgent(),
+                        "new_key_signing_of_author":    await new_key.sign( alice_client.agent_id ),
+                    },
+                    "derivation_details":       {
+                        app_index,
+                        key_index,
+                        "derivation_seed":      alice_key_store.seed,
+                        "derivation_bytes":     new_key.derivation_bytes,
+                    },
+                });
+            }, "derivation app index does not match the app binding" );
         });
 
     });

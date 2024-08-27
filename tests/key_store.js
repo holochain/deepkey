@@ -5,6 +5,7 @@ import crypto                           from 'crypto';
 import * as ed                          from '@noble/ed25519';
 import { hmac }                         from '@noble/hashes/hmac';
 import { sha256 }                       from '@noble/hashes/sha256';
+import { Bytes }                        from '@whi/bytes-class';
 
 import {
     AgentPubKey,
@@ -17,7 +18,7 @@ export class KeyStore {
     #keys                               = {};
 
     constructor ( device_seed, name ) {
-        this.#device_seed               = Buffer.from( device_seed ).toString("hex");
+        this.#device_seed               = new Bytes( device_seed );
 
         if ( name )
             this.#name                  = name;

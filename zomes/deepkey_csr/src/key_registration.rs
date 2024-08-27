@@ -23,33 +23,20 @@ pub use deepkey_sdk::{
 };
 
 
-// TODO: conductor will keep track of app_index instead of this; therefore, remove option
 #[hdk_extern]
 pub fn next_derivation_details(
-    input: Option<ByteArray<32>>
+    key_bytes: ByteArray<32>
 ) -> ExternResult<DerivationDetails> {
-    Ok(
-        match input {
-            Some(key_bytes) => {
-                let (_, app_binding) = crate::app_binding::query_app_binding_by_key( key_bytes )?;
+    let (_, app_binding) = crate::app_binding::query_app_binding_by_key( key_bytes )?;
 
-                let next_key_index = crate::key_meta::query_next_key_index_for_app_index(
-                    app_binding.app_index
-                )?;
+    let next_key_index = crate::key_meta::query_next_key_index_for_app_index(
+        app_binding.app_index
+    )?;
 
-                DerivationDetails {
-                    app_index: app_binding.app_index,
-                    key_index: next_key_index,
-                }
-            },
-            None => {
-                DerivationDetails {
-                    app_index: crate::app_binding::query_next_app_index(())?,
-                    key_index: 0,
-                }
-            },
-        }
-    )
+    Ok(DerivationDetails {
+        app_index: app_binding.app_index,
+        key_index: next_key_index,
+    })
 }
 
 
@@ -66,6 +53,35 @@ pub fn get_key_derivation_details(
             key_index: key_meta.key_index,
         }
     )
+}
+
+
+#[hdk_extern]
+pub fn check_existing_derivation_details(
+    derivation_details: DerivationDetailsInput,
+) -> ExternResult<Option<(AppBinding, KeyMeta)>> {
+    for key_meta in crate::key_meta::query_key_metas(())? {
+        if let Some(ref derivation_bytes) = key_meta.derivation_bytes {
+            if *derivation_bytes == derivation_details.derivation_bytes {
+                let app_binding = crate::app_binding::query_app_binding_by_action(
+                    key_meta.app_binding_addr.to_owned()
+                )?;
+
+                return Ok(Some((app_binding, key_meta)));
+            }
+        }
+
+        let app_binding = crate::app_binding::query_app_binding_by_action(
+            key_meta.app_binding_addr.to_owned()
+        )?;
+
+        if derivation_details.app_index == app_binding.app_index &&
+            Some(derivation_details.derivation_seed.to_owned()) == key_meta.derivation_seed {
+                return Ok(Some((app_binding, key_meta)));
+        }
+    }
+
+    Ok(None)
 }
 
 
@@ -122,26 +138,6 @@ pub fn get_key_derivation_details(
 pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistration, KeyMeta)> {
     let key_gen = input.key_generation;
     let next_app_index = crate::app_binding::query_next_app_index(())?;
-
-    // Check that derivation details match the chain state
-    if let Some(derivation_details) = &input.derivation_details {
-        let given_app_index = derivation_details.app_index;
-        let given_key_index = derivation_details.key_index;
-
-        // TODO: change this check so that it only checks if the index was already use
-        if given_app_index != next_app_index {
-            Err(guest_error!(format!(
-                "The derivation app index does not match the chain state: [given] {} != {} [next]",
-                given_app_index, next_app_index,
-            )))?
-        }
-        if given_key_index != 0 {
-            Err(guest_error!(format!(
-                "The derivation key index must be 0 for a new key registration: [given] {} != 0",
-                given_key_index,
-            )))?
-        }
-    }
 
     // Derive Key Anchor
     let key_anchor = KeyAnchor::try_from( &key_gen.new_key )?;
@@ -264,21 +260,12 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
     // Check that derivation details match the chain state
     if let Some(derivation_details) = &input.derivation_details {
         let given_app_index = derivation_details.app_index;
-        let given_key_index = derivation_details.key_index;
 
         // Check that derivation details has the correct 'app_index'
         if given_app_index != app_binding.app_index {
             Err(guest_error!(format!(
                 "The derivation app index does not match the app binding: [given] {} != {} [prior]",
                 given_app_index, app_binding.app_index,
-            )))?
-        }
-
-        // Check that derivation details has the correct 'key_index'
-        if given_key_index != next_key_index {
-            Err(guest_error!(format!(
-                "The derivation key index does not match the chain state: [given] {} != {} [next]",
-                given_key_index, next_key_index
             )))?
         }
     }
@@ -299,7 +286,9 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
     // Create Meta
     let key_meta = KeyMeta {
         app_binding_addr: prior_key_meta.app_binding_addr.clone(),
-        key_index: next_key_index,
+        key_index: input.derivation_details.as_ref()
+            .map( |details| details.key_index.to_owned() )
+            .unwrap_or( next_key_index ),
         key_registration_addr: key_reg_addr.clone(),
         key_anchor_addr: key_anchor_addr.clone(),
         derivation_seed: input.derivation_details.as_ref()
