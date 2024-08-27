@@ -1,5 +1,6 @@
 use crate::{
     utils,
+    deepkey_sdk,
 };
 use serde_bytes::ByteArray;
 use deepkey::*;
@@ -22,6 +23,7 @@ pub use deepkey_sdk::{
 };
 
 
+// TODO: conductor will keep track of app_index instead of this; therefore, remove option
 #[hdk_extern]
 pub fn next_derivation_details(
     input: Option<ByteArray<32>>
@@ -73,7 +75,7 @@ pub fn get_key_derivation_details(
 /// ```rust, no_run
 /// # use hdk::prelude::*;
 /// # use deepkey::*;
-/// # use deepkey_sdk::*;
+/// # use hc_deepkey_sdk::*;
 /// # fn main() -> ExternResult<()> {
 /// // Generates a new key in Lair
 /// let new_key = AgentPubKey::from_raw_32( create_x25519_keypair()?.as_ref().to_vec() );
@@ -126,6 +128,7 @@ pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
         let given_app_index = derivation_details.app_index;
         let given_key_index = derivation_details.key_index;
 
+        // TODO: change this check so that it only checks if the index was already use
         if given_app_index != next_app_index {
             Err(guest_error!(format!(
                 "The derivation app index does not match the chain state: [given] {} != {} [next]",
@@ -194,7 +197,7 @@ pub fn create_key(input: CreateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
 /// ```rust, no_run
 /// # use hdk::prelude::*;
 /// # use deepkey::*;
-/// # use deepkey_sdk::*;
+/// # use hc_deepkey_sdk::*;
 /// # fn main() -> ExternResult<()> {
 /// let prior_key_registration = ActionHash::try_from("uhCkkzhwfnkYh7CWji2KpS2wO6YaKOKPQ4-kr4XGRBRRx9hitvOw9").unwrap();
 ///
@@ -320,7 +323,7 @@ pub fn update_key(input: UpdateKeyInput) -> ExternResult<(ActionHash, KeyRegistr
 /// ```rust, no_run
 /// # use hdk::prelude::*;
 /// # use deepkey::*;
-/// # use deepkey_sdk::*;
+/// # use hc_deepkey_sdk::*;
 /// # fn main() -> ExternResult<()> {
 /// let prior_key_registration = ActionHash::try_from("uhCkkzhwfnkYh7CWji2KpS2wO6YaKOKPQ4-kr4XGRBRRx9hitvOw9").unwrap();
 ///

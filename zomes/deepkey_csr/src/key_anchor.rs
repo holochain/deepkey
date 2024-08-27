@@ -1,4 +1,7 @@
-use crate::utils;
+use crate::{
+    utils,
+    deepkey_sdk,
+};
 use deepkey::*;
 use deepkey_sdk::{
     KeyState,

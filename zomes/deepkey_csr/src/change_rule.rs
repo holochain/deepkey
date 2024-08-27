@@ -1,4 +1,7 @@
-use crate::utils;
+use crate::{
+    utils,
+    deepkey_sdk,
+};
 use deepkey::*;
 use hdk::prelude::*;
 use hdk_extensions::{
@@ -81,7 +84,7 @@ pub fn construct_authority_spec(input: AuthoritySpecInput) -> ExternResult<(Auth
 /// #### Example usage (first update)
 /// ```rust, no_run
 /// use hdk::prelude::*;
-/// use deepkey_sdk::*;
+/// use hc_deepkey_sdk::*;
 ///
 /// use rand::rngs::OsRng;
 /// use ed25519_dalek::SigningKey;
@@ -122,7 +125,7 @@ pub fn construct_authority_spec(input: AuthoritySpecInput) -> ExternResult<(Auth
 /// #### Example usage (second update)
 /// ```rust, no_run
 /// # use hdk::prelude::*;
-/// # use deepkey_sdk::*;
+/// # use hc_deepkey_sdk::*;
 /// # use rand::rngs::OsRng;
 /// # use ed25519_dalek::SigningKey;
 /// use ed25519_dalek::Signer;
