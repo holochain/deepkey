@@ -44,6 +44,7 @@ pub use hdk_extensions;
 pub use hdk_extensions::hdi_extensions;
 pub use deepkey;
 pub use deepkey::deepkey_types;
+pub use hc_deepkey_sdk as deepkey_sdk;
 
 use deepkey::*;
 use hdi_extensions::{

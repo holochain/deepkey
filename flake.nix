@@ -17,7 +17,7 @@
         devShell = pkgs.mkShell {
             buildInputs = with pkgs; [
               holochain_0-4
-              lair-keystore_0-4-5
+              lair-keystore_0-5
               hc_0-4
 
               rustup

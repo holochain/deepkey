@@ -6,9 +6,9 @@ pub mod joining_proof;
 pub mod source_of_authority;
 
 // Re-exports
-pub use deepkey_types;
+pub use hc_deepkey_types as deepkey_types;
 
-pub use deepkey_types::*;
+pub use hc_deepkey_types::*;
 pub use error::*;
 pub use joining_proof::*;
 pub use source_of_authority::*;

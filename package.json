@@ -13,7 +13,7 @@
     "@noble/hashes": "^1.4.0",
     "@spartan-hc/app-interface-client": "^0.7.2",
     "@spartan-hc/holo-hash": "^0.7.0",
-    "@spartan-hc/holochain-backdrop": "^4.4.1",
+    "@spartan-hc/holochain-backdrop": "^4.5.0",
     "@whi/json": "^0.1.8",
     "@whi/weblogger": "^0.4.0",
     "chai": "^4.3.4",
