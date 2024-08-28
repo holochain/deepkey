@@ -488,6 +488,27 @@ function basic_tests () {
         }
     });
 
+    it("should register new key without derivation details", async function () {
+        this.timeout( 5_000 );
+
+        const new_key                   = await random_key();
+
+        const [ addr, key_reg, key_meta ]       = await alice_deepkey.create_key({
+            "app_binding": {
+                "app_name":             "Alice - App #4",
+                "installed_app_id":     "random_agent_key",
+                "dna_hashes":           [ dna1_hash ],
+            },
+            "key_generation": {
+                "new_key":                      await new_key.getAgent(),
+                "new_key_signing_of_author":    await new_key.sign( alice_client.agent_id ),
+            },
+        });
+        log.normal("Key Registration (%s): %s", addr, json.debug(key_reg) );
+        log.normal("Key Meta: %s", json.debug(key_meta) );
+        log.normal("Key registration (update) addr: %s", addr );
+    });
+
     it("should query key lineage", async function () {
         {
             const lineage               = await alice_deepkey.query_key_lineage( alice_key1a );
