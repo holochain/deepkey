@@ -162,6 +162,16 @@ const functions                         = {
 
         return result;
     },
+    async check_existing_derivation_details ( input ) {
+        const result                    = await this.call( input );
+
+        return result === null
+            ? null
+            : {
+                "app_binding":  AppBinding( result[0] ),
+                "key_meta":     KeyMeta( result[1] ),
+            };
+    },
     async create_key ( input ) {
         const result                    = await this.call( input );
 

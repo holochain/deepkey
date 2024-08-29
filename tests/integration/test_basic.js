@@ -45,6 +45,11 @@ const alice1_key_store                  = new KeyStore( ALICE1_DEVICE_SEED, "ali
 
 let app_port;
 let installations;
+let app_count                           = 1;
+
+function next_app_index () {
+    return app_count++;
+}
 
 
 describe("DeepKey", function () {
@@ -123,11 +128,8 @@ function basic_tests () {
     it("should register new key", async function () {
         this.timeout( 5_000 );
 
-        const derivation_details        = await alice1_deepkey.next_derivation_details();
-        const {
-            app_index,
-            key_index,
-        }                               = derivation_details;
+        const app_index                 = next_app_index();
+        const key_index                 = 0;
         const path                      = `app/${app_index}/key/${key_index}`;
         const new_key                   = await alice1_key_store.createKey( path );
 
@@ -142,7 +144,8 @@ function basic_tests () {
                 "new_key_signing_of_author":    await new_key.sign( alice1_client.agent_id ),
             },
             "derivation_details":       {
-                ...derivation_details,
+                app_index,
+                key_index,
                 "derivation_seed":      alice1_key_store.seed,
                 "derivation_bytes":     new_key.derivation_bytes,
             },
