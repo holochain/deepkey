@@ -20,6 +20,7 @@ INT_SOURCE_FILES	= $(COMMON_SOURCE_FILES) \
 				$(INT_DIR)/Cargo.toml $(INT_DIR)/src/*.rs $(INT_DIR)/src/validation/*.rs
 CSR_SOURCE_FILES	= $(INT_SOURCE_FILES) \
 				$(CSR_DIR)/Cargo.toml $(CSR_DIR)/src/*.rs
+DNA_CRATE_DNA_SRC	= crates/holochain_deepkey_dna/src/deepkey.dna
 
 
 #
@@ -174,3 +175,11 @@ publish-%-sdk-crate:		 .cargo/credentials
 
 preview-deepkey-sdk-crate:
 publish-deepkey-sdk-crate:
+
+preview-deepkey-dna-crate:	 .cargo/credentials $(DNA_CRATE_DNA_SRC)
+	cargo publish -p holochain_deepkey_dna --dry-run --allow-dirty
+publish-deepkey-dna-crate:	 .cargo/credentials $(DNA_CRATE_DNA_SRC)
+	cargo publish -p holochain_deepkey_dna --allow-dirty
+
+$(DNA_CRATE_DNA_SRC):		$(DEEPKEY_DNA)
+	cp $< $@

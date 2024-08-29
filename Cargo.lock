@@ -1152,7 +1152,7 @@ dependencies = [
 
 [[package]]
 name = "holochain_deepkey_dna"
-version = "0.0.8-dev.1"
+version = "0.0.8-dev.2"
 
 [[package]]
 name = "holochain_integrity_types"
