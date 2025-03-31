@@ -2,7 +2,10 @@
   description = "Flake for Holochain app development";
 
   inputs = {
-    holonix.url = "github:holochain/holonix?ref=main";
+    holonix = {
+        url = "github:holochain/holonix?ref=support-integrate-k2";
+        inputs.holochain.url  = "github:holochain/holochain?ref=feat/integrate-k2";
+    };
 
     nixpkgs.follows = "holonix/nixpkgs";
     flake-parts.follows = "holonix/flake-parts";
