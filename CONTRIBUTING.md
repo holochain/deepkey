@@ -48,33 +48,20 @@ detailed API References.
 #### DNA Bundle
 
 ```bash
-make dna/deepkey.dna
+make dnas/deepkey.dna
 ```
 
-#### [Deepkey types crate](https://crates.io/crates/hc_deepkey_types)
+#### [Holochain Deepkey DNA](https://crates.io/crates/holochain_deepkey_dna)
 
 Build package without publishing
 ```bash
-make preview-deepkey-types-crate
+make preview-deepkey-dna-crate
 ```
 
 Publish package
 ```bash
-make publish-deepkey-types-crate
+make publish-deepkey-dna-crate
 ```
-
-#### [Deepkey SDK crate](https://crates.io/crates/hc_deepkey_sdk)
-
-Build package without publishing
-```bash
-make preview-deepkey-sdk-crate
-```
-
-Publish package
-```bash
-make publish-deepkey-sdk-crate
-```
-
 
 ### Testing
 

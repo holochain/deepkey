@@ -154,27 +154,11 @@ docs-watch:
 
 
 #
-# Publishing Types Packages
+# Publishing crates
 #
 .cargo/credentials:
 	mkdir -p .cargo
 	cp ~/$@ $@
-preview-%-types-crate:		 .cargo/credentials
-	cd dnas/$*; make preview-types-crate
-publish-%-types-crate:		 .cargo/credentials
-	cd dnas/$*; make publish-types-crate
-
-preview-deepkey-types-crate:
-publish-deepkey-types-crate:
-
-
-preview-%-sdk-crate:		 .cargo/credentials
-	cd dnas/$*; make preview-sdk-crate
-publish-%-sdk-crate:		 .cargo/credentials
-	cd dnas/$*; make publish-sdk-crate
-
-preview-deepkey-sdk-crate:
-publish-deepkey-sdk-crate:
 
 preview-deepkey-dna-crate:	 .cargo/credentials $(DNA_CRATE_DNA_SRC)
 	cargo publish -p holochain_deepkey_dna --dry-run --allow-dirty

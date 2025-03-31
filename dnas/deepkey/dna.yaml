@@ -4,7 +4,6 @@ name: deepkey
 integrity:
   network_seed: ~
   properties: ~
-  origin_time: 1669408001130688
   zomes:
     - name: deepkey
       hash: ~

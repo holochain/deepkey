@@ -87,7 +87,7 @@ derivation instructions.  In order to regenerate your app keys, Deepkey must sto
 info that will instruct Lair to reproduce the same keys.
 
 
-#### How are keys determinitic?
+#### How are keys deterministic?
 
 Key uniquenss is determined by a combination of 2 incrementing numbers; an **app index** and a **key
 index**.  When an app is installed, a new key registration is made using the next unused app index
